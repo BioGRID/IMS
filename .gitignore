@@ -55,3 +55,16 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# Configs
+config.json
+config/config.json
+
+# Misc
+.listing
+
+# Logs
+logs/
+
+# Composer
+vendor/

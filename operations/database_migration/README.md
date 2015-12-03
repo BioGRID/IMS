@@ -1,0 +1,2 @@
+# Database Migration
+Utilities for migrating an instance of BioGRID IMS 2.0 database to the latest database structure. Requires configuration variables set in <base>/config/config.json to operate correctly.
