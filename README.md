@@ -1,6 +1,10 @@
 # BioGRID IMS (Interaction Management System)
 This resource contains the complete BIoGRID Interaction Management System (IMS) platform and all related tools. It is specifically used in the curation of data from publications for release at the BioGRID website (http://thebiogrid.org). It contains both command line tools, database components, and a web based front end interface. 
 
+## Development Status
++ Unstable/In Development
++ Current Version: **0.0.1 ALPHA**
+
 ## System Requirements
 To use all of the tools contained within, you require at least the following:
 
