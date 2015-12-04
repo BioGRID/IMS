@@ -1,3 +1,6 @@
+
+# Basic Database Connection Setup
+
 import MySQLdb
 import MySQLdb.cursors
 import Config

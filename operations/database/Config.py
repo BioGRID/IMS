@@ -1,3 +1,7 @@
+
+# Load the config file, and create variables
+# that can be referenced within other files
+
 import json
 import os
 
