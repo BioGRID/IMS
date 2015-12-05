@@ -1,0 +1,10 @@
+{
+	"DB" : {
+		"DB_HOST"						: "DATABASE HOST IP",
+		"DB_USER"						: "DATABASE LOGIN USER NAME",
+		"DB_PASS"						: "DATABASE LOGIN PASSWORD",
+		"DB_QUICK"						: "QUICK DATABASE NAME",
+		"DB_IMS"						: "NEW IMS DATABASE NAME",
+		"DB_IMS_OLD"					: "OLD IMS 2.0 DATABASE NAME (only required if porting from old IMS)"
+	}
+}
