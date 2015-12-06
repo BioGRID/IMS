@@ -59,5 +59,3 @@ class Ontologies( ) :
 			])
 			
 		self.cursor.execute( "UPDATE " + Config.DB_IMS + ".ontology_terms SET ontology_term_isroot='1' WHERE ontology_term_id IN ( SELECT ontology_rootid FROM " + Config.DB_IMS + ".ontologies )" )
-			
-		

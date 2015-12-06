@@ -3,9 +3,9 @@ DROP TABLE IF EXISTS `ontology_terms`;
 CREATE TABLE `ontology_terms` (
   `ontology_term_id` bigint(10) NOT NULL AUTO_INCREMENT,
   `ontology_term_official_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `ontology_term_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `ontology_term_name` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `ontology_term_desc` text COLLATE utf8mb4_unicode_ci,
-  `ontology_term_synonymns` text COLLATE utf8mb4_unicode_ci,
+  `ontology_term_synonyms` text COLLATE utf8mb4_unicode_ci,
   `ontology_term_replacement` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `ontology_term_subsets` text COLLATE utf8mb4_unicode_ci,
   `ontology_term_preferred_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
