@@ -35,6 +35,7 @@ class SQL( ) :
 	
 		self.clean( "ontologies" )
 		self.clean( "ontology_terms" )
+		self.clean( "ontology_relationships" )
 		
 	def build_ontologies( self ) :
 	
@@ -47,6 +48,11 @@ class SQL( ) :
 		
 		self.writeLine( "Migrating Ontology Terms" )
 		self.ontologies.migrateOntologyTerms( )
+		
+		self.writeLine( "Adding New Ontologies" )
+		self.ontologies.setupNewOntologies( )
+		
+		self.writeLine( "You will need to run an update of Ontologies separately to populate the relationships table" )
 		
 	def clean( self, table ) :
 	
