@@ -40,8 +40,12 @@ with Database.db as cursor :
 		for (termOfficialID,termDetails) in oboData.items( ) :
 			ontologies.processTerm( termOfficialID, termDetails, row['ontology_rootid'], row['ontology_id'] )
 			
+		for (termOfficialID,termDetails) in oboData.items( ) :
+			ontologies.processRelationships( termOfficialID, termDetails, row['ontology_rootid'], row['ontology_id'] )
+			
 		cursor.execute( "UPDATE " + Config.DB_IMS + ".ontologies SET ontology_lastparsed=NOW( ) WHERE ontology_id=%s", [row['ontology_id']] )
 			
 		Database.db.commit( )
+		oboParser.reset( )
 			
 sys.exit(0)

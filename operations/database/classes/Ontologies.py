@@ -53,9 +53,87 @@ class Ontologies( ) :
 				row['phenotype_ontology_id'], 
 				row['phenotype_addeddate'],
 				row['phenotype_status'],
-				row['phenotype_child_count'],
-				row['phenotype_parents'],
+				0,
+				"-",
 				0
 			])
 			
 		self.cursor.execute( "UPDATE " + Config.DB_IMS + ".ontology_terms SET ontology_term_isroot='1' WHERE ontology_term_id IN ( SELECT ontology_rootid FROM " + Config.DB_IMS + ".ontologies )" )
+		
+	def setupNewOntologies( self ) :
+		
+		"""Add new ontologies to the the end of the ontologies table"""
+		
+		self.addOntology( 
+			"BioGRID Experimental System Ontology", 
+			"https://raw.githubusercontent.com/BioGRID/BioGRID-Ontologies/master/BioGRIDExperimentalSystems.obo", 
+			"BIOGRID:0000030", 
+			"BioGRID Experimental System Ontology", 
+			"BioGRID Experimental Systems used to classify interactions" 
+		)
+		
+		self.addOntology( 
+			"BioGRID Chemical Actions Ontology", 
+			"https://raw.githubusercontent.com/BioGRID/BioGRID-Ontologies/master/BioGRIDChemicalActions.obo", 
+			"BIOGRID:0000031", 
+			"BioGRID Chemical Actions Ontology", 
+			"BioGRID Terms relating to effects and modes of employment for drugs and chemicals" 
+		)
+		
+		self.addOntology( 
+			"BioGRID Participant Tag Ontology", 
+			"https://raw.githubusercontent.com/BioGRID/BioGRID-Ontologies/master/BioGRIDParticipantTags.obo", 
+			"BIOGRID:0000032", 
+			"BioGRID Participant Tag Ontology", 
+			"BioGRID tags denoting additional annotation specifically attributed to a single participant" 
+		)
+		
+		self.addOntology( 
+			"BioGRID Phenotype Types Ontology", 
+			"https://raw.githubusercontent.com/BioGRID/BioGRID-Ontologies/master/BioGRIDPhenotypeTypes.obo", 
+			"BIOGRID:0000033", 
+			"BioGRID Phenotype Types Ontology", 
+			"BioGRID terms for qualifiying phenotypes" 
+		)
+		
+		self.addOntology( 
+			"BioGRID Post-Translational Modification Ontology", 
+			"https://raw.githubusercontent.com/BioGRID/BioGRID-Ontologies/master/BioGRIDPostTranslationalModifications.obo", 
+			"BIOGRID:0000034", 
+			"BioGRID Post-Translational Modification Ontology", 
+			"BioGRID post-translational modification classification terms" 
+		)
+		
+		self.addOntology( 
+			"BioGRID Sources Ontology", 
+			"https://raw.githubusercontent.com/BioGRID/BioGRID-Ontologies/master/BioGRIDSources.obo", 
+			"BIOGRID:0000035", 
+			"BioGRID Sources Ontology", 
+			"BioGRID database/website source references for curated data" 
+		)
+		
+		self.addOntology( 
+			"BioGRID Throughput Ontology", 
+			"https://raw.githubusercontent.com/BioGRID/BioGRID-Ontologies/master/BioGRIDThroughput.obo", 
+			"BIOGRID:0000036", 
+			"BioGRID Throughput Ontology", 
+			"BioGRID terms for classifying the throughput methodology of a dataset" 
+		)
+		
+	def addOntology( self, ontologyName, ontologyURL, termID, termName, termDef ) :
+	
+		"""Input both a new Ontology and a ROOT ID reference and establish linkage between the two within the database"""
+	
+		# Add Ontology
+		self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".ontologies VALUES( '0', %s, %s, %s, NOW( ), '0000-00-00 00:00:00', 'active' )", [ontologyName, ontologyURL, "0"] )
+		ontologyID = self.cursor.lastrowid
+		
+		# Add Root Ontology Term
+		self.cursor.execute( "INSERT INTO ontology_terms VALUES( '0', %s, %s, %s, '-', '-', '-', '-', %s, NOW( ), 'active', '0', '-', '1' )", [termID, termName, termDef, ontologyID] )
+		rootTermID = self.cursor.lastrowid
+		
+		# Map new root to ontology
+		self.cursor.execute( "UPDATE ontologies SET ontology_rootid=%s WHERE ontology_id=%s", [rootTermID, ontologyID] )
+		self.db.commit( )
+		
+		

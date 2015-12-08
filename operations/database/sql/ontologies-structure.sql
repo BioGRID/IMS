@@ -14,4 +14,4 @@ CREATE TABLE `ontologies` (
   KEY `ontology_lastparsed` (`ontology_lastparsed`),
   KEY `ontology_status` (`ontology_status`),
   KEY `ontology_name` (`ontology_name`(191))
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

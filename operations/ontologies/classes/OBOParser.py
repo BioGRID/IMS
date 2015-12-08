@@ -8,10 +8,13 @@ class OBOParser( ) :
 	"""Tools for parsing of OBO formatted files"""
 
 	def __init__( self ) :
+		self.quoteRE = re.compile( "\"(.*)\"\s?(.*)" )
+		self.reset( )
+		
+	def reset( self ) :
 		self.oboData = { }
 		self.parsingTerm = False
 		self.currentTerm = { }
-		self.quoteRE = re.compile( "\"(.*)\"\s?(.*)" )
 		
 	def parse( self, oboFile ) :
 	

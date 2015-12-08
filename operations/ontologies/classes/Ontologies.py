@@ -1,6 +1,8 @@
 import sys, string
 import Config
 
+from classes import OntologyHash
+
 class Ontologies( ) :
 
 	"""Tools for Processing Ontology Terms in to the Database"""
@@ -8,33 +10,9 @@ class Ontologies( ) :
 	def __init__( self, db, cursor, ontologyID ) :
 		self.db = db
 		self.cursor = cursor
-		self.termHash = self.buildTermHash( ontologyID )
-		self.termRelHash = self.buildRelationshipHash( ontologyID )
-		
-	def buildTermHash( self, ontologyID ) :
-	
-		"""Build a quick lookup hash of terms within an ontology"""
-		
-		termHash = { }
-		self.cursor.execute( "SELECT ontology_term_id, ontology_term_official_id FROM " + Config.DB_IMS + ".ontology_terms WHERE ontology_id=%s", [ontologyID] )
-		
-		for row in self.cursor.fetchall( ) :
-			termHash[row['ontology_term_official_id'].upper( )] = str(row['ontology_term_id'])
-			
-		return termHash
-		
-	def buildRelationshipHash( self, ontologyID ) :
-	
-		"""Build a quick lookup hash of terms within an ontology"""
-		
-		termRelHash = { }
-		self.cursor.execute( "SELECT ontology_term_id, ontology_parent_id, ontology_relationship_type, ontology_relationship_id FROM " + Config.DB_IMS + ".ontology_relationships WHERE ontology_term_id IN ( SELECT ontology_term_id FROM ontology_terms WHERE ontology_id=%s )", [ontologyID] )
-		
-		for row in self.cursor.fetchall( ) :
-			relationship = str(row['ontology_term_id']) + "|" + str(row['ontology_parent_id']) + "|" + str(row['ontology_relationship_type'])
-			termRelHash[relationship.upper( )] = str(row['ontology_relationship_id'])
-			
-		return termRelHash
+		self.ontologyHash = OntologyHash.OntologyHash( db, cursor )
+		self.termHash = self.ontologyHash.buildTermHash( ontologyID )
+		self.termRelHash = self.ontologyHash.buildRelationshipHash( ontologyID )
 		
 	def processTerm( self, termOfficialID, termDetails, rootID, ontologyID ) :
 	
@@ -80,13 +58,16 @@ class Ontologies( ) :
 		else :
 			self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".ontology_terms VALUES( %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW( ), %s, %s, %s, %s )", [termID, termOfficialID, termName, termDesc, termSynonyms, termReplacement, termSubsets, "-", ontologyID, termStatus, termChildCount, termParent, '0'] )
 			termID = self.cursor.lastrowid
+			self.termHash[termOfficialID.upper( )] = termID
+			
+		#if termStatus != "inactive" :
+			#self.processRelationships( termID, termDetails, rootID, ontologyID )
 		
-		if termStatus != "inactive" :
-			self.processRelationships( termID, termDetails, rootID, ontologyID )
-		
-	def processRelationships( self, termID, termDetails, rootID, ontologyID ) :
+	def processRelationships( self, termOfficialID, termDetails, rootID, ontologyID ) :
 	
 		"""Step through both is_a and other relationships and update/insert relationships"""
+		
+		termID = self.termHash[termOfficialID.upper( )]
 	
 		self.cursor.execute( "UPDATE " + Config.DB_IMS + ".ontology_relationships SET ontology_relationship_status='inactive' WHERE ontology_term_id=%s", [termID] )
 		self.db.commit( )
@@ -95,6 +76,10 @@ class Ontologies( ) :
 			self.processRelationship( termID, rootID, "is_a" )
 		else :
 			for relationship in termDetails["is_a"] :
+				# Clean up improperly formatted is_a relationships
+				# by cutting out anything past a space
+				relationship = relationship.split( " " )
+				relationship = relationship[0].strip( )
 				if relationship.upper( ) in self.termHash :
 					self.processRelationship( termID, self.termHash[relationship.upper( )], "is_a" )
 					
