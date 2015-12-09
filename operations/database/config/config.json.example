@@ -1,0 +1,10 @@
+{
+	"DB" : {
+		"DB_IMS_OLD"					: "OLD IMS 2.0 FORMATTED DATABASE",
+		"DB_IMS_TRANSITION"				: "A TRANSITIONAL DB"
+	},
+	
+	"USERS" : {
+		"DEFAULT_PASSWORD"				: "A DEFAULT PASSWORD"
+	}
+}
