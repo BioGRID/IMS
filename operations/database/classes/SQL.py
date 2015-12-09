@@ -2,7 +2,7 @@
 import sys, string
 import Config
 
-from classes import Ontologies
+from classes import Ontologies, Datasets
 
 class SQL( ) :
 
@@ -13,8 +13,6 @@ class SQL( ) :
 		self.cursor = cursor
 		self.SQL_DIR = "sql/"
 		self.verbose = verbose
-		
-		self.ontologies = Ontologies.Ontologies( db, cursor )
 				
 	def clean_interactions( self ) :
 	
@@ -41,18 +39,61 @@ class SQL( ) :
 	
 		"""Load data into the tables pertaining to ontologies"""
 		
+		ontologies = Ontologies.Ontologies( self.db, self.cursor )
+		
 		self.writeHeader( "Building Ontologies" )
 		
 		self.writeLine( "Migrating Ontologies" )
-		self.ontologies.migrateOntologies( )
+		ontologies.migrateOntologies( )
 		
 		self.writeLine( "Migrating Ontology Terms" )
-		self.ontologies.migrateOntologyTerms( )
+		ontologies.migrateOntologyTerms( )
 		
 		self.writeLine( "Adding New Ontologies" )
-		self.ontologies.setupNewOntologies( )
+		ontologies.setupNewOntologies( )
 		
 		self.writeLine( "You will need to run an update of Ontologies separately to populate the relationships table" )
+		
+	def clean_datasets( self ) :
+		
+		"""Clean the Dataset Associated Tables"""
+		
+		self.clean( "datasets" )
+		self.clean( "dataset_attributes" )
+		self.clean( "dataset_history" )
+		self.clean( "dataset_types" )
+		self.clean( "pubmed_mappings" )
+		self.clean( "pubmed_queries" )
+		self.clean( "pubmed" )
+		self.clean( "prepub" )
+		
+	def build_datasets( self ) :
+	
+		"""Load data into the tables pertaining to Datasets"""
+		
+		datasets = Datasets.Datasets( self.db, self.cursor )
+		
+		self.writeHeader( "Building Datasets" )
+		
+		self.writeLine( "Loading Dataset Types" )
+		self.processSQL( "dataset_types-data.sql" )
+		
+		self.writeLine( "Migrating Pubmed Mappings" )
+		datasets.migratePubmedMappings( )
+		
+		self.writeLine( "Migrating Pubmed Queries" )
+		datasets.migratePubmedQueries( )
+		
+		self.writeLine( "Migrating Pubmed" )
+		datasets.migratePubmed( )
+		
+		self.writeLine( "Migrating Pre-Pub" )
+		datasets.migratePrepub( )
+		
+		self.writeLine( "Migrating History" )
+		datasets.migrateHistory( )
+		
+		self.writeLine( "Publications will have no annotation, you will need to update that manually." )
 		
 	def clean( self, table ) :
 	
