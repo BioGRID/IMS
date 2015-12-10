@@ -12,3 +12,6 @@ To use all of the tools contained within, you require at least the following:
 + MySQL 5.5+ (https://www.mysql.com/)
 + PHP 5.5.9+ (http://www.php.net/)
 + A web server such as Nginx (https://www.nginx.com/) or Apache (https://httpd.apache.org/)
+
+## Directories
++ **operations** - Tools for maintenance of Site Operation
