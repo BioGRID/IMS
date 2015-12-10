@@ -19,7 +19,7 @@ argGroup.add_argument( '--build', '-b', nargs='*', action='store', help='Comma s
 argGroup.add_argument( '--list', '-l', action='store_true', help='List all of the build options available for the build command' )
 inputArgs = argParser.parse_args( )
 
-validOptions = [ "interactions", "ontologies", "participants", "projects", "ptms", "datasets", "core", "all" ]
+validOptions = [ "interactions", "ontologies", "datasets", "attributes", "history", "participants", "projects", "ptms", "core", "all" ]
 
 if inputArgs.list :
 	print "Build Options: " + ", ".join( validOptions )

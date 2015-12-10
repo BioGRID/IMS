@@ -2,7 +2,7 @@
 import sys, string
 import Config
 
-from classes import Ontologies, Datasets
+from classes import Ontologies, Datasets, Interactions, History
 
 class SQL( ) :
 
@@ -94,6 +94,68 @@ class SQL( ) :
 		datasets.migrateHistory( )
 		
 		self.writeLine( "Publications will have no annotation, you will need to update that manually." )
+		
+	def clean_interactions( self ) :
+		
+		"""Clean the Interaction Associated Tables"""
+		
+		self.clean( "interactions" )
+		self.clean( "interaction_attributes" )
+		self.clean( "interaction_types" )
+		
+	def build_interactions( self ) :
+	
+		"""Load data into the tables pertaining to Interactions"""
+		
+		self.writeHeader( "Building Interactions" )
+		self.writeLine( "Building Quick Lookup Sets" )
+		
+		interactions = Interactions.Interactions( self.db, self.cursor )
+		
+		self.writeLine( "Loading Interaction Types" )
+		self.processSQL( "interaction_types-data.sql" )
+		
+		self.writeLine( "Migrating Interactions" )
+		interactions.migrateInteractions( )
+		
+	def clean_attributes( self ) :
+	
+		"""Clean the Attributes Associated Tables"""
+	
+		self.clean( "attributes" )
+		self.clean( "attribute_types" )
+		self.clean( "attribute_type_categories" )
+		
+	def build_attributes( self ) :
+	
+		self.writeHeader( "Resetting Attributes" )
+		
+		self.writeLine( "Loading Attribute Types" )
+		self.processSQL( "attribute_types-data.sql" )
+		
+		self.writeLine( "Loading Attribute Type Categories" )
+		self.processSQL( "attribute_type_categories-data.sql" )
+		
+	def clean_history( self ) :
+	
+		"""Clean the history and history_operations tables"""
+		
+		self.clean( "history" )
+		self.clean( "history_operations" )
+		
+	def build_history( self ) :
+	
+		"""Load Interaction History Data"""
+	
+		self.writeHeader( "Building History" )
+		
+		history = History.History( self.db, self.cursor )
+		
+		self.writeLine( "Migrating History Operations" )
+		self.processSQL( "history_operations-data.sql" )
+		
+		self.writeLine( "Migrating History" )
+		history.migrateHistory( )
 		
 	def clean( self, table ) :
 	
