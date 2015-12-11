@@ -16,7 +16,7 @@ class Interactions( ) :
 		self.ignoreInteractionSet = self.buildIgnoreInteractionSet( )
 		self.expSysHash = self.buildExpSystemHash( )
 		self.modHash = self.buildModificationHash( )
-		self.activatedHash = self.buildInteractionActivationDateHash( )
+		self.activatedHash = self.buildInteractionActivationHash( )
 		
 	def buildValidDatasetSet( self ) :
 		
@@ -102,14 +102,14 @@ class Interactions( ) :
 				
 		return modHash
 		
-	def buildInteractionActivationDateHash( self ) :
+	def buildInteractionActivationHash( self ) :
 	
-		"""Build a mapping HASH of interaction IDs to the date of activation"""
+		"""Build a mapping HASH of interaction IDs to details of activation"""
 		
 		activatedHash = { }
-		self.cursor.execute( "SELECT interaction_id, interaction_history_date FROM " + Config.DB_IMS_OLD + ".interaction_history WHERE modification_type='ACTIVATED'" )
+		self.cursor.execute( "SELECT interaction_id, interaction_history_date, user_id FROM " + Config.DB_IMS_OLD + ".interaction_history WHERE modification_type='ACTIVATED'" )
 		for row in self.cursor.fetchall( ) :
-			activatedHash[str(row['interaction_id'])] = row['interaction_history_date'].strftime(self.dateFormat)
+			activatedHash[str(row['interaction_id'])] = { "USER_ID" : str(row['user_id']), "DATE" : row['interaction_history_date'].strftime(self.dateFormat) }
 			
 		return activatedHash
 		
@@ -128,25 +128,27 @@ class Interactions( ) :
 				intCount += 1
 				self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".interactions VALUES( %s, %s, %s, %s )", [row['interaction_id'], row['publication_id'], "1", "normal"] )
 				
-				attribDate = self.activatedHash[str(row['interaction_id'])]
+				activationInfo = self.activatedHash[str(row['interaction_id'])]
+				attribDate = activationInfo["DATE"]
+				attribUserID = activationInfo["USER_ID"]
 				
 				# Remap Experimental System ID into Attributes Entry
 				expSystemID = self.expSysHash[str(row['experimental_system_id'])]
-				self.processInteractionAttribute( row['interaction_id'], expSystemID, "11", attribDate )
+				self.processInteractionAttribute( row['interaction_id'], expSystemID, "11", attribDate, attribUserID )
 				
 				# Remap Modification ID into Attributes Entry
 				# Modifications are only applicable when BioChemical Activity (9)
 				# is the Experimental System 
 				modificationID = self.modHash[str(row['modification_id'])]
 				if str(row['experimental_system_id']) == '9' :
-					self.processInteractionAttribute( row['interaction_id'], modificationID, "12", attribDate )
+					self.processInteractionAttribute( row['interaction_id'], modificationID, "12", attribDate, attribUserID )
 				
 				if (intCount % 10000) == 0 :
 					self.db.commit( )
 				
 		self.db.commit( )
 		
-	def processInteractionAttribute( self, interactionID, attribVal, attribType, attribDate ) :
+	def processInteractionAttribute( self, interactionID, attribVal, attribType, attribDate, userID ) :
 	
 		"""Process adding and mapping of the interaction to its attribute"""
 		
@@ -159,7 +161,7 @@ class Interactions( ) :
 		else :
 			attribID = row['attribute_id']
 		
-		self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".interaction_attributes VALUES( '0', %s, %s, '0', %s, 'active' )", [interactionID, attribID, attribDate] )
+		self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".interaction_attributes VALUES( '0', %s, %s, '0', %s, %s, 'active' )", [interactionID, attribID, userID, attribDate] )
 		
 	def migrateHistory( self ) :
 	
