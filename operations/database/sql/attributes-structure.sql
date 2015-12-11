@@ -9,5 +9,6 @@ CREATE TABLE `attributes` (
   PRIMARY KEY (`attribute_id`),
   KEY `attribute_type_id` (`attribute_type_id`),
   KEY `attribute_addeddate` (`attribute_addeddate`),
-  KEY `attribute_status` (`attribute_status`)
+  KEY `attribute_status` (`attribute_status`),
+  KEY `attribute_value` (`attribute_value`(50))
 ) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
