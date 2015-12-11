@@ -19,6 +19,7 @@ class Interactions( ) :
 		self.expSysHash = self.buildExpSystemHash( )
 		self.modHash = self.buildModificationHash( )
 		self.throughputHash = self.buildThroughputTagHash( )
+		self.sourceHash = self.buildSourceTagHash( )
 		self.activatedHash = self.buildInteractionActivationHash( )
 		
 	def buildValidDatasetSet( self ) :
@@ -137,6 +138,35 @@ class Interactions( ) :
 		
 		tagHash = { }
 		self.cursor.execute( "SELECT tag_id, tag_name FROM " + Config.DB_IMS_OLD + ".tags WHERE tag_category_id='1' AND tag_status='active'" )
+		
+		for row in self.cursor.fetchall( ) :
+			if row['tag_name'].lower( ) in ontologyTerms :
+				ontologyID = ontologyTerms[row['tag_name'].lower( )]
+				tagHash[str(row['tag_id'])] = ontologyID
+				
+		return tagHash
+		
+	def buildSourceTagHash( self ) :
+	
+		"""Build a mapping HASH from old Source Tag IDs to New Ontology ID"""
+		
+		# Need to fetch the ontology by name rather than by ID because
+		# the ID may not be the same by the time we do the final
+		# migration of the databases.
+		
+		ontologyTerms = { }
+		self.cursor.execute( "SELECT ontology_id FROM " + Config.DB_IMS + ".ontologies WHERE ontology_name = 'BioGRID Sources Ontology' LIMIT 1" )
+		row = self.cursor.fetchone( ) 
+		
+		if None != row :
+			ontologyID = row['ontology_id']
+			
+			self.cursor.execute( "SELECT ontology_term_id, ontology_term_name FROM " + Config.DB_IMS + ".ontology_terms WHERE ontology_id=%s", [ontologyID] )
+			for row in self.cursor.fetchall( ) :
+				ontologyTerms[row['ontology_term_name'].lower( )] = str(row['ontology_term_id'])
+		
+		tagHash = { }
+		self.cursor.execute( "SELECT tag_id, tag_name FROM " + Config.DB_IMS_OLD + ".tags WHERE tag_category_id='2' AND tag_status='active'" )
 		
 		for row in self.cursor.fetchall( ) :
 			if row['tag_name'].lower( ) in ontologyTerms :
@@ -279,6 +309,36 @@ class Interactions( ) :
 				# Remap Tag ID into Attributes Entry
 				throughputTermID = self.throughputHash[str(row['tag_id'])]
 				self.processInteractionAttribute( row['interaction_id'], throughputTermID, "13", row['interaction_tag_mapping_timestamp'], attribUserID, row['interaction_tag_mapping_status'] )
+				
+				if (tagCount % 10000) == 0 :
+					self.db.commit( )
+				
+		self.db.commit( )
+		
+	def migrateSourceTags( self ) :
+	
+		"""
+		Copy Operation
+			-> IMS2: interaction_tag_mappings
+			-> IMS4: attribues and interaction_attributes
+		"""
+		
+		self.cursor.execute( "SELECT * FROM " + Config.DB_IMS_OLD + ".interaction_tag_mappings WHERE interaction_id IN ( SELECT interaction_id FROM " + Config.DB_IMS + ".interactions )" )
+		
+		tagCount = 0
+		for row in self.cursor.fetchall( ) :
+		
+			activationInfo = self.activatedHash[str(row['interaction_id'])]
+			attribDate = activationInfo["DATE"]
+			attribUserID = activationInfo["USER_ID"]
+			
+			if str(row['tag_id']) in self.sourceHash :
+			
+				tagCount += 1
+				
+				# Remap Tag ID into Attributes Entry
+				sourceTermID = self.sourceHash[str(row['tag_id'])]
+				self.processInteractionAttribute( row['interaction_id'], sourceTermID, "14", row['interaction_tag_mapping_timestamp'], attribUserID, row['interaction_tag_mapping_status'] )
 				
 				if (tagCount % 10000) == 0 :
 					self.db.commit( )

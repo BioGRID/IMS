@@ -113,16 +113,19 @@ class SQL( ) :
 		interactions = Interactions.Interactions( self.db, self.cursor )
 		
 		self.writeLine( "Loading Interaction Types" )
-		self.processSQL( "interaction_types-data.sql" )
+		#self.processSQL( "interaction_types-data.sql" )
 		
 		self.writeLine( "Migrating Interactions" )
-		interactions.migrateInteractions( )
+		#interactions.migrateInteractions( )
 		
 		self.writeLine( "Migrating Qualifications" )
-		interactions.migrateQualifications( )
+		#interactions.migrateQualifications( )
 		
 		self.writeLine( "Migrating Throughput Tags" )
-		interactions.migrateThroughputTags( )
+		#interactions.migrateThroughputTags( )
+		
+		self.writeLine( "Migrating Source Tags" )
+		interactions.migrateSourceTags( )
 		
 	def clean_attributes( self ) :
 	
