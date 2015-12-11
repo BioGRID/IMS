@@ -1,6 +1,7 @@
 import sys, string
 import Config
 import datetime
+import re
 
 class Interactions( ) :
 
@@ -10,12 +11,14 @@ class Interactions( ) :
 		self.db = db
 		self.cursor = cursor
 		self.dateFormat = "%Y-%m-%d %H:%M:%S"
+		self.quoteWrap = re.compile( '^[\'\"](.*)[\"\']$' )
 		
 		# Build Quick Reference Data Structures
 		self.validDatasets = self.buildValidDatasetSet( )
 		self.ignoreInteractionSet = self.buildIgnoreInteractionSet( )
 		self.expSysHash = self.buildExpSystemHash( )
 		self.modHash = self.buildModificationHash( )
+		self.throughputHash = self.buildThroughputTagHash( )
 		self.activatedHash = self.buildInteractionActivationHash( )
 		
 	def buildValidDatasetSet( self ) :
@@ -113,6 +116,35 @@ class Interactions( ) :
 			
 		return activatedHash
 		
+	def buildThroughputTagHash( self ) :
+	
+		"""Build a mapping HASH from old Throughput Tag IDs to New Ontology ID"""
+		
+		# Need to fetch the ontology by name rather than by ID because
+		# the ID may not be the same by the time we do the final
+		# migration of the databases.
+		
+		ontologyTerms = { }
+		self.cursor.execute( "SELECT ontology_id FROM " + Config.DB_IMS + ".ontologies WHERE ontology_name = 'BioGRID Throughput Ontology' LIMIT 1" )
+		row = self.cursor.fetchone( ) 
+		
+		if None != row :
+			ontologyID = row['ontology_id']
+			
+			self.cursor.execute( "SELECT ontology_term_id, ontology_term_name FROM " + Config.DB_IMS + ".ontology_terms WHERE ontology_id=%s", [ontologyID] )
+			for row in self.cursor.fetchall( ) :
+				ontologyTerms[row['ontology_term_name'].lower( )] = str(row['ontology_term_id'])
+		
+		tagHash = { }
+		self.cursor.execute( "SELECT tag_id, tag_name FROM " + Config.DB_IMS_OLD + ".tags WHERE tag_category_id='1' AND tag_status='active'" )
+		
+		for row in self.cursor.fetchall( ) :
+			if row['tag_name'].lower( ) in ontologyTerms :
+				ontologyID = ontologyTerms[row['tag_name'].lower( )]
+				tagHash[str(row['tag_id'])] = ontologyID
+				
+		return tagHash
+		
 	def migrateInteractions( self ) :
 		
 		"""
@@ -134,21 +166,21 @@ class Interactions( ) :
 				
 				# Remap Experimental System ID into Attributes Entry
 				expSystemID = self.expSysHash[str(row['experimental_system_id'])]
-				self.processInteractionAttribute( row['interaction_id'], expSystemID, "11", attribDate, attribUserID )
+				self.processInteractionAttribute( row['interaction_id'], expSystemID, "11", attribDate, attribUserID, 'active' )
 				
 				# Remap Modification ID into Attributes Entry
 				# Modifications are only applicable when BioChemical Activity (9)
 				# is the Experimental System 
 				modificationID = self.modHash[str(row['modification_id'])]
 				if str(row['experimental_system_id']) == '9' :
-					self.processInteractionAttribute( row['interaction_id'], modificationID, "12", attribDate, attribUserID )
+					self.processInteractionAttribute( row['interaction_id'], modificationID, "12", attribDate, attribUserID, 'active' )
 				
 				if (intCount % 10000) == 0 :
 					self.db.commit( )
 				
 		self.db.commit( )
 		
-	def processInteractionAttribute( self, interactionID, attribVal, attribType, attribDate, userID ) :
+	def processInteractionAttribute( self, interactionID, attribVal, attribType, attribDate, userID, mappingStatus ) :
 	
 		"""Process adding and mapping of the interaction to its attribute"""
 		
@@ -161,7 +193,7 @@ class Interactions( ) :
 		else :
 			attribID = row['attribute_id']
 		
-		self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".interaction_attributes VALUES( '0', %s, %s, '0', %s, %s, 'active' )", [interactionID, attribID, userID, attribDate] )
+		self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".interaction_attributes VALUES( '0', %s, %s, '0', %s, %s, %s )", [interactionID, attribID, userID, attribDate, mappingStatus] )
 		
 	def migrateHistory( self ) :
 	
@@ -188,4 +220,67 @@ class Interactions( ) :
 				row['interaction_history_date']
 			])
 			
+		self.db.commit( )
+		
+	def migrateQualifications( self ) :
+	
+		"""
+		Copy Operation
+			-> IMS2: interaction_qualifications
+			-> IMS4: attributes and interaction_attributes
+		"""
+		
+		self.cursor.execute( "SELECT * FROM " + Config.DB_IMS_OLD + ".interaction_qualifications WHERE interaction_id IN ( SELECT interaction_id FROM " + Config.DB_IMS + ".interactions )" )
+		
+		qualCount = 0
+		for row in self.cursor.fetchall( ) :
+			
+			qualCount += 1
+			
+			activationInfo = self.activatedHash[str(row['interaction_id'])]
+			attribDate = activationInfo["DATE"]
+			attribUserID = activationInfo["USER_ID"]
+			
+			qualification = row['interaction_qualification'].strip( "\\" ).decode( 'string_escape' ).strip( )
+			
+			matchSet = self.quoteWrap.match( qualification )
+			if matchSet :
+				qualification = matchSet.group(1)
+				
+			if len(qualification) > 0 :
+				self.processInteractionAttribute( row['interaction_id'], qualification, "22", attribDate, row['user_id'], row['interaction_qualification_status'] )
+				
+			if (qualCount % 10000) == 0 :
+				self.db.commit( )
+				
+		self.db.commit( )
+				
+	def migrateThroughputTags( self ) :
+	
+		"""
+		Copy Operation
+			-> IMS2: interaction_tag_mappings
+			-> IMS4: attribues and interaction_attributes
+		"""
+		
+		self.cursor.execute( "SELECT * FROM " + Config.DB_IMS_OLD + ".interaction_tag_mappings WHERE interaction_id IN ( SELECT interaction_id FROM " + Config.DB_IMS + ".interactions )" )
+		
+		tagCount = 0
+		for row in self.cursor.fetchall( ) :
+		
+			activationInfo = self.activatedHash[str(row['interaction_id'])]
+			attribDate = activationInfo["DATE"]
+			attribUserID = activationInfo["USER_ID"]
+			
+			if str(row['tag_id']) in self.throughputHash :
+			
+				tagCount += 1
+				
+				# Remap Tag ID into Attributes Entry
+				throughputTermID = self.throughputHash[str(row['tag_id'])]
+				self.processInteractionAttribute( row['interaction_id'], throughputTermID, "13", row['interaction_tag_mapping_timestamp'], attribUserID, row['interaction_tag_mapping_status'] )
+				
+				if (tagCount % 10000) == 0 :
+					self.db.commit( )
+				
 		self.db.commit( )

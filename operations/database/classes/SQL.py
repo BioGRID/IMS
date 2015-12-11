@@ -118,6 +118,12 @@ class SQL( ) :
 		self.writeLine( "Migrating Interactions" )
 		interactions.migrateInteractions( )
 		
+		self.writeLine( "Migrating Qualifications" )
+		interactions.migrateQualifications( )
+		
+		self.writeLine( "Migrating Throughput Tags" )
+		interactions.migrateThroughputTags( )
+		
 	def clean_attributes( self ) :
 	
 		"""Clean the Attributes Associated Tables"""
