@@ -2,7 +2,7 @@
 import sys, string
 import Config
 
-from classes import Ontologies, Datasets, Interactions, History
+from classes import Ontologies, Datasets, Interactions, History, Participants
 
 class SQL( ) :
 
@@ -171,6 +171,34 @@ class SQL( ) :
 		
 		self.writeLine( "Migrating History" )
 		history.migrateHistory( )
+		
+	def clean_participants( self ) :
+	
+		"""Clean the participant related tables"""
+		
+		self.clean( "participants" )
+		self.clean( "participant_roles" )
+		self.clean( "participant_types" )
+		self.clean( "interaction_participants" )
+		self.clean( "interaction_participant_attributes" )
+		
+	def build_participants( self ) :
+	
+		"""Load paticipant data"""
+		
+		self.writeHeader( "Building Participants" )
+		self.writeLine( "Building Quick Lookup Sets" )
+		
+		participants = Participants.Participants( self.db, self.cursor )
+		
+		self.writeLine( "Loading Participant Roles" )
+		self.processSQL( "participant_roles-data.sql" )
+		
+		self.writeLine( "Loading Participant Types" )
+		self.processSQL( "participant_types-data.sql" )
+		
+		self.writeLine( "Migrating Participants" )
+		participants.migrateParticipants( )
 		
 	def clean( self, table ) :
 	

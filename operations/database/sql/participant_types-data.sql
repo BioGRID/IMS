@@ -1,0 +1,1 @@
+INSERT INTO `participant_types` VALUES (1,'Gene','2015-12-04 19:32:10','active'),(2,'Uniprot Protein','2015-12-04 19:32:16','active'),(3,'Refseq Protein','2015-12-04 19:32:21','active'),(4,'Chemical','2015-12-04 19:32:26','active'),(5,'Unknown','2015-12-04 19:32:30','active');
