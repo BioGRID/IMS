@@ -3,6 +3,8 @@ import Config
 import datetime
 import re
 
+from classes import Maps
+
 class Interactions( ) :
 
 	"""Tools for Handling the Migration of Interaction Data from IMS 2 to IMS 4"""
@@ -12,6 +14,7 @@ class Interactions( ) :
 		self.cursor = cursor
 		self.dateFormat = "%Y-%m-%d %H:%M:%S"
 		self.quoteWrap = re.compile( '^[\'\"](.*)[\"\']$' )
+		self.maps = Maps.Maps( )
 		
 		# Build Quick Reference Data Structures
 		self.validDatasets = self.buildValidDatasetSet( )
@@ -344,3 +347,40 @@ class Interactions( ) :
 					self.db.commit( )
 				
 		self.db.commit( )
+		
+	def migrateQuantitativeScores( self ) :
+	
+		"""
+		Copy Operation
+			-> IMS2: interaction_quantitation, interaction_quantitation_type
+			-> IMS4: attributes, interaction_attributes
+		"""
+		
+		self.cursor.execute( "SELECT * FROM " + Config.DB_IMS_OLD + ".interaction_quantitation WHERE interaction_id IN ( SELECT interaction_id FROM " + Config.DB_IMS + ".interactions )" )
+		
+		quantCount = 0
+		quantCheck = { }
+		for row in self.cursor.fetchall( ) :
+			
+			activationInfo = self.activatedHash[str(row['interaction_id'])]
+			attribDate = activationInfo["DATE"]
+			attribUserID = activationInfo["USER_ID"]
+			
+			quantTypeConverted = self.maps.convertQuantType( row['interaction_quantitation_type_id'] )
+			
+			if "" != quantTypeConverted :
+			
+				if str(row['interaction_id']) not in quantCheck :
+					quantCheck[str(row['interaction_id'])] = set( )
+					
+				if str(row['interaction_quantitation_type_id']) not in quantCheck[str(row['interaction_id'])] :
+				
+					quantCheck[str(row['interaction_id'])].add( str(row['interaction_quantitation_type_id']) )
+				
+					quantCount += 1	
+					self.processInteractionAttribute( row['interaction_id'], str(row['interaction_quantitation_value']), quantTypeConverted, attribDate, attribUserID, 'active' )
+					
+					if (quantCount % 10000) == 0 :
+						self.db.commit( )
+				
+		self.db.commit( )			
