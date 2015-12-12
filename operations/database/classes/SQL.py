@@ -124,6 +124,15 @@ class SQL( ) :
 		self.writeLine( "Migrating Throughput Tags" )
 		interactions.migrateThroughputTags( )
 		
+		self.writeLine( "Migrating Source Tags" )
+		interactions.migrateSourceTags( )
+		
+		self.writeLine( "Migrating Ontology Terms" )
+		interactions.migrateOntologyTerms( )
+		
+		self.writeLine( "Migrating Quantitative Scores" )
+		interactions.migrateQuantitativeScores( )
+		
 	def clean_attributes( self ) :
 	
 		"""Clean the Attributes Associated Tables"""

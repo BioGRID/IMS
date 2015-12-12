@@ -3,6 +3,8 @@ import Config
 import datetime
 import re
 
+from classes import Maps
+
 class Interactions( ) :
 
 	"""Tools for Handling the Migration of Interaction Data from IMS 2 to IMS 4"""
@@ -12,6 +14,7 @@ class Interactions( ) :
 		self.cursor = cursor
 		self.dateFormat = "%Y-%m-%d %H:%M:%S"
 		self.quoteWrap = re.compile( '^[\'\"](.*)[\"\']$' )
+		self.maps = Maps.Maps( )
 		
 		# Build Quick Reference Data Structures
 		self.validDatasets = self.buildValidDatasetSet( )
@@ -19,7 +22,10 @@ class Interactions( ) :
 		self.expSysHash = self.buildExpSystemHash( )
 		self.modHash = self.buildModificationHash( )
 		self.throughputHash = self.buildThroughputTagHash( )
+		self.sourceHash = self.buildSourceTagHash( )
 		self.activatedHash = self.buildInteractionActivationHash( )
+		self.ontologyTermIDSet = self.buildOntologyTermIDSet( )
+		self.phenotypeTypeHash = self.buildPhenotypeTypeHash( )
 		
 	def buildValidDatasetSet( self ) :
 		
@@ -145,6 +151,76 @@ class Interactions( ) :
 				
 		return tagHash
 		
+	def buildSourceTagHash( self ) :
+	
+		"""Build a mapping HASH from old Source Tag IDs to New Ontology ID"""
+		
+		# Need to fetch the ontology by name rather than by ID because
+		# the ID may not be the same by the time we do the final
+		# migration of the databases.
+		
+		ontologyTerms = { }
+		self.cursor.execute( "SELECT ontology_id FROM " + Config.DB_IMS + ".ontologies WHERE ontology_name = 'BioGRID Sources Ontology' LIMIT 1" )
+		row = self.cursor.fetchone( ) 
+		
+		if None != row :
+			ontologyID = row['ontology_id']
+			
+			self.cursor.execute( "SELECT ontology_term_id, ontology_term_name FROM " + Config.DB_IMS + ".ontology_terms WHERE ontology_id=%s", [ontologyID] )
+			for row in self.cursor.fetchall( ) :
+				ontologyTerms[row['ontology_term_name'].lower( )] = str(row['ontology_term_id'])
+		
+		tagHash = { }
+		self.cursor.execute( "SELECT tag_id, tag_name FROM " + Config.DB_IMS_OLD + ".tags WHERE tag_category_id='2' AND tag_status='active'" )
+		
+		for row in self.cursor.fetchall( ) :
+			if row['tag_name'].lower( ) in ontologyTerms :
+				ontologyID = ontologyTerms[row['tag_name'].lower( )]
+				tagHash[str(row['tag_id'])] = ontologyID
+				
+		return tagHash
+		
+	def buildOntologyTermIDSet( self ) :
+	
+		"""Build a set of ontology term ids"""
+		
+		termIDSet = set( )
+		self.cursor.execute( "SELECT ontology_term_id FROM " + Config.DB_IMS + ".ontology_terms" )
+		
+		for row in self.cursor.fetchall( ) :
+			termIDSet.add( str(row['ontology_term_id']) )
+			
+		return termIDSet
+		
+	def buildPhenotypeTypeHash( self ) :
+	
+		"""Build a mapping HASH from old Phenotype Type IDs to New Ontology ID"""
+		
+		# Need to fetch the ontology by name rather than by ID because
+		# the ID may not be the same by the time we do the final
+		# migration of the databases.
+		
+		ontologyTerms = { }
+		self.cursor.execute( "SELECT ontology_id FROM " + Config.DB_IMS + ".ontologies WHERE ontology_name = 'BioGRID Phenotype Types Ontology' LIMIT 1" )
+		row = self.cursor.fetchone( ) 
+		
+		if None != row :
+			ontologyID = row['ontology_id']
+			
+			self.cursor.execute( "SELECT ontology_term_id, ontology_term_name FROM " + Config.DB_IMS + ".ontology_terms WHERE ontology_id=%s", [ontologyID] )
+			for row in self.cursor.fetchall( ) :
+				ontologyTerms[row['ontology_term_name'].lower( )] = str(row['ontology_term_id'])
+		
+		typeHash = { }
+		self.cursor.execute( "SELECT phenotype_type_id, phenotype_type_name FROM " + Config.DB_IMS_OLD + ".phenotypes_types" )
+		
+		for row in self.cursor.fetchall( ) :
+			if row['phenotype_type_name'].lower( ) in ontologyTerms :
+				ontologyID = ontologyTerms[row['phenotype_type_name'].lower( )]
+				typeHash[str(row['phenotype_type_id'])] = ontologyID
+				
+		return typeHash
+		
 	def migrateInteractions( self ) :
 		
 		"""
@@ -166,21 +242,21 @@ class Interactions( ) :
 				
 				# Remap Experimental System ID into Attributes Entry
 				expSystemID = self.expSysHash[str(row['experimental_system_id'])]
-				self.processInteractionAttribute( row['interaction_id'], expSystemID, "11", attribDate, attribUserID, 'active' )
+				interactionAttribID = self.processInteractionAttribute( row['interaction_id'], expSystemID, "11", attribDate, "0", attribUserID, 'active' )
 				
 				# Remap Modification ID into Attributes Entry
 				# Modifications are only applicable when BioChemical Activity (9)
 				# is the Experimental System 
 				modificationID = self.modHash[str(row['modification_id'])]
 				if str(row['experimental_system_id']) == '9' :
-					self.processInteractionAttribute( row['interaction_id'], modificationID, "12", attribDate, attribUserID, 'active' )
+					interactionAttribID = self.processInteractionAttribute( row['interaction_id'], modificationID, "12", attribDate, "0", attribUserID, 'active' )
 				
 				if (intCount % 10000) == 0 :
 					self.db.commit( )
 				
 		self.db.commit( )
 		
-	def processInteractionAttribute( self, interactionID, attribVal, attribType, attribDate, userID, mappingStatus ) :
+	def processInteractionAttribute( self, interactionID, attribVal, attribType, attribDate, parentID, userID, mappingStatus ) :
 	
 		"""Process adding and mapping of the interaction to its attribute"""
 		
@@ -193,7 +269,10 @@ class Interactions( ) :
 		else :
 			attribID = row['attribute_id']
 		
-		self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".interaction_attributes VALUES( '0', %s, %s, '0', %s, %s, %s )", [interactionID, attribID, userID, attribDate, mappingStatus] )
+		self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".interaction_attributes VALUES( '0', %s, %s, %s, %s, %s, %s )", [interactionID, attribID, parentID, userID, attribDate, mappingStatus] )
+		
+		interactionAttribID = self.cursor.lastrowid
+		return interactionAttribID
 		
 	def migrateHistory( self ) :
 	
@@ -248,7 +327,7 @@ class Interactions( ) :
 				qualification = matchSet.group(1)
 				
 			if len(qualification) > 0 :
-				self.processInteractionAttribute( row['interaction_id'], qualification, "22", attribDate, row['user_id'], row['interaction_qualification_status'] )
+				interactionAttribID = self.processInteractionAttribute( row['interaction_id'], qualification, "22", attribDate, "0", row['user_id'], row['interaction_qualification_status'] )
 				
 			if (qualCount % 10000) == 0 :
 				self.db.commit( )
@@ -278,9 +357,147 @@ class Interactions( ) :
 				
 				# Remap Tag ID into Attributes Entry
 				throughputTermID = self.throughputHash[str(row['tag_id'])]
-				self.processInteractionAttribute( row['interaction_id'], throughputTermID, "13", row['interaction_tag_mapping_timestamp'], attribUserID, row['interaction_tag_mapping_status'] )
+				interactionAttribID = self.processInteractionAttribute( row['interaction_id'], throughputTermID, "13", row['interaction_tag_mapping_timestamp'], "0", attribUserID, row['interaction_tag_mapping_status'] )
 				
 				if (tagCount % 10000) == 0 :
 					self.db.commit( )
 				
 		self.db.commit( )
+		
+	def migrateSourceTags( self ) :
+	
+		"""
+		Copy Operation
+			-> IMS2: interaction_tag_mappings
+			-> IMS4: attribues and interaction_attributes
+		"""
+		
+		self.cursor.execute( "SELECT * FROM " + Config.DB_IMS_OLD + ".interaction_tag_mappings WHERE interaction_id IN ( SELECT interaction_id FROM " + Config.DB_IMS + ".interactions )" )
+		
+		tagCount = 0
+		for row in self.cursor.fetchall( ) :
+		
+			activationInfo = self.activatedHash[str(row['interaction_id'])]
+			attribDate = activationInfo["DATE"]
+			attribUserID = activationInfo["USER_ID"]
+			
+			if str(row['tag_id']) in self.sourceHash :
+			
+				tagCount += 1
+				
+				# Remap Tag ID into Attributes Entry
+				sourceTermID = self.sourceHash[str(row['tag_id'])]
+				interactionAttribID = self.processInteractionAttribute( row['interaction_id'], sourceTermID, "14", row['interaction_tag_mapping_timestamp'], "0", attribUserID, row['interaction_tag_mapping_status'] )
+				
+				if (tagCount % 10000) == 0 :
+					self.db.commit( )
+				
+		self.db.commit( )
+		
+	def migrateQuantitativeScores( self ) :
+	
+		"""
+		Copy Operation
+			-> IMS2: interaction_quantitation, interaction_quantitation_type
+			-> IMS4: attributes, interaction_attributes
+		"""
+		
+		self.cursor.execute( "SELECT * FROM " + Config.DB_IMS_OLD + ".interaction_quantitation WHERE interaction_id IN ( SELECT interaction_id FROM " + Config.DB_IMS + ".interactions )" )
+		
+		quantCount = 0
+		quantCheck = { }
+		for row in self.cursor.fetchall( ) :
+			
+			activationInfo = self.activatedHash[str(row['interaction_id'])]
+			attribDate = activationInfo["DATE"]
+			attribUserID = activationInfo["USER_ID"]
+			
+			quantTypeConverted = self.maps.convertQuantType( row['interaction_quantitation_type_id'] )
+			quantValue = str(row['interaction_quantitation_value']).strip( )
+			
+			if "" != quantTypeConverted :
+			
+				if str(row['interaction_id']) not in quantCheck :
+					quantCheck[str(row['interaction_id'])] = set( )
+					
+				if str(row['interaction_quantitation_type_id']) not in quantCheck[str(row['interaction_id'])] :
+				
+					quantCheck[str(row['interaction_id'])].add( str(row['interaction_quantitation_type_id']) )
+				
+					quantCount += 1	
+					interactionAttribID = self.processInteractionAttribute( row['interaction_id'], quantValue, quantTypeConverted, attribDate, "0", attribUserID, 'active' )
+					
+					if (quantCount % 10000) == 0 :
+						self.db.commit( )
+				
+		self.db.commit( )
+
+	def migrateOntologyTerms( self ) :
+	
+		"""
+		Copy Operation
+			-> IMS2: interaction_phenotypes, interaction_phenotypes_qualifiers
+			-> IMS4: attributes, interaction_attributes
+		"""
+		
+		self.cursor.execute( "SELECT * FROM " + Config.DB_IMS_OLD + ".interaction_phenotypes WHERE interaction_id IN ( SELECT interaction_id FROM " + Config.DB_IMS + ".interactions )" )
+		
+		phenoCount = 0
+		for row in self.cursor.fetchall( ) :
+			
+			activationInfo = self.activatedHash[str(row['interaction_id'])]
+			attribDate = activationInfo["DATE"]
+			attribUserID = activationInfo["USER_ID"]
+			
+			flagConverted = self.maps.convertPhenotypeFlag( row['flag'] )
+			interactionPhenotypeID = str(row['interaction_phenotype_id'])
+			phenotypeID = str(row['phenotype_id'])
+			phenotypeTypeID = str(row['phenotype_type_id'])
+			phenotypeStatus = row['interaction_phenotype_status']
+			
+			if "" != flagConverted :
+			
+				if phenotypeID in self.ontologyTermIDSet :
+					phenoCount += 1
+					interactionAttribID = self.processInteractionAttribute( row['interaction_id'], phenotypeID, flagConverted, attribDate, "0", attribUserID, phenotypeStatus )
+					
+					# Add Phenotype Qualifiers if Found
+					self.processPhenotypeQualifiers( interactionAttribID, interactionPhenotypeID, attribUserID, row['interaction_id'] )
+					
+					# Add Phenotype Type if Necessary
+					self.processPhenotypeTypes( interactionAttribID, phenotypeTypeID, attribUserID, attribDate, row['interaction_id'], phenotypeStatus )
+					
+					if (phenoCount % 10000) == 0 :
+						self.db.commit( )
+						
+				else :
+					if phenotypeStatus == "active" :
+						print "FOUND MISSING ONTOLOGY ID: " + phenotypeID
+				
+		self.db.commit( )
+		
+	def processPhenotypeQualifiers( self, attribID, interactionPhenotypeID, userID, interactionID ) :
+	
+		"""Check to see if the interactionPhenotypeID had qualifiers and copy those over as well if it did"""
+		
+		self.cursor.execute( "SELECT * FROM " + Config.DB_IMS_OLD + ".interaction_phenotypes_qualifiers WHERE interaction_phenotype_id=%s", [interactionPhenotypeID] )
+		for row in self.cursor.fetchall( ) :
+			
+			if str(row['phenotype_id']) in self.ontologyTermIDSet :
+				interactionAttribID = self.processInteractionAttribute( interactionID, str(row['phenotype_id']), "31", row['interaction_phenotypes_qualifier_addeddate'], attribID, userID, row['interaction_phenotypes_qualifier_status'] )
+			else :
+				if row['interaction_phenotypes_qualifier_status'] == "active" :
+					print "FOUND MISSING QUALIFIER ID: " + str(row['phenotype_id'])
+				
+		self.db.commit( )
+		
+	def processPhenotypeTypes( self, attribID, phenotypeTypeID, userID, addedDate, interactionID, status ) :
+	
+		"""Check to see if the phenotypeTypeID is useful and copy those over as mappings if they are"""
+		
+		phenotypeTypeID = phenotypeTypeID.strip( )
+		if phenotypeTypeID != "4" and phenotypeTypeID != "" :
+			phenotypeTypeOntologyID = self.phenotypeTypeHash[phenotypeTypeID]
+			interactionAttribID = self.processInteractionAttribute( interactionID, phenotypeTypeOntologyID, "23", addedDate, attribID, userID, status )
+				
+			self.db.commit( )
