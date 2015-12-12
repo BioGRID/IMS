@@ -367,6 +367,7 @@ class Interactions( ) :
 			attribUserID = activationInfo["USER_ID"]
 			
 			quantTypeConverted = self.maps.convertQuantType( row['interaction_quantitation_type_id'] )
+			quantValue = str(row['interaction_quantitation_value']).strip( )
 			
 			if "" != quantTypeConverted :
 			
@@ -378,7 +379,7 @@ class Interactions( ) :
 					quantCheck[str(row['interaction_id'])].add( str(row['interaction_quantitation_type_id']) )
 				
 					quantCount += 1	
-					self.processInteractionAttribute( row['interaction_id'], str(row['interaction_quantitation_value']), quantTypeConverted, attribDate, attribUserID, 'active' )
+					self.processInteractionAttribute( row['interaction_id'], quantValue, quantTypeConverted, attribDate, attribUserID, 'active' )
 					
 					if (quantCount % 10000) == 0 :
 						self.db.commit( )
