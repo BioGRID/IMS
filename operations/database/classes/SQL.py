@@ -127,6 +127,9 @@ class SQL( ) :
 		self.writeLine( "Migrating Source Tags" )
 		interactions.migrateSourceTags( )
 		
+		self.writeLine( "Migrating Ontology Terms" )
+		interactions.migrateOntologyTerms( )
+		
 		self.writeLine( "Migrating Quantitative Scores" )
 		interactions.migrateQuantitativeScores( )
 		
