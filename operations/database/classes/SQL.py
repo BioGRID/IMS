@@ -2,7 +2,7 @@
 import sys, string
 import Config
 
-from classes import Ontologies, Datasets, Interactions, History
+from classes import Ontologies, Datasets, Interactions, History, Participants, Complexes
 
 class SQL( ) :
 
@@ -13,19 +13,6 @@ class SQL( ) :
 		self.cursor = cursor
 		self.SQL_DIR = "sql/"
 		self.verbose = verbose
-				
-	def clean_interactions( self ) :
-	
-		"""Clean interaction associated tables"""
-	
-		self.clean( "interactions" )
-		self.clean( "interaction_types" )
-		
-	def build_interactions( self ) :
-				
-		"""Load data into the tables based on established criteria in the IMS class"""
-		self.writeHeader( "Building Interactions" )
-		self.processSQL( "interaction_types-data.sql" )
 		
 	def clean_ontologies( self ) :
 	
@@ -67,6 +54,9 @@ class SQL( ) :
 		self.clean( "pubmed" )
 		self.clean( "prepub" )
 		
+		self.writeLine( "Loading Dataset Types" )
+		self.processSQL( "dataset_types-data.sql" )
+		
 	def build_datasets( self ) :
 	
 		"""Load data into the tables pertaining to Datasets"""
@@ -74,9 +64,6 @@ class SQL( ) :
 		datasets = Datasets.Datasets( self.db, self.cursor )
 		
 		self.writeHeader( "Building Datasets" )
-		
-		self.writeLine( "Loading Dataset Types" )
-		self.processSQL( "dataset_types-data.sql" )
 		
 		self.writeLine( "Migrating Pubmed Mappings" )
 		datasets.migratePubmedMappings( )
@@ -103,6 +90,9 @@ class SQL( ) :
 		self.clean( "interaction_attributes" )
 		self.clean( "interaction_types" )
 		
+		self.writeLine( "Loading Interaction Types" )
+		self.processSQL( "interaction_types-data.sql" )
+		
 	def build_interactions( self ) :
 	
 		"""Load data into the tables pertaining to Interactions"""
@@ -111,10 +101,7 @@ class SQL( ) :
 		self.writeLine( "Building Quick Lookup Sets" )
 		
 		interactions = Interactions.Interactions( self.db, self.cursor )
-		
-		self.writeLine( "Loading Interaction Types" )
-		self.processSQL( "interaction_types-data.sql" )
-		
+	
 		self.writeLine( "Migrating Interactions" )
 		interactions.migrateInteractions( )
 		
@@ -141,15 +128,15 @@ class SQL( ) :
 		self.clean( "attribute_types" )
 		self.clean( "attribute_type_categories" )
 		
-	def build_attributes( self ) :
-	
-		self.writeHeader( "Resetting Attributes" )
-		
 		self.writeLine( "Loading Attribute Types" )
 		self.processSQL( "attribute_types-data.sql" )
 		
 		self.writeLine( "Loading Attribute Type Categories" )
 		self.processSQL( "attribute_type_categories-data.sql" )
+		
+	def build_attributes( self ) :
+	
+		self.writeHeader( "Attributes are loaded via Interaction Build" )
 		
 	def clean_history( self ) :
 	
@@ -157,6 +144,9 @@ class SQL( ) :
 		
 		self.clean( "history" )
 		self.clean( "history_operations" )
+		
+		self.writeLine( "Migrating History Operations" )
+		self.processSQL( "history_operations-data.sql" )
 		
 	def build_history( self ) :
 	
@@ -166,11 +156,72 @@ class SQL( ) :
 		
 		history = History.History( self.db, self.cursor )
 		
-		self.writeLine( "Migrating History Operations" )
-		self.processSQL( "history_operations-data.sql" )
-		
 		self.writeLine( "Migrating History" )
 		history.migrateHistory( )
+		
+	def clean_participants( self ) :
+	
+		"""Clean the participant related tables"""
+		
+		self.clean( "participants" )
+		self.clean( "participant_roles" )
+		self.clean( "participant_types" )
+		self.clean( "interaction_participants" )
+		self.clean( "interaction_participant_attributes" )
+		
+		self.writeLine( "Loading Participant Roles" )
+		self.processSQL( "participant_roles-data.sql" )
+		
+		self.writeLine( "Loading Participant Types" )
+		self.processSQL( "participant_types-data.sql" )
+		
+	def build_participants( self ) :
+	
+		"""Load paticipant data"""
+		
+		self.writeHeader( "Building Participants" )
+		self.writeLine( "Building Quick Lookup Sets" )
+		
+		participants = Participants.Participants( self.db, self.cursor )
+		
+		self.writeLine( "Migrating Participants" )
+		participants.migrateParticipants( )
+		
+	def clean_complexes( self ) :
+	
+		"""Clean the complex specific tables"""
+		
+		self.writeHeader( "No Complex Specific Tables to Clean" )
+		
+	def build_complexes( self ) :
+	
+		"""Load complex data into interactions"""
+		
+		self.writeHeader( "Building Complexes" )
+		self.writeLine( "Building Quick Lookup Sets" )
+		
+		complexes = Complexes.Complexes( self.db, self.cursor )
+		
+		self.writeLine( "Migrating Complexes" )
+		complexes.migrateComplexes( )
+		
+		self.writeLine( "Migrating Qualifications" )
+		complexes.migrateQualifications( )
+		
+		self.writeLine( "Migrating Throughput Tags" )
+		complexes.migrateThroughputTags( )
+		
+		self.writeLine( "Migrating Source Tags" )
+		complexes.migrateSourceTags( )
+		
+		self.writeLine( "Migrating Ontology Terms" )
+		complexes.migrateOntologyTerms( )
+		
+		self.writeLine( "Migrating Participants" )
+		complexes.migrateParticipants( )
+		
+		self.writeLine( "Migrating History" )
+		complexes.migrateHistory( )
 		
 	def clean( self, table ) :
 	

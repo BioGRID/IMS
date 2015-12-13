@@ -13,36 +13,51 @@ from classes import SQL
 # Process Command Line Input
 argParser = argparse.ArgumentParser( description = 'Build the IMS Database' )
 argParser.add_argument( '--verbose', '-v', action='store_true', help='Display output while the process is running' )
-argParser.add_argument( '--clean', '-c', action='store_true', help='Perform the clean operations before the build operations' )
+argParser.add_argument( '--clean', '-c', action='store_true', help='Perform clean operations on processes' )
+argParser.add_argument( '--build', '-b', action='store_true', help='Perform build operations on processes' )
 argGroup = argParser.add_mutually_exclusive_group( required=True )
-argGroup.add_argument( '--build', '-b', nargs='*', action='store', help='Comma separated list of build processes to run' )
+argGroup.add_argument( '--operations', '-o', nargs='*', action='store', help='Comma separated list of build/clean operations to run' )
 argGroup.add_argument( '--list', '-l', action='store_true', help='List all of the build options available for the build command' )
 inputArgs = argParser.parse_args( )
 
-validOptions = [ "interactions", "ontologies", "datasets", "attributes", "history", "participants", "projects", "ptms", "core", "all" ]
+validOptions = [ "interactions", "ontologies", "datasets", "attributes", "history", "participants", "complexes", "projects", "ptms", "core", "all" ]
 
 if inputArgs.list :
 	print "Build Options: " + ", ".join( validOptions )
 else :
 
-	for buildOption in inputArgs.build :
+	if inputArgs.clean :
+		for operation in inputArgs.operations :
 		
-		buildOption = buildOption.lower( )
-		if buildOption not in validOptions :
-			continue
-	
-		with Database.db as cursor :
-			
-			sqlProcessor = SQL.SQL( Database.db, cursor, inputArgs.verbose )
-			
-			if inputArgs.verbose :
-				print ""
+			operation = operation.lower( )
+			if operation not in validOptions :
+				continue
 				
-			if inputArgs.clean :
-				toClean = "clean_" + buildOption
+			with Database.db as cursor :
+			
+				sqlProcessor = SQL.SQL( Database.db, cursor, inputArgs.verbose )
+				
+				if inputArgs.verbose :
+					print ""
+					
+				toClean = "clean_" + operation
 				getattr(sqlProcessor, toClean)( )
 				
-			toBuild = "build_" + buildOption
-			getattr(sqlProcessor, toBuild)( )
+	if inputArgs.build :
+		for operation in inputArgs.operations :
+		
+			operation = operation.lower( )
+			if operation not in validOptions :
+				continue
+				
+			with Database.db as cursor :
+			
+				sqlProcessor = SQL.SQL( Database.db, cursor, inputArgs.verbose )
+				
+				if inputArgs.verbose :
+					print ""
+					
+				toBuild = "build_" + operation
+				getattr(sqlProcessor, toBuild)( )
 	
 sys.exit(0)
