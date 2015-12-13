@@ -3,7 +3,7 @@ import Config
 import datetime
 import re
 
-from classes import Maps, Lookups
+from classes import Maps, Lookups, DBProcessor
 
 class Interactions( ) :
 
@@ -16,6 +16,7 @@ class Interactions( ) :
 		self.quoteWrap = re.compile( '^[\'\"](.*)[\"\']$' )
 		self.maps = Maps.Maps( )
 		self.lookups = Lookups.Lookups( db, cursor )
+		self.dbProcessor = DBProcessor.DBProcessor( db, cursor )
 		
 		# Build Quick Reference Data Structures
 		self.validDatasets = self.lookups.buildValidDatasetSet( )
@@ -49,37 +50,19 @@ class Interactions( ) :
 				
 				# Remap Experimental System ID into Attributes Entry
 				expSystemID = self.expSysHash[str(row['experimental_system_id'])]
-				interactionAttribID = self.processInteractionAttribute( row['interaction_id'], expSystemID, "11", attribDate, "0", attribUserID, 'active' )
+				interactionAttribID = self.dbProcessor.processInteractionAttribute( row['interaction_id'], expSystemID, "11", attribDate, "0", attribUserID, 'active' )
 				
 				# Remap Modification ID into Attributes Entry
 				# Modifications are only applicable when BioChemical Activity (9)
 				# is the Experimental System 
 				modificationID = self.modHash[str(row['modification_id'])]
 				if str(row['experimental_system_id']) == '9' :
-					interactionAttribID = self.processInteractionAttribute( row['interaction_id'], modificationID, "12", attribDate, "0", attribUserID, 'active' )
+					interactionAttribID = self.dbProcessor.processInteractionAttribute( row['interaction_id'], modificationID, "12", attribDate, "0", attribUserID, 'active' )
 				
 				if (intCount % 10000) == 0 :
 					self.db.commit( )
 				
 		self.db.commit( )
-		
-	def processInteractionAttribute( self, interactionID, attribVal, attribType, attribDate, parentID, userID, mappingStatus ) :
-	
-		"""Process adding and mapping of the interaction to its attribute"""
-		
-		self.cursor.execute( "SELECT attribute_id FROM " + Config.DB_IMS + ".attributes WHERE attribute_value=%s AND attribute_type_id=%s AND attribute_status='active' LIMIT 1", [attribVal.strip( ), attribType] )
-		
-		row = self.cursor.fetchone( )
-		if None == row :
-			self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".attributes VALUES ( '0', %s, %s, %s, 'active' )", [attribVal, attribType, attribDate] )
-			attribID = self.cursor.lastrowid
-		else :
-			attribID = row['attribute_id']
-		
-		self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".interaction_attributes VALUES( '0', %s, %s, %s, %s, %s, %s )", [interactionID, attribID, parentID, userID, attribDate, mappingStatus] )
-		
-		interactionAttribID = self.cursor.lastrowid
-		return interactionAttribID
 		
 	def migrateHistory( self ) :
 	
@@ -134,7 +117,7 @@ class Interactions( ) :
 				qualification = matchSet.group(1)
 				
 			if len(qualification) > 0 :
-				interactionAttribID = self.processInteractionAttribute( row['interaction_id'], qualification, "22", attribDate, "0", row['user_id'], row['interaction_qualification_status'] )
+				interactionAttribID = self.dbProcessor.processInteractionAttribute( row['interaction_id'], qualification, "22", attribDate, "0", row['user_id'], row['interaction_qualification_status'] )
 				
 			if (qualCount % 10000) == 0 :
 				self.db.commit( )
@@ -164,7 +147,7 @@ class Interactions( ) :
 				
 				# Remap Tag ID into Attributes Entry
 				throughputTermID = self.throughputHash[str(row['tag_id'])]
-				interactionAttribID = self.processInteractionAttribute( row['interaction_id'], throughputTermID, "13", row['interaction_tag_mapping_timestamp'], "0", attribUserID, row['interaction_tag_mapping_status'] )
+				interactionAttribID = self.dbProcessor.processInteractionAttribute( row['interaction_id'], throughputTermID, "13", row['interaction_tag_mapping_timestamp'], "0", attribUserID, row['interaction_tag_mapping_status'] )
 				
 				if (tagCount % 10000) == 0 :
 					self.db.commit( )
@@ -194,7 +177,7 @@ class Interactions( ) :
 				
 				# Remap Tag ID into Attributes Entry
 				sourceTermID = self.sourceHash[str(row['tag_id'])]
-				interactionAttribID = self.processInteractionAttribute( row['interaction_id'], sourceTermID, "14", row['interaction_tag_mapping_timestamp'], "0", attribUserID, row['interaction_tag_mapping_status'] )
+				interactionAttribID = self.dbProcessor.processInteractionAttribute( row['interaction_id'], sourceTermID, "14", row['interaction_tag_mapping_timestamp'], "0", attribUserID, row['interaction_tag_mapping_status'] )
 				
 				if (tagCount % 10000) == 0 :
 					self.db.commit( )
@@ -232,7 +215,7 @@ class Interactions( ) :
 					quantCheck[str(row['interaction_id'])].add( str(row['interaction_quantitation_type_id']) )
 				
 					quantCount += 1	
-					interactionAttribID = self.processInteractionAttribute( row['interaction_id'], quantValue, quantTypeConverted, attribDate, "0", attribUserID, 'active' )
+					interactionAttribID = self.dbProcessor.processInteractionAttribute( row['interaction_id'], quantValue, quantTypeConverted, attribDate, "0", attribUserID, 'active' )
 					
 					if (quantCount % 10000) == 0 :
 						self.db.commit( )
@@ -266,7 +249,7 @@ class Interactions( ) :
 			
 				if phenotypeID in self.ontologyTermIDSet :
 					phenoCount += 1
-					interactionAttribID = self.processInteractionAttribute( row['interaction_id'], phenotypeID, flagConverted, attribDate, "0", attribUserID, phenotypeStatus )
+					interactionAttribID = self.dbProcessor.processInteractionAttribute( row['interaction_id'], phenotypeID, flagConverted, attribDate, "0", attribUserID, phenotypeStatus )
 					
 					# Add Phenotype Qualifiers if Found
 					self.processPhenotypeQualifiers( interactionAttribID, interactionPhenotypeID, attribUserID, row['interaction_id'] )
@@ -291,7 +274,7 @@ class Interactions( ) :
 		for row in self.cursor.fetchall( ) :
 			
 			if str(row['phenotype_id']) in self.ontologyTermIDSet :
-				interactionAttribID = self.processInteractionAttribute( interactionID, str(row['phenotype_id']), "31", row['interaction_phenotypes_qualifier_addeddate'], attribID, userID, row['interaction_phenotypes_qualifier_status'] )
+				interactionAttribID = self.dbProcessor.processInteractionAttribute( interactionID, str(row['phenotype_id']), "31", row['interaction_phenotypes_qualifier_addeddate'], attribID, userID, row['interaction_phenotypes_qualifier_status'] )
 			else :
 				if row['interaction_phenotypes_qualifier_status'] == "active" :
 					print "FOUND MISSING QUALIFIER ID: " + str(row['phenotype_id'])
@@ -305,6 +288,6 @@ class Interactions( ) :
 		phenotypeTypeID = phenotypeTypeID.strip( )
 		if phenotypeTypeID != "4" and phenotypeTypeID != "" :
 			phenotypeTypeOntologyID = self.phenotypeTypeHash[phenotypeTypeID]
-			interactionAttribID = self.processInteractionAttribute( interactionID, phenotypeTypeOntologyID, "23", addedDate, attribID, userID, status )
+			interactionAttribID = self.dbProcessor.processInteractionAttribute( interactionID, phenotypeTypeOntologyID, "23", addedDate, attribID, userID, status )
 				
 			self.db.commit( )

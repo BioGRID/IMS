@@ -1,5 +1,6 @@
 import sys, string
 import Config
+import datetime
 
 class Lookups( ) :
 
@@ -203,3 +204,14 @@ class Lookups( ) :
 				typeHash[str(row['phenotype_type_id'])] = ontologyID
 				
 		return typeHash
+		
+	def buildComplexActivationHash( self ) :
+	
+		"""Build a mapping HASH of Complex IDs to details of activation"""
+		
+		activatedHash = { }
+		self.cursor.execute( "SELECT complex_id, complex_history_date, user_id FROM " + Config.DB_IMS_OLD + ".complex_history WHERE modification_type='ACTIVATED'" )
+		for row in self.cursor.fetchall( ) :
+			activatedHash[str(row['complex_id'])] = { "USER_ID" : str(row['user_id']), "DATE" : row['complex_history_date'].strftime(self.dateFormat) }
+			
+		return activatedHash
