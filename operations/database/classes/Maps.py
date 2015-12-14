@@ -54,3 +54,24 @@ class Maps( ) :
 			
 		print "Couldn't Map: " + str(flag)
 		return ""
+		
+	def convertForcedOrganismID( self, organismID ) :
+	
+		"""Convert the Forced Organism ID into a Correct One Using Up to Date Annotation"""
+	
+		organismID = str(organismID).lower( )
+		
+		orgIDs = {
+			"4896" 		: "284812", # Schizosaccharomyces pombe
+			"5141" 		: "367110", # Neurospora crassa
+			"5270" 		: "237631", # Ustilago maydis
+			"5664" 		: "347515", # Leishmania major
+			"435895"	: "37296", 	# Human Herpes 8
+			"57667" 	: "11723", 	# SIV
+			"0" 		: "9606" 	# Map to Human 
+		}
+		
+		if organismID in orgIDs :
+			return orgIDs[organismID]
+			
+		return organismID
