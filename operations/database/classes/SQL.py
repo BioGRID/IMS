@@ -2,7 +2,7 @@
 import sys, string
 import Config
 
-from classes import Ontologies, Datasets, Interactions, History, Participants, Complexes
+from classes import Ontologies, Datasets, Interactions, History, Participants, Complexes, Forced
 
 class SQL( ) :
 
@@ -222,6 +222,24 @@ class SQL( ) :
 		
 		self.writeLine( "Migrating History" )
 		complexes.migrateHistory( )
+		
+	def clean_forced( self ) :
+	
+		"""Clean the Forced Interaction Specific Tables"""
+		
+		self.clean( "unknown_participants" )
+		
+	def build_forced( self ) :
+	
+		"""Load forced interaction data into interactions"""
+		
+		self.writeHeader( "Building Forced Interactions" )
+		self.writeLine( "Building Quick Lookup Sets" )
+		
+		forced = Forced.Forced( self.db, self.cursor )
+		
+		self.writeLine( "Migrating Interactions" )
+		forced.migrateForcedInteractions( )
 		
 	def clean( self, table ) :
 	

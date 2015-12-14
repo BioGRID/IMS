@@ -215,3 +215,15 @@ class Lookups( ) :
 			activatedHash[str(row['complex_id'])] = { "USER_ID" : str(row['user_id']), "DATE" : row['complex_history_date'].strftime(self.dateFormat) }
 			
 		return activatedHash
+		
+	def buildIgnoreForcedInteractionSet( self ) :
+	
+		"""Build a set of forced interaction ids to Ignore"""
+		
+		intSet = set( )
+		self.cursor.execute( "SELECT interaction_forced_id FROM " + Config.DB_IMS_OLD + ".interaction_forced_attributes WHERE interaction_forced_attribute_value IN ('5','7') AND forced_attribute_type_id='4'" )
+		
+		for row in self.cursor.fetchall( ) :
+			intSet.add( str(row['interaction_forced_id']) )
+			
+		return intSet
