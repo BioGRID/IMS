@@ -2,7 +2,7 @@
 import sys, string
 import Config
 
-from classes import Ontologies, Datasets, Interactions, History, Participants, Complexes, Forced
+from classes import Ontologies, Datasets, Interactions, History, Participants, Complexes, Forced, ForcedComplexes
 
 class SQL( ) :
 
@@ -254,6 +254,23 @@ class SQL( ) :
 		forced.migrateOntologyTerms( )
 		
 		self.writeLine( "Migrating Forced Participants" )
+		forced.migrateParticipants( )
+		
+		self.writeHeader( "Building Forced Complexes" )
+		self.writeLine( "Building Quick Lookup Sets" )
+		
+		forced = ForcedComplexes.ForcedComplexes( self.db, self.cursor )
+		
+		self.writeLine( "Migrating Forced Complexes" )
+		forced.migrateForcedComplexes( )
+		
+		self.writeLine( "Migrating Forced Complex Qualifications" )
+		forced.migrateQualifications( )
+		
+		self.writeLine( "Migrating Forced Complex Throughput Tags" )
+		forced.migrateThroughputTags( )
+		
+		self.writeLine( "Migrating Forced Complex Participants" )
 		forced.migrateParticipants( )
 		
 	def clean( self, table ) :

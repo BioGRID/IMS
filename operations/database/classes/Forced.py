@@ -7,7 +7,7 @@ from classes import Maps, Lookups, DBProcessor
 
 class Forced( ) :
 
-	"""Tools for Handling the Migration of Forced Interactions and Forced Complexes from IMS 2 to IMS 4"""
+	"""Tools for Handling the Migration of Forced Interactions from IMS 2 to IMS 4"""
 
 	def __init__( self, db, cursor ) :
 		self.db = db
