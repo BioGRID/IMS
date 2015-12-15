@@ -49,3 +49,19 @@ class DBProcessor( ) :
 		"""Add entries for the interactors to the interaction_participants table"""
 	
 		self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".interaction_participants VALUES( '0', %s, %s, %s, %s, 'active' )", [interactionID, participantID, role, dateAdded] )
+		
+	def processUnknownParticipant( self, participantValue, participantTypeID, organismID, dateAdded ) :
+	
+		"""Add/Fetch an Unknown Participant ID for an unknown participant value"""
+	
+		self.cursor.execute( "SELECT unknown_participant_id FROM " + Config.DB_IMS + ".unknown_participants WHERE unknown_participant_value=%s AND participant_type_id=%s AND organism_id=%s LIMIT 1", [participantValue, participantTypeID, organismID] )
+		row = self.cursor.fetchone( )
+		
+		unknownParticipantID = ""
+		if None == row :
+			self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".unknown_participants VALUES( '0', %s, %s, %s, '0', %s, 'active' )", [participantValue, participantTypeID, organismID, dateAdded] )
+			unknownParticipantID = self.cursor.lastrowid
+		else :
+			unknownParticipantID = str(row['unknown_participant_id'])
+			
+		return unknownParticipantID

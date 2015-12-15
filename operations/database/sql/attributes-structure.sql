@@ -2,7 +2,7 @@ DROP TABLE IF EXISTS `attributes`;
 
 CREATE TABLE `attributes` (
   `attribute_id` bigint(10) NOT NULL AUTO_INCREMENT,
-  `attribute_value` blob NOT NULL,
+  `attribute_value` text NOT NULL,
   `attribute_type_id` bigint(10) NOT NULL,
   `attribute_addeddate` datetime NOT NULL,
   `attribute_status` enum('active','inactive') COLLATE utf8mb4_unicode_ci NOT NULL,

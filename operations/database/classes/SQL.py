@@ -238,8 +238,23 @@ class SQL( ) :
 		
 		forced = Forced.Forced( self.db, self.cursor )
 		
-		self.writeLine( "Migrating Interactions" )
+		self.writeLine( "Migrating Forced Interactions" )
 		forced.migrateForcedInteractions( )
+		
+		self.writeLine( "Migrating Forced Qualifications" )
+		forced.migrateQualifications( )
+		
+		self.writeLine( "Migrating Forced Throughput Tags" )
+		forced.migrateThroughputTags( )
+		
+		self.writeLine( "Migrating Forced Quantitative Scores" )
+		forced.migrateQuantitativeScores( )
+		
+		self.writeLine( "Migrating Forced Ontology Terms" )
+		forced.migrateOntologyTerms( )
+		
+		self.writeLine( "Migrating Forced Participants" )
+		forced.migrateParticipants( )
 		
 	def clean( self, table ) :
 	
