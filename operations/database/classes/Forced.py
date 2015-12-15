@@ -7,7 +7,7 @@ from classes import Maps, Lookups, DBProcessor
 
 class Forced( ) :
 
-	"""Tools for Handling the Migration of Forced Interactions and Forced Complexes from IMS 2 to IMS 4"""
+	"""Tools for Handling the Migration of Forced Interactions from IMS 2 to IMS 4"""
 
 	def __init__( self, db, cursor ) :
 		self.db = db
@@ -17,6 +17,15 @@ class Forced( ) :
 		self.maps = Maps.Maps( )
 		self.lookups = Lookups.Lookups( db, cursor )
 		self.dbProcessor = DBProcessor.DBProcessor( db, cursor )
+		
+		# Regular expressions to test if a qualifier is 
+		# actually a qualifier, cause it appears scores and 
+		# quantification are being stuffed in the qualification fields
+		self.ptmTest1 = re.compile( '\^\^\^' )
+		self.ptmTest2 = re.compile( '\$\$\$' )
+		self.quantTest = re.compile( '^[-0-9Ee.]+[|]?[0-9]?$' )
+		self.phenoTest = re.compile( '^[0-9\^\$]+[|]+[0-9]+$' )
+		self.phenoTest2 = re.compile( '^[0-9]+[\^NONE|]+[0-9]+$' )
 		
 		# Build Quick Reference Data Structures
 		self.validDatasets = self.lookups.buildValidDatasetSet( )
@@ -30,6 +39,7 @@ class Forced( ) :
 		
 		# A set of newly mapped 
 		self.forced2interaction = { }
+		self.interaction2activation = { }
 		
 	def migrateForcedInteractions( self ) :
 		
@@ -50,6 +60,7 @@ class Forced( ) :
 					interactionID = str(self.cursor.lastrowid)
 					
 					self.forced2interaction[str(row['interaction_forced_id'])] = interactionID
+					self.interaction2activation[interactionID] = { "USER_ID" : row['user_id'], "DATE" : row['interaction_forced_timestamp'] }
 					
 					# Remap Experimental System ID into Attributes Entry
 					expSystemID = self.expSysHash[str(row['experimental_system_id'])]
@@ -75,33 +86,53 @@ class Forced( ) :
 	
 		"""
 		Copy Operation
-			-> IMS2: complex_qualifications
+			-> IMS2: interaction_forced_attributes
 			-> IMS4: attributes and interaction_attributes
 		"""
 		
-		self.cursor.execute( "SELECT * FROM " + Config.DB_IMS_OLD + ".complex_qualifications" )
+		self.cursor.execute( "SELECT * FROM " + Config.DB_IMS_OLD + ".interaction_forced_attributes WHERE forced_attribute_type_id='2'" )
 		
 		qualCount = 0
 		for row in self.cursor.fetchall( ) :
 			
-			if str(row['complex_id']) in self.complex2interaction :
+			if str(row['interaction_forced_id']) in self.forced2interaction :
 			
-				interactionID = self.complex2interaction[str(row['complex_id'])]
+				interactionID = self.forced2interaction[str(row['interaction_forced_id'])]
+				
+				activationInfo = self.interaction2activation[interactionID]
+				attribDate = row['interaction_forced_attribute_timestamp']
+				attribUserID = activationInfo["USER_ID"]
 			
 				qualCount += 1
 				
-				activationInfo = self.activatedHash[str(row['complex_id'])]
-				attribDate = activationInfo["DATE"]
-				attribUserID = activationInfo["USER_ID"]
+				qualification = row['interaction_forced_attribute_value'].strip( "\\" ).decode( 'string_escape' ).strip( )
 				
-				qualification = row['complex_qualification'].strip( "\\" ).decode( 'string_escape' ).strip( )
+				qualificationSplit = qualification.split( "|" )
+				if len(qualificationSplit) > 1 :
+					attribUserID = qualificationSplit[1].strip( )
+					qualification = qualificationSplit[0].strip( )
 				
 				matchSet = self.quoteWrap.match( qualification )
 				if matchSet :
 					qualification = matchSet.group(1)
 					
+				# Check to see if the qualifications entered are invalid
+				# and shouldn't be there
+				
+				matchSet = self.ptmTest1.search( qualification )
+				if matchSet :
+					continue
+					
+				matchSet = self.ptmTest2.search( qualification )
+				if matchSet :
+					continue
+					
+				matchSet = self.quantTest.search( qualification )
+				if matchSet :
+					continue
+					
 				if len(qualification) > 0 :
-					interactionAttribID = self.dbProcessor.processInteractionAttribute( interactionID, qualification, "22", attribDate, "0", row['user_id'], row['complex_qualification_status'] )
+					interactionAttribID = self.dbProcessor.processInteractionAttribute( interactionID, qualification, "22", attribDate, "0", attribUserID, 'active' )
 					
 				if (qualCount % 10000) == 0 :
 					self.db.commit( )
@@ -112,130 +143,172 @@ class Forced( ) :
 	
 		"""
 		Copy Operation
-			-> IMS2: complex_tag_mappings
+			-> IMS2: interaction_forced_attributes
 			-> IMS4: attribues and interaction_attributes
 		"""
 		
-		self.cursor.execute( "SELECT * FROM " + Config.DB_IMS_OLD + ".complex_tag_mappings" )
+		self.cursor.execute( "SELECT * FROM " + Config.DB_IMS_OLD + ".interaction_forced_attributes WHERE forced_attribute_type_id='4'" )
 		
 		tagCount = 0
 		for row in self.cursor.fetchall( ) :
 		
-			if str(row['complex_id']) in self.complex2interaction :
+			if str(row['interaction_forced_id']) in self.forced2interaction :
 			
-				interactionID = self.complex2interaction[str(row['complex_id'])]
+				interactionID = self.forced2interaction[str(row['interaction_forced_id'])]
 		
-				activationInfo = self.activatedHash[str(row['complex_id'])]
-				attribDate = activationInfo["DATE"]
+				activationInfo = self.interaction2activation[interactionID]
+				attribDate = row['interaction_forced_attribute_timestamp']
 				attribUserID = activationInfo["USER_ID"]
 				
-				if str(row['tag_id']) in self.throughputHash :
+				if str(row['interaction_forced_attribute_value']) in self.throughputHash :
 				
 					tagCount += 1
 					
 					# Remap Tag ID into Attributes Entry
-					throughputTermID = self.throughputHash[str(row['tag_id'])]
-					interactionAttribID = self.dbProcessor.processInteractionAttribute( interactionID, throughputTermID, "13", row['complex_tag_mapping_timestamp'], "0", attribUserID, row['complex_tag_mapping_status'] )
+					throughputTermID = self.throughputHash[str(row['interaction_forced_attribute_value'])]
+					interactionAttribID = self.dbProcessor.processInteractionAttribute( interactionID, throughputTermID, "13", attribDate, "0", attribUserID, 'active' )
 					
 					if (tagCount % 10000) == 0 :
 						self.db.commit( )
 				
 		self.db.commit( )
 		
-	def migrateSourceTags( self ) :
+	def migrateQuantitativeScores( self ) :
 	
 		"""
 		Copy Operation
-			-> IMS2: complex_tag_mappings
+			-> IMS2: interaction_forced_attributes
 			-> IMS4: attribues and interaction_attributes
 		"""
 		
-		self.cursor.execute( "SELECT * FROM " + Config.DB_IMS_OLD + ".complex_tag_mappings" )
+		self.cursor.execute( "SELECT * FROM " + Config.DB_IMS_OLD + ".interaction_forced_attributes WHERE forced_attribute_type_id='3' OR forced_attribute_type_id='2'" )
 		
-		tagCount = 0
+		quantCount = 0
+		quantCheck = { }
 		for row in self.cursor.fetchall( ) :
 		
-			if str(row['complex_id']) in self.complex2interaction :
+			if str(row['interaction_forced_id']) in self.forced2interaction :
 			
-				interactionID = self.complex2interaction[str(row['complex_id'])]
+				quantCount += 1
+			
+				interactionID = self.forced2interaction[str(row['interaction_forced_id'])]
 		
-				activationInfo = self.activatedHash[str(row['complex_id'])]
-				attribDate = activationInfo["DATE"]
+				activationInfo = self.interaction2activation[interactionID]
+				attribDate = row['interaction_forced_attribute_timestamp']
 				attribUserID = activationInfo["USER_ID"]
 				
-				if str(row['tag_id']) in self.sourceHash :
+				quantValue = row['interaction_forced_attribute_value'].strip( )
+
+				# Skip if doesn't match our regular expression
+				matchSet = self.quantTest.match( quantValue )
+				if not matchSet :
+					continue
 				
-					tagCount += 1
+				# Skip if it doesn't have a type
+				quantSplit = quantValue.split( "|" )
+				if len(quantSplit) < 2 :
+					continue
 					
-					# Remap Tag ID into Attributes Entry
-					sourceTermID = self.sourceHash[str(row['tag_id'])]
-					interactionAttribID = self.processInteractionAttribute( interactionID, sourceTermID, "14", row['complex_tag_mapping_timestamp'], "0", attribUserID, row['complex_tag_mapping_status'] )
+				# Skip if unrecognized type
+				quantTypeConverted = self.maps.convertQuantType( quantSplit[1] )
+				if quantTypeConverted == "" :
+					continue
 					
-					if (tagCount % 10000) == 0 :
+				# Skip if not a valid float value
+				if not self.isFloat( quantSplit[0] ) :
+					continue
+					
+				if interactionID not in quantCheck :
+					quantCheck[interactionID] = set( )
+					
+				# Skip if we already have a quant score of this type for this interaction
+				if quantTypeConverted not in quantCheck[interactionID] :
+					quantCheck[interactionID].add( quantTypeConverted )
+				
+					interactionAttribID = self.dbProcessor.processInteractionAttribute( interactionID, quantSplit[0], quantTypeConverted, attribDate, "0", attribUserID, 'active' )
+				
+					if (quantCount % 10000) == 0 :
 						self.db.commit( )
 				
 		self.db.commit( )
+		
+	def isFloat( self, number ) :
+		
+		try :
+			float( number )
+			return True
+		except ValueError :
+			return False
 
 	def migrateOntologyTerms( self ) :
 	
 		"""
 		Copy Operation
-			-> IMS2: complex_phenotypes, complex_phenotypes_qualifiers
+			-> IMS2: interaction_forced_attributes
 			-> IMS4: attributes, interaction_attributes
 		"""
 		
-		self.cursor.execute( "SELECT * FROM " + Config.DB_IMS_OLD + ".complex_phenotypes" )
+		self.cursor.execute( "SELECT * FROM " + Config.DB_IMS_OLD + ".interaction_forced_attributes WHERE forced_attribute_type_id='3' OR forced_attribute_type_id='2'" )
 		
 		phenoCount = 0
 		for row in self.cursor.fetchall( ) :
 		
-			if str(row['complex_id']) in self.complex2interaction :
+			if str(row['interaction_forced_id']) in self.forced2interaction :
 			
-				interactionID = self.complex2interaction[str(row['complex_id'])]
-			
-				activationInfo = self.activatedHash[str(row['complex_id'])]
-				attribDate = activationInfo["DATE"]
+				interactionID = self.forced2interaction[str(row['interaction_forced_id'])]
+		
+				activationInfo = self.interaction2activation[interactionID]
+				attribDate = row['interaction_forced_attribute_timestamp']
 				attribUserID = activationInfo["USER_ID"]
 				
-				flagConverted = self.maps.convertPhenotypeFlag( row['flag'] )
-				complexPhenotypeID = str(row['complex_phenotype_id'])
-				phenotypeID = str(row['phenotype_id'])
-				phenotypeTypeID = str(row['phenotype_type_id'])
-				phenotypeStatus = row['complex_phenotype_status']
+				phenotypeInfo = str(row['interaction_forced_attribute_value'])
 				
-				if "" != flagConverted :
+				# If doesn't match the syntax for a Phenotype 
+				matchWithStructure = self.phenoTest.match( phenotypeInfo )
+				matchWithNone = self.phenoTest2.match( phenotypeInfo )
+				if not matchWithStructure and not matchWithNone :
+					continue
+					
+				# If doesn't have a clean split
+				phenoSplit = phenotypeInfo.split( "|" )
+				if len(phenoSplit) < 2 :
+					continue
+					
+				phenotypeInfo = phenoSplit[0]
+				phenotypeTypeID = phenoSplit[1]
 				
-					if phenotypeID in self.ontologyTermIDSet :
-						phenoCount += 1
-						interactionAttribID = self.dbProcessor.processInteractionAttribute( interactionID, phenotypeID, flagConverted, attribDate, "0", attribUserID, phenotypeStatus )
-						
-						# Add Phenotype Qualifiers if Found
-						self.processPhenotypeQualifiers( interactionAttribID, complexPhenotypeID, attribUserID, interactionID )
-						
-						# Add Phenotype Type if Necessary
-						self.processPhenotypeTypes( interactionAttribID, phenotypeTypeID, attribUserID, attribDate, interactionID, phenotypeStatus )
-						
-						if (phenoCount % 10000) == 0 :
-							self.db.commit( )
-							
-					else :
-						if phenotypeStatus == "active" :
-							print "FOUND MISSING ONTOLOGY ID: " + phenotypeID
+				phenoSplit = phenotypeInfo.split( "^^^" )
+				phenotypeID = phenoSplit[0]
+				
+				qualifiers = []
+				if len(phenoSplit) > 1 :
+					qualifiers = phenoSplit[1].split( "$$$" )
+				
+				if phenotypeID in self.ontologyTermIDSet :
+					phenoCount += 1
+					interactionAttribID = self.dbProcessor.processInteractionAttribute( interactionID, phenotypeID, "1", attribDate, "0", attribUserID, "active" )
+					
+					for qualifier in qualifiers :
+						if qualifier.upper( ) != "NONE" :
+							# Add Phenotype Qualifiers if Found
+							self.processPhenotypeQualifiers( interactionAttribID, qualifier, attribUserID, attribDate, interactionID )
+					
+					# Add Phenotype Type if Necessary
+					self.processPhenotypeTypes( interactionAttribID, phenotypeTypeID, attribUserID, attribDate, interactionID, "active" )
+					
+					if (phenoCount % 10000) == 0 :
+						self.db.commit( )
 				
 		self.db.commit( )
 		
-	def processPhenotypeQualifiers( self, attribID, complexPhenotypeID, userID, interactionID ) :
+	def processPhenotypeQualifiers( self, attribID, qualifierID, userID, dateAdded, interactionID ) :
 	
-		"""Check to see if the complexPhenotypeID had qualifiers and copy those over as well if it did"""
-		
-		self.cursor.execute( "SELECT * FROM " + Config.DB_IMS_OLD + ".complex_phenotypes_qualifiers WHERE complex_phenotype_id=%s", [complexPhenotypeID] )
-		for row in self.cursor.fetchall( ) :
+		"""Check to see if the qualifierID is valid copy those over as well if they are"""
 			
-			if str(row['phenotype_id']) in self.ontologyTermIDSet :
-				interactionAttribID = self.dbProcessor.processInteractionAttribute( interactionID, str(row['phenotype_id']), "31", row['complex_phenotypes_qualifier_addeddate'], attribID, userID, row['complex_phenotypes_qualifier_status'] )
-			else :
-				if row['complex_phenotypes_qualifier_status'] == "active" :
-					print "FOUND MISSING QUALIFIER ID: " + str(row['phenotype_id'])
+		if qualifierID in self.ontologyTermIDSet :
+			interactionAttribID = self.dbProcessor.processInteractionAttribute( interactionID, qualifierID, "31", dateAdded, attribID, userID, "active" )
+		else :
+			print "FOUND MISSING QUALIFIER ID: " + str(qualifierID)
 				
 		self.db.commit( )
 		
@@ -254,68 +327,62 @@ class Forced( ) :
 	
 		"""
 		Copy Operation
-			-> IMS2: complexes
+			-> IMS2: interaction_forced_additions
 			-> IMS4: participants, interaction_participants
 		"""
 		
-		self.cursor.execute( "SELECT * FROM " + Config.DB_IMS_OLD + ".complexes ORDER BY complex_id ASC" )
+		self.cursor.execute( "SELECT * FROM " + Config.DB_IMS_OLD + ".interaction_forced_additions ORDER BY interaction_forced_id ASC" )
 		
 		partCount = 0
 		for row in self.cursor.fetchall( ) :
 		
-			if str(row['complex_id']) in self.complex2interaction :
+			if str(row['interaction_forced_id']) in self.forced2interaction :
 			
-				interactionID = self.complex2interaction[str(row['complex_id'])]
+				interactionID = self.forced2interaction[str(row['interaction_forced_id'])]
 		
 				partCount += 1
 				
-				activationInfo = self.activatedHash[str(row['complex_id'])]
-				dateAdded = activationInfo["DATE"]
+				activationInfo = self.interaction2activation[interactionID]
+				attribDate = row['interaction_forced_timestamp']
+				attribUserID = activationInfo["USER_ID"]
+		
+				# INTERACTOR A
+				interactorA = str(row['interactor_A_name']).strip( )
+				interactorAStatus = row['interactor_A_forced_status']
+				interactorAOrg = str(row['interactor_A_organism_id'])
+				interactorAOrg = self.maps.convertForcedOrganismID( interactorAOrg )
+				interactorAType = str(row['interactor_A_type_id'])
 				
-				interactors = row['complex_participants'].split( "|" )
+				if interactorAType == "2" :
+					interactorAType = "4"
 				
-				for interactor in interactors :
-					interactor = interactor.strip( )
-					self.dbProcessor.processParticipant( interactor, interactionID, '1', '1', dateAdded )
+				interactorAID = interactorA
+				participantTypeID = "1"
+				if interactorAStatus.upper( ) == "UNKNOWN" :
+					interactorAID = self.dbProcessor.processUnknownParticipant( interactorA, interactorAType, interactorAOrg, attribDate )
+					participantTypeID = "5"
 				
+				self.dbProcessor.processParticipant( interactorAID, interactionID, '2', participantTypeID, attribDate )
+				
+				# INTERACTOR B
+				interactorB = str(row['interactor_B_name']).strip( )
+				interactorBStatus = row['interactor_B_forced_status']
+				interactorBOrg = str(row['interactor_B_organism_id'])
+				interactorBOrg = self.maps.convertForcedOrganismID( interactorBOrg )
+				interactorBType = str(row['interactor_B_type_id'])
+				
+				if interactorAType == "2" :
+					interactorAType = "4"
+				
+				interactorBID = interactorB
+				participantTypeID = "1"
+				if interactorBStatus.upper( ) == "UNKNOWN" :
+					interactorBID = self.dbProcessor.processUnknownParticipant( interactorB, interactorBType, interactorBOrg, attribDate )
+					participantTypeID = "5"
+				
+				self.dbProcessor.processParticipant( interactorBID, interactionID, '3', participantTypeID, attribDate )
+		
 				if (partCount % 10000) == 0 :
 					self.db.commit( )
 				
-		self.db.commit( )
-		
-	def migrateHistory( self ) :
-	
-		"""
-		Copy Operation
-			-> IMS2: complex_history
-			-> IMS4: history
-		"""
-		
-		self.cursor.execute( "SELECT * FROM " + Config.DB_IMS_OLD + ".complex_history" )
-		rowCount = 0
-		for row in self.cursor.fetchall( ) :
-		
-			if str(row['complex_id']) in self.complex2interaction :
-			
-				interactionID = self.complex2interaction[str(row['complex_id'])]
-		
-				rowCount += 1
-			
-				modificationType = row['modification_type']
-				if modificationType == "DEACTIVATED" :
-					modificationType = "DISABLED"
-			
-				self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".history VALUES( %s, %s, %s, %s, %s, %s, %s )" , [
-					'0', 
-					modificationType, 
-					interactionID, 
-					row['user_id'], 
-					row['complex_history_comment'],
-					'12', 
-					row['complex_history_date']
-				])
-			
-				if (rowCount % 10000) == 0 :
-					self.db.commit( )
-			
 		self.db.commit( )
