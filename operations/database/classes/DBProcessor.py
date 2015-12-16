@@ -11,10 +11,10 @@ class DBProcessor( ) :
 		self.db = db
 		self.cursor = cursor
 		
-	def processInteractionAttribute( self, interactionID, attribVal, attribType, attribDate, parentID, userID, mappingStatus ) :
+	def processAttribute( self, attribVal, attribType, attribDate ) :
 	
-		"""Process adding and mapping of the interaction to its attribute"""
-		
+		"""Return attribID if exists or insert new and return new ID"""
+	
 		self.cursor.execute( "SELECT attribute_id FROM " + Config.DB_IMS + ".attributes WHERE attribute_value=%s AND attribute_type_id=%s AND attribute_status='active' LIMIT 1", [attribVal.strip( ), attribType] )
 		
 		row = self.cursor.fetchone( )
@@ -23,6 +23,24 @@ class DBProcessor( ) :
 			attribID = self.cursor.lastrowid
 		else :
 			attribID = row['attribute_id']
+			
+		return attribID
+		
+	def processInteractionParticipantAttribute( self, interactionParticipantID, attribVal, attribType, attribDate, parentID, userID, mappingStatus ) :
+	
+		"""Process adding and mapping of the participant to its attribute"""
+		
+		attribID = self.processAttribute( attribVal, attribType, attribDate )
+		
+		self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".interaction_participant_attributes VALUES( '0', %s, %s, %s, %s, %s, %s )", [interactionParticipantID, attribID, parentID, userID, attribDate, mappingStatus] )
+		
+		return self.cursor.lastrowid
+		
+	def processInteractionAttribute( self, interactionID, attribVal, attribType, attribDate, parentID, userID, mappingStatus ) :
+	
+		"""Process adding and mapping of the interaction to its attribute"""
+		
+		attribID = self.processAttribute( attribVal, attribType, attribDate )
 		
 		self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".interaction_attributes VALUES( '0', %s, %s, %s, %s, %s, %s )", [interactionID, attribID, parentID, userID, attribDate, mappingStatus] )
 		
@@ -42,13 +60,14 @@ class DBProcessor( ) :
 		else :
 			participantID = str(row['participant_id'])
 			
-		self.processInteractionParticipant( participantID, interactionID, role, dateAdded )
+		return self.processInteractionParticipant( participantID, interactionID, role, dateAdded )
 		
 	def processInteractionParticipant( self, participantID, interactionID, role, dateAdded ) :
 	
 		"""Add entries for the interactors to the interaction_participants table"""
 	
 		self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".interaction_participants VALUES( '0', %s, %s, %s, %s, 'active' )", [interactionID, participantID, role, dateAdded] )
+		return self.cursor.lastrowid
 		
 	def processUnknownParticipant( self, participantValue, participantTypeID, organismID, dateAdded ) :
 	

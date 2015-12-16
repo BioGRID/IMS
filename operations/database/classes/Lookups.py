@@ -227,3 +227,53 @@ class Lookups( ) :
 			intSet.add( str(row['interaction_forced_id']) )
 			
 		return intSet
+		
+	def buildChemicalActionHash( self ) :
+	
+		"""Build a mapping HASH from old Chemical Action IDs to New Ontology ID"""
+		
+		# Need to fetch the ontology by name rather than by ID because
+		# the ID may not be the same by the time we do the final
+		# migration of the databases.
+		
+		ontologyTerms = { }
+		self.cursor.execute( "SELECT ontology_id FROM " + Config.DB_IMS + ".ontologies WHERE ontology_name = 'BioGRID Chemical Actions Ontology' LIMIT 1" )
+		row = self.cursor.fetchone( ) 
+		
+		if None != row :
+			ontologyID = row['ontology_id']
+			
+			self.cursor.execute( "SELECT ontology_term_id, ontology_term_name FROM " + Config.DB_IMS + ".ontology_terms WHERE ontology_id=%s", [ontologyID] )
+			for row in self.cursor.fetchall( ) :
+				ontologyTerms[row['ontology_term_name'].lower( )] = str(row['ontology_term_id'])
+		
+		chemHash = { }
+		self.cursor.execute( "SELECT chemical_action_id, chemical_action_name FROM " + Config.DB_IMS_OLD + ".chemical_actions WHERE chemical_action_status='active'" )
+		
+		for row in self.cursor.fetchall( ) :
+			if row['chemical_action_name'].lower( ) in ontologyTerms :
+				ontologyID = ontologyTerms[row['chemical_action_name'].lower( )]
+				chemHash[str(row['chemical_action_id'])] = ontologyID
+				
+		return chemHash
+		
+	def buildSourceNameHash( self ) :
+	
+		"""Build a mapping HASH from source names to Source Ontology IDs"""
+		
+		# Need to fetch the ontology by name rather than by ID because
+		# the ID may not be the same by the time we do the final
+		# migration of the databases.
+		
+		nameHash = { }
+		self.cursor.execute( "SELECT ontology_id FROM " + Config.DB_IMS + ".ontologies WHERE ontology_name = 'BioGRID Sources Ontology' LIMIT 1" )
+		row = self.cursor.fetchone( )
+		
+		if None != row :
+			ontologyID = row['ontology_id']
+			
+			self.cursor.execute( "SELECT ontology_term_id, ontology_term_name FROM " + Config.DB_IMS + ".ontology_terms WHERE ontology_id=%s", [ontologyID] )
+			for row in self.cursor.fetchall( ) :
+				nameHash[row['ontology_term_name'].lower( )] = str(row['ontology_term_id'])
+				
+		return nameHash

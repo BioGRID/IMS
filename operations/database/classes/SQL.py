@@ -2,7 +2,7 @@
 import sys, string
 import Config
 
-from classes import Ontologies, Datasets, Interactions, History, Participants, Complexes, Forced, ForcedComplexes
+from classes import Ontologies, Datasets, Interactions, History, Participants, Complexes, Forced, ForcedComplexes, Chemicals
 
 class SQL( ) :
 
@@ -272,6 +272,24 @@ class SQL( ) :
 		
 		self.writeLine( "Migrating Forced Complex Participants" )
 		forced.migrateParticipants( )
+		
+	def clean_chemicals( self ) :
+	
+		"""Clean the Chemical Specific Tables"""
+		
+		self.writeHeader( "No Chemical Specific Tables to Clean" )
+		
+	def build_chemicals( self ) :
+	
+		"""Load chemical interaction data into interactions"""
+		
+		self.writeHeader( "Building Chemical Interactions" )
+		self.writeLine( "Building Quick Lookup Sets" )
+		
+		chemicals = Chemicals.Chemicals( self.db, self.cursor )
+		
+		self.writeLine( "Migrating Chemical Interactions" )
+		chemicals.migrateChemicalMappings( )
 		
 	def clean( self, table ) :
 	
