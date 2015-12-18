@@ -75,3 +75,21 @@ class Maps( ) :
 			return orgIDs[organismID]
 			
 		return organismID
+		
+	def convertPTMSources( self, ptmSourceID ) :
+	
+		"""Convert a PTM Source ID into the String to Use to Find Ontology Term"""
+		
+		ptmSourceID = str(ptmSourceID)
+		
+		ptmSources = { 
+			"1"	: "PhosphoGRID",
+			"2" : "BioGRID Ubiquitin Project",
+			"3" : "BioGRID"
+		}
+		
+		if ptmSourceID in ptmSources :
+			return ptmSources[ptmSourceID]
+		
+		print "Couldn't Map PTM Source ID: " + str(ptmSourceID)		
+		return ""
