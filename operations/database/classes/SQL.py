@@ -2,7 +2,7 @@
 import sys, string
 import Config
 
-from classes import Ontologies, Datasets, Interactions, History, Participants, Complexes, Forced, ForcedComplexes, Chemicals
+from classes import Ontologies, Datasets, Interactions, History, Participants, Complexes, Forced, ForcedComplexes, Chemicals, PTM
 
 class SQL( ) :
 
@@ -290,6 +290,30 @@ class SQL( ) :
 		
 		self.writeLine( "Migrating Chemical Interactions" )
 		chemicals.migrateChemicalMappings( )
+		
+	def clean_ptms( self ) :
+		
+		"""Clean the PTM Specific Tables"""
+		
+		self.writeHeader( "No PTM Specific Tables to Clean" )
+		
+	def build_ptms( self ) :
+	
+		"""Load PTM interaction data into interactions"""
+		
+		self.writeHeader( "Building PTM Interactions" )
+		self.writeLine( "Building Quick Lookup Sets" )
+		
+		ptm = PTM.PTM( self.db, self.cursor )
+		
+		self.writeLine( "Migrating PTM Interactions" )
+		ptm.migratePTMs( )
+		
+		self.writeLine( "Migrating PTM Notes" )
+		ptm.migratePTMNotes( )
+		
+		self.writeLine( "Migrating PTM Participants" )
+		ptm.migrateParticipants( )
 		
 	def clean( self, table ) :
 	
