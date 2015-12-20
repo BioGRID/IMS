@@ -277,3 +277,24 @@ class Lookups( ) :
 				nameHash[row['ontology_term_name'].lower( )] = str(row['ontology_term_id'])
 				
 		return nameHash
+		
+	def buildPTMIdentityHash( self ) :
+	
+		"""Build a mapping HASH from PTM identity types to Ontology IDs"""
+		
+		# Need to fetch the ontology by name rather than by ID because
+		# the ID may not be the same by the time we do the final
+		# migration of the databases.
+		
+		ontologyTerms = { }
+		self.cursor.execute( "SELECT ontology_id FROM " + Config.DB_IMS + ".ontologies WHERE ontology_name = 'BioGRID Post-Translational Modification Identities Ontology' LIMIT 1" )
+		row = self.cursor.fetchone( )
+		
+		if None != row :
+			ontologyID = row['ontology_id']
+			
+			self.cursor.execute( "SELECT ontology_term_id, ontology_term_name FROM " + Config.DB_IMS + ".ontology_terms WHERE ontology_id=%s", [ontologyID] )
+			for row in self.cursor.fetchall( ) :
+				ontologyTerms[row['ontology_term_name'].lower( )] = str(row['ontology_term_id'])
+				
+		return ontologyTerms
