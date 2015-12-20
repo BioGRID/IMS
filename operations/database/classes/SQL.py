@@ -309,8 +309,11 @@ class SQL( ) :
 		self.writeLine( "Migrating PTM Interactions" )
 		ptm.migratePTMs( )
 		
-		#self.writeLine( "Migrating PTM Notes" )
-		#ptm.migratePTMNotes( )
+		self.writeLine( "Migrating PTM Orphan Interactions from Relationships" )
+		ptm.migratePTMOrphanRelationships( )
+		
+		self.writeLine( "Migrating PTM Notes" )
+		ptm.migratePTMNotes( )
 		
 	def clean( self, table ) :
 	
