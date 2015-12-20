@@ -120,6 +120,14 @@ class Ontologies( ) :
 			"BioGRID terms for classifying the throughput methodology of a dataset" 
 		)
 		
+		self.addOntology( 
+			"BioGRID Post-Translational Modification Identities Ontology", 
+			"https://raw.githubusercontent.com/starkfree/BioGRID-Ontologies/master/BioGRIDPostTranslationalModificationIdentities.obo", 
+			"BIOGRID:0000037", 
+			"BioGRID Post-Translational Modification Identities Ontology", 
+			"BioGRID terms for classifying the identity of PTM relationships" 
+		)
+		
 	def addOntology( self, ontologyName, ontologyURL, termID, termName, termDef ) :
 	
 		"""Input both a new Ontology and a ROOT ID reference and establish linkage between the two within the database"""
