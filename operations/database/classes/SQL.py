@@ -2,7 +2,7 @@
 import sys, string
 import Config
 
-from classes import Ontologies, Datasets, Interactions, History, Participants, Complexes, Forced, ForcedComplexes, Chemicals, PTM
+from classes import Ontologies, Datasets, Interactions, History, Participants, Complexes, Forced, ForcedComplexes, Chemicals, PTM, Groups
 
 class SQL( ) :
 
@@ -309,8 +309,37 @@ class SQL( ) :
 		self.writeLine( "Migrating PTM Interactions" )
 		ptm.migratePTMs( )
 		
-		#self.writeLine( "Migrating PTM Notes" )
-		#ptm.migratePTMNotes( )
+		self.writeLine( "Migrating PTM Orphan Interactions from Relationships" )
+		ptm.migratePTMOrphanRelationships( )
+		
+		self.writeLine( "Migrating PTM Notes" )
+		ptm.migratePTMNotes( )
+		
+	def clean_groups( self ) :
+		
+		"""Clean the Group Specific Tables"""
+		
+		self.clean( "groups" )
+		self.clean( "group_datasets" )
+		self.clean( "group_users" )
+		
+	def build_groups( self ) :
+	
+		"""Load GROUP data from PROJECT data"""
+		
+		self.writeHeader( "Building Groups" )
+		self.writeLine( "Building Quick Lookup Sets" )
+		
+		groups = Groups.Groups( self.db, self.cursor )
+		
+		self.writeLine( "Migrating Groups" )
+		groups.migrateGroups( )
+		
+		self.writeLine( "Migrating Group Users" )
+		groups.migrageGroupUsers( )
+		
+		self.writeLine( "Migrating Group Datasets" )
+		groups.migrateGroupDatasets( )
 		
 	def clean( self, table ) :
 	

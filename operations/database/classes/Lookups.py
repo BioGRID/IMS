@@ -23,6 +23,18 @@ class Lookups( ) :
 			
 		return datasetSet
 		
+	def buildPubmedToDatasetHash( self ) :
+	
+		"""Build a mapping HASH from pubmed_ids to dataset_ids"""
+		
+		mappingHash = { }
+		self.cursor.execute( "SELECT dataset_id, dataset_source_id FROM " + Config.DB_IMS + ".datasets WHERE dataset_type_id='1'" )
+		
+		for row in self.cursor.fetchall( ) :
+			mappingHash[str(row['dataset_source_id'])] = str(row['dataset_id'])
+			
+		return mappingHash
+		
 	def buildIgnoreInteractionSet( self ) :
 	
 		"""Build a set of interaction ids to Ignore"""
