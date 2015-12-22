@@ -166,6 +166,7 @@ class SQL( ) :
 		self.clean( "participants" )
 		self.clean( "participant_roles" )
 		self.clean( "participant_types" )
+		self.clean( "participant_attributes" )
 		self.clean( "interaction_participants" )
 		self.clean( "interaction_participant_attributes" )
 		
