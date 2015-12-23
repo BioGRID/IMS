@@ -9,6 +9,7 @@ CREATE TABLE `participant_attributes` (
   `participant_attribute_evidence` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `participant_attribute_evidence_text` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `participant_attribute_evidence_method` enum('inferred','experimental','unknown') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `participant_attribute_evidence_id` bigint(10) NOT NULL,
   `participant_attribute_addeddate` datetime NOT NULL,
   `participant_attribute_status` enum('active','inactive') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'active',
   PRIMARY KEY (`participant_attribute_id`),
@@ -20,5 +21,6 @@ CREATE TABLE `participant_attributes` (
   KEY `participant_attribute_status` (`participant_attribute_status`),
   KEY `participant_attribute_evidence` (`participant_attribute_evidence`(191)),
   KEY `participant_attribute_evidence_text` (`participant_attribute_evidence_text`(191)),
-  KEY `participant_attribute_evidence_method` (`participant_attribute_evidence_method`)
+  KEY `participant_attribute_evidence_method` (`participant_attribute_evidence_method`),
+  KEY `participant_attribute_evidence_id` (`participant_attribute_evidence_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

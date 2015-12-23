@@ -310,3 +310,32 @@ class Lookups( ) :
 				ontologyTerms[row['ontology_term_name'].lower( )] = str(row['ontology_term_id'])
 				
 		return ontologyTerms
+		
+	def buildGenetagIDHash( self ) :
+	
+		"""Build a mapping HASH from old Genetag IDs to New Ontology ID"""
+		
+		# Need to fetch the ontology by name rather than by ID because
+		# the ID may not be the same by the time we do the final
+		# migration of the databases.
+		
+		ontologyTerms = { }
+		self.cursor.execute( "SELECT ontology_id FROM " + Config.DB_IMS + ".ontologies WHERE ontology_name = 'BioGRID Participant Tag Ontology' LIMIT 1" )
+		row = self.cursor.fetchone( ) 
+		
+		if None != row :
+			ontologyID = row['ontology_id']
+			
+			self.cursor.execute( "SELECT ontology_term_id, ontology_term_name FROM " + Config.DB_IMS + ".ontology_terms WHERE ontology_id=%s", [ontologyID] )
+			for row in self.cursor.fetchall( ) :
+				ontologyTerms[row['ontology_term_name'].lower( )] = str(row['ontology_term_id'])
+		
+		typeHash = { }
+		self.cursor.execute( "SELECT genetag_id, genetag_name FROM " + Config.DB_IMS_OLD + ".genetags" )
+		
+		for row in self.cursor.fetchall( ) :
+			if row['genetag_name'].lower( ) in ontologyTerms :
+				ontologyID = ontologyTerms[row['genetag_name'].lower( )]
+				typeHash[str(row['genetag_id'])] = ontologyID
+				
+		return typeHash

@@ -2,7 +2,8 @@
 import sys, string
 import Config
 
-from classes import Ontologies, Datasets, Interactions, History, Participants, Complexes, Forced, ForcedComplexes, Chemicals, PTM, Groups
+from classes import Ontologies, Datasets, Interactions, History, Participants, Projects
+from classes import Complexes, Forced, ForcedComplexes, Chemicals, PTM, Groups
 
 class SQL( ) :
 
@@ -166,7 +167,6 @@ class SQL( ) :
 		self.clean( "participants" )
 		self.clean( "participant_roles" )
 		self.clean( "participant_types" )
-		self.clean( "participant_attributes" )
 		self.clean( "interaction_participants" )
 		self.clean( "interaction_participant_attributes" )
 		
@@ -341,6 +341,36 @@ class SQL( ) :
 		
 		self.writeLine( "Migrating Group Datasets" )
 		groups.migrateGroupDatasets( )
+		
+	def clean_projects( self ) :
+	
+		"""Clean the Project Specific Tables"""
+		
+		self.clean( "projects" )
+		self.clean( "project_columns" )
+		self.clean( "participant_attributes" )
+		self.clean( "participant_attribute_evidence" )
+		
+		self.writeLine( "Loading Participant Attribute Evidence Types" )
+		self.processSQL( "participant_attribute_evidence-data.sql" )
+		
+	def build_projects( self ) :
+	
+		"""Load PROJECT data from IPLEX PROJECTS""" 
+		
+		self.writeHeader( "Building Projects" )
+		self.writeLine( "Building Quick Lookup Sets" )
+		
+		projects = Projects.Projects( self.db, self.cursor )
+		
+		self.writeLine( "Migrating Projects" )
+		projects.migrateProjects( )
+		
+		self.writeLine( "Migrating Project Columns" )
+		projects.migrateProjectColumns( )
+		
+		self.writeLine( "Migrating Project Mappings" )
+		projects.migrateProjectAttributes( )
 		
 	def clean( self, table ) :
 	

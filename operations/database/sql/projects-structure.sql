@@ -1,6 +1,5 @@
 DROP TABLE IF EXISTS `projects`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+
 CREATE TABLE `projects` (
   `project_id` bigint(10) NOT NULL AUTO_INCREMENT,
   `project_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -17,5 +16,4 @@ CREATE TABLE `projects` (
   KEY `project_state` (`project_state`),
   KEY `project_addeddate` (`project_addeddate`),
   KEY `project_status` (`project_status`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

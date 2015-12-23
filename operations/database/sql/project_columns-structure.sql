@@ -1,6 +1,5 @@
 DROP TABLE IF EXISTS `project_columns`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+
 CREATE TABLE `project_columns` (
   `project_column_id` bigint(10) NOT NULL AUTO_INCREMENT,
   `project_column_title` varchar(255) NOT NULL,
@@ -16,5 +15,4 @@ CREATE TABLE `project_columns` (
   KEY `project_column_status` (`project_column_status`),
   KEY `project_id` (`project_id`),
   KEY `project_column_rank` (`project_column_rank`)
-) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
-/*!40101 SET character_set_client = @saved_cs_client */;
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

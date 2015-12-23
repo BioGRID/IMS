@@ -93,3 +93,18 @@ class Maps( ) :
 		
 		print "Couldn't Map PTM Source ID: " + str(ptmSourceID)		
 		return ""
+		
+	def convertGenetagTypeIDFromProject( self, genetagTypeID ) :
+
+		"""Convert a Genetag Type ID into the Attribute Type ID"""
+		
+		genetagTypeID = str(genetagTypeID)
+		
+		genetagTypeIDs = { 
+			"1"	: "35"
+		}
+		
+		if genetagTypeID in genetagTypeIDs :
+			return genetagTypeIDs[genetagTypeID]
+			
+		return genetagTypeID
