@@ -6,14 +6,15 @@ CREATE TABLE `pubmed` (
   `pubmed_abstract` mediumtext COLLATE utf8mb4_unicode_ci,
   `pubmed_fulltext` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
   `pubmed_author_short` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `pubmed_author_full` text COLLATE utf8mb4_unicode_ci,
+  `pubmed_author_list` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `pubmed_author_full` longtext COLLATE utf8mb4_unicode_ci,
   `pubmed_volume` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `pubmed_issue` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `pubmed_date` date DEFAULT NULL,
   `pubmed_journal` text COLLATE utf8mb4_unicode_ci,
   `pubmed_journal_short` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `pubmed_pagination` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `pubmed_affiliation` text COLLATE utf8mb4_unicode_ci,
+  `pubmed_affiliations` longtext COLLATE utf8mb4_unicode_ci,
   `pubmed_meshterms` text COLLATE utf8mb4_unicode_ci,
   `pubmed_pmcid` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `pubmed_status` enum('active','inactive','retracted','erratum') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'active',
@@ -30,4 +31,3 @@ CREATE TABLE `pubmed` (
   KEY `pubmed_lastupdated` (`pubmed_lastupdated`),
   KEY `pubmed_isannotated` (`pubmed_isannotated`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-

@@ -50,6 +50,20 @@ class DBProcessor( ) :
 	
 		"""Check if participant exists already, if not add it, then process mappings"""
 	
+		participantID = self.addParticipant( interactorID, type, dateAdded )
+		return self.processInteractionParticipant( participantID, interactionID, role, dateAdded )
+		
+	def processInteractionParticipant( self, participantID, interactionID, role, dateAdded ) :
+	
+		"""Add entries for the interactors to the interaction_participants table"""
+	
+		self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".interaction_participants VALUES( '0', %s, %s, %s, %s, 'active' )", [interactionID, participantID, role, dateAdded] )
+		return self.cursor.lastrowid
+		
+	def addParticipant( self, interactorID, type, dateAdded ) :
+	
+		"""Check if participant exists already, if not add it"""
+	
 		self.cursor.execute( "SELECT participant_id FROM " + Config.DB_IMS + ".participants WHERE participant_value=%s AND participant_type_id=%s LIMIT 1", [interactorID, type] )
 		row = self.cursor.fetchone( )
 		
@@ -59,15 +73,8 @@ class DBProcessor( ) :
 			participantID = self.cursor.lastrowid
 		else :
 			participantID = str(row['participant_id'])
-			
-		return self.processInteractionParticipant( participantID, interactionID, role, dateAdded )
 		
-	def processInteractionParticipant( self, participantID, interactionID, role, dateAdded ) :
-	
-		"""Add entries for the interactors to the interaction_participants table"""
-	
-		self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".interaction_participants VALUES( '0', %s, %s, %s, %s, 'active' )", [interactionID, participantID, role, dateAdded] )
-		return self.cursor.lastrowid
+		return participantID
 		
 	def processUnknownParticipant( self, participantValue, participantTypeID, organismID, dateAdded ) :
 	
@@ -84,3 +91,18 @@ class DBProcessor( ) :
 			unknownParticipantID = str(row['unknown_participant_id'])
 			
 		return unknownParticipantID
+		
+	def processParticipantAttribute( self, participantID, attribVal, attribType, attribDate, parentID, userID, mappingStatus, evidence, evidenceText, evidenceMethod, evidenceID ) :
+	
+		"""Process adding and mapping of the participant to its attribute"""
+		
+		attribID = self.processAttribute( attribVal, attribType, attribDate )
+		
+		self.cursor.execute( "SELECT participant_attribute_id FROM " + Config.DB_IMS + ".participant_attributes WHERE participant_id=%s AND attribute_id=%s AND participant_attribute_evidence=%s AND participant_attribute_evidence_method=%s AND participant_attribute_evidence_id=%s LIMIT 1", [participantID, attribID, evidence, evidenceMethod, evidenceID] )
+		
+		row = self.cursor.fetchone( )
+		
+		if None == row :
+			self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".participant_attributes VALUES( '0', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s )", [participantID, attribID, parentID, userID, evidence, evidenceText, evidenceMethod, evidenceID, attribDate, mappingStatus] )
+		
+		return self.cursor.lastrowid
