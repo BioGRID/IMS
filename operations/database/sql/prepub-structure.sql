@@ -5,9 +5,10 @@ CREATE TABLE `prepub` (
   `prepub_title` text COLLATE utf8mb4_unicode_ci,
   `prepub_abstract` mediumtext COLLATE utf8mb4_unicode_ci,
   `prepub_author_short` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `prepub_author_full` text COLLATE utf8mb4_unicode_ci,
+  `prepub_author_list` text COLLATE utf8mb4_unicode_ci,
+  `prepub_author_full` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
   `prepub_date` date DEFAULT NULL,
-  `prepub_affiliation` text COLLATE utf8mb4_unicode_ci,
+  `prepub_affiliations` longtext COLLATE utf8mb4_unicode_ci,
   `prepub_url` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `prepub_pubmed_id` bigint(10) NOT NULL,
   `prepub_status` enum('active','inactive','published') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'active',
@@ -20,4 +21,4 @@ CREATE TABLE `prepub` (
   KEY `prepub_status` (`prepub_status`),
   KEY `prepub_addeddate` (`prepub_addeddate`),
   KEY `prepub_lastupdated` (`prepub_lastupdated`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -2,6 +2,7 @@ import sys, string
 import Config
 import re
 import datetime
+import json
 
 class Datasets( ) :
 
@@ -67,7 +68,7 @@ class Datasets( ) :
 		
 			if not skipPub :
 				insertData = [row['publication_pubmed_id'].strip( )]
-				insertData = insertData + (["-"] * 7)
+				insertData = insertData + (["-"] * 8)
 				insertData.append( "0000-00-00" )
 				insertData = insertData + (["-"] * 6)
 				insertData = insertData + [row['publication_status'], row['publication_modified'].strftime(dateFormat), row['publication_modified'].strftime(dateFormat), '0'] 
@@ -99,7 +100,9 @@ class Datasets( ) :
 			
 			if not skipPub :
 			
-				insertData = ['0', row['publication_article_title'], row['publication_abstract'], row['publication_author'], row['publication_author_full'], row['publication_date'], row['publication_affiliation'], "-", "-1", row['publication_status'], row['publication_modified'].strftime(dateFormat), row['publication_modified'].strftime(dateFormat)]
+				affiliations = [row['publication_affiliation']]
+			
+				insertData = ['0', row['publication_article_title'], row['publication_abstract'], row['publication_author'], row['publication_author_full'], "-", row['publication_date'], json.dumps(affiliations), "-", "-1", row['publication_status'], row['publication_modified'].strftime(dateFormat), row['publication_modified'].strftime(dateFormat)]
 				
 				sqlFormat = ",".join( ['%s'] * len(insertData) )
 				self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".prepub VALUES( %s )" % sqlFormat, insertData )
