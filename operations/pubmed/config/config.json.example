@@ -1,0 +1,6 @@
+{
+	"APP" : {
+		"PUBMED_EMAIL"					: "YOUR EMAIL ADDRESS",
+		"PUBMED_TOOL"					: "A NAME FOR YOUR TOOL"
+	}
+}
