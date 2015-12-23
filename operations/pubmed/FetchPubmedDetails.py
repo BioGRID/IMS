@@ -34,7 +34,7 @@ with Database.db as cursor :
 	batchCount = 1
 	while True :
 	
-		cursor.execute( "SELECT pubmed_id FROM " + Config.DB_IMS + ".pubmed WHERE pubmed_isannotated='0' ORDER BY pubmed_id ASC LIMIT 100" )
+		cursor.execute( "SELECT pubmed_id FROM " + Config.DB_IMS + ".pubmed WHERE pubmed_isannotated='0' ORDER BY pubmed_id ASC LIMIT 300" )
 		
 		if cursor.rowcount <= 0 :
 			break
@@ -51,7 +51,7 @@ with Database.db as cursor :
 					attempts[str(row['pubmed_id'])] = 0
 					
 				attempts[str(row['pubmed_id'])] += 1
-				if attempts > 3 :
+				if attempts[str(row['pubmed_id'])] > 3 :
 					cursor.execute( "UPDATE " + Config.DB_IMS + ".pubmed SET pubmed_isannotated='3' WHERE pubmed_id=%s", [row['pubmed_id']] )
 				
 			#pubmeds.append( "9811642" )
@@ -115,7 +115,8 @@ with Database.db as cursor :
 				
 				articleIssue = article.find( 'MedlineCitation/Article/Journal/JournalIssue/Issue' )
 				if None != articleIssue :
-					pubInfo['ISSUE'] = articleIssue.text.strip( )
+					if None != articleIssue.text :
+						pubInfo['ISSUE'] = articleIssue.text.strip( )
 				
 				# NEEDED TO MAKE JOURNAL A TEXT FIELD CAUSE VARCHAR WAS TOO SHORT
 				# EXAMPLE: PUBMED 18475251
@@ -198,7 +199,17 @@ with Database.db as cursor :
 						
 					authorInitials = author.find( 'Initials' )
 					if None != authorInitials :
-						authorRecord['INITIALS'] = authorInitials.text.strip( )
+						if None != authorInitials.text :
+							authorRecord['INITIALS'] = authorInitials.text.strip( )
+						else :
+							authorInitials = author.find( 'Suffix' )
+							if None != authorInitials :
+								if None != authorInitials.text :
+									authorRecord['INITIALS'] = authorInitials.text.strip( )
+					
+					if authorRecord['INITIALS'] == "-" :
+						authorRecord['INITIALS'] = "AZ"
+							
 						
 					authorAffiliation = author.find( 'AffiliationInfo/Affiliation' )
 					if None != authorAffiliation :
@@ -258,7 +269,7 @@ with Database.db as cursor :
 				if None != pubmedID :
 					pubmedID = pubmedID.text.strip( )
 					
-				cursor.execute( "UPDATE " + Config.DB_IMS + ".pubmeds SET pubmed_isannotated='2' WHERE pubmed_id=%s", [pubmedID] )
+				cursor.execute( "UPDATE " + Config.DB_IMS + ".pubmed SET pubmed_isannotated='2' WHERE pubmed_id=%s", [pubmedID] )
 				attempts.pop( str(pubmedID), None )
 				Database.db.commit( )
 				
