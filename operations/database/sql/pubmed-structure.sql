@@ -17,6 +17,8 @@ CREATE TABLE `pubmed` (
   `pubmed_affiliations` longtext COLLATE utf8mb4_unicode_ci,
   `pubmed_meshterms` text COLLATE utf8mb4_unicode_ci,
   `pubmed_pmcid` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `pubmed_doi` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `pubmed_article_ids` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `pubmed_status` enum('active','inactive','retracted','erratum') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'active',
   `pubmed_addeddate` datetime NOT NULL,
   `pubmed_lastupdated` datetime DEFAULT NULL,
@@ -29,5 +31,6 @@ CREATE TABLE `pubmed` (
   KEY `pubmed_status` (`pubmed_status`),
   KEY `pubmed_addeddate` (`pubmed_addeddate`),
   KEY `pubmed_lastupdated` (`pubmed_lastupdated`),
-  KEY `pubmed_isannotated` (`pubmed_isannotated`)
+  KEY `pubmed_isannotated` (`pubmed_isannotated`),
+  KEY `pubmed_doi` (`pubmed_doi`(191))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
