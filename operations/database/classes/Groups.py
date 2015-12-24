@@ -82,7 +82,7 @@ class Groups( ) :
 		
 			if str(row['pubmed_id']) not in self.datasetHash :
 			
-				insertData = [row['pubmed_id'], '-','-','-','-','-','-','-','0000-00-00','-','-','-','-','-','-','active',row['project_pubmed_timestamp'],row['project_pubmed_timestamp'], '0']
+				insertData = [row['pubmed_id'], '-','-','-','-','-','-','-','-','0000-00-00','-','-','-','-','-','-','-','-','active',row['project_pubmed_timestamp'],row['project_pubmed_timestamp'], '0']
 				
 				sqlFormat = ",".join( ['%s'] * len(insertData) )
 				self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".pubmed VALUES( %s )" % sqlFormat, insertData )
