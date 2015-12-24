@@ -46,7 +46,7 @@ class Datasets( ) :
 		dateFormat = "%Y-%m-%d %H:%M:%S"
 		
 		self.cursor.execute( "TRUNCATE TABLE " + Config.DB_IMS_TRANSITION + ".invalid_publications" )
-		self.cursor.execute( "SELECT publication_id, publication_pubmed_id, publication_status, publication_modified FROM " + Config.DB_IMS_OLD + ".publications WHERE publication_pubmed_id NOT LIKE '99990000%'" )
+		self.cursor.execute( "SELECT publication_id, publication_pubmed_id, publication_status, publication_modified FROM " + Config.DB_IMS_OLD + ".publications WHERE publication_pubmed_id NOT LIKE '99990000%' AND publication_id NOT IN ( SELECT publication_id FROM " + Config.DB_IMS_TRANSITION + ".ignore_publications )" )
 		for row in self.cursor.fetchall( ) :
 		
 			skipPub = False
@@ -70,7 +70,7 @@ class Datasets( ) :
 				insertData = [row['publication_pubmed_id'].strip( )]
 				insertData = insertData + (["-"] * 8)
 				insertData.append( "0000-00-00" )
-				insertData = insertData + (["-"] * 6)
+				insertData = insertData + (["-"] * 8)
 				insertData = insertData + [row['publication_status'], row['publication_modified'].strftime(dateFormat), row['publication_modified'].strftime(dateFormat), '0'] 
 				#print insertData
 				
