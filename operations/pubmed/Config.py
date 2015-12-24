@@ -27,3 +27,7 @@ data = json.loads( data )
 # PUBMED PARAMETERS
 PUBMED_EMAIL = data['APP']['PUBMED_EMAIL']
 PUBMED_TOOL = data['APP']['PUBMED_TOOL']
+
+# DB OLD
+DB_IMS_OLD = data['DB']['DB_IMS_OLD']
+DB_IMS_TRANSITION = data['DB']['DB_IMS_TRANSITION']

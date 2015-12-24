@@ -13,9 +13,9 @@ class DatabaseProcessor( ) :
 		self.db = db
 		self.cursor = cursor
 		
-	def processPubmed( self, data ) :
+	def processPubmedArticle( self, data ) :
 	
-		"""Update the Record in Pubmed with latest data parsed from the API"""
+		"""Update the Article Record in Pubmed with latest data parsed from the API"""
 		
 		authorList, authorFull = self.processAuthors( data['AUTHORS'] )
 		affiliations = self.processAffiliations( data['AFFILIATIONS'] )
@@ -24,10 +24,12 @@ class DatabaseProcessor( ) :
 		self.cursor.execute( "UPDATE " + Config.DB_IMS + ".pubmed SET " +
 			"pubmed_title=%s, pubmed_abstract=%s, pubmed_author_short=%s, pubmed_author_list=%s, pubmed_author_full=%s," +
 			"pubmed_volume=%s, pubmed_issue=%s, pubmed_date=%s, pubmed_journal=%s, pubmed_journal_short=%s, pubmed_pagination=%s," +
-			"pubmed_affiliations=%s, pubmed_meshterms=%s, pubmed_pmcid=%s, pubmed_addeddate=NOW( ), pubmed_lastupdated=NOW( )" +
+			"pubmed_affiliations=%s, pubmed_meshterms=%s, pubmed_pmcid=%s, pubmed_doi=%s, pubmed_article_ids=%s," +
+			"pubmed_status=%s, pubmed_addeddate=NOW( ), pubmed_lastupdated=NOW( )" +
 			"WHERE pubmed_id=%s", [data['TITLE'], data['ABSTRACT'], data['AUTHOR_SHORT'], authorList, authorFull, data['VOLUME'], data['ISSUE'],
-			data['PUBDATE'], data['JOURNAL'], data['JOURNAL_SHORT'], data['PAGINATION'], affiliations, meshTerms, data['PMCID'], data['PUBMED_ID']] )
-			
+			data['PUBDATE'], data['JOURNAL'], data['JOURNAL_SHORT'], data['PAGINATION'], affiliations, meshTerms, data['PMCID'], data['DOI'], 
+			data['ARTICLE_IDS'], data['STATUS'], data['PUBMED_ID']] )
+	
 	def processMeshTerms( self, meshTerms ) :
 	
 		"""Convert Mesh Terms into the Datbaase Format Required"""
@@ -47,7 +49,11 @@ class DatabaseProcessor( ) :
 				
 			authorList.append( authorName )
 			
-		return ", ".join( authorList ), json.dumps( authorSet, ensure_ascii=False ).encode( 'utf8' )
+		authorString = "-"
+		if len(authorList) > 0 :
+			authorString = ", ".join( authorList )
+			
+		return authorString, json.dumps( authorSet, ensure_ascii=False ).encode( 'utf8' )
 		
 	def processAffiliations( self, affiliations ) :
 		
