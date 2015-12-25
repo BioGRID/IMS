@@ -339,3 +339,25 @@ class Lookups( ) :
 				typeHash[str(row['genetag_id'])] = ontologyID
 				
 		return typeHash
+		
+	def buildOldPublicationIDtoPubmedID( self ) :
+	
+		"""Build a Mapping Hash from Old Publication ID to Pubmed ID"""
+		
+		mappingHash = { }
+		self.cursor.execute( "SELECT publication_id, publication_pubmed_id FROM " + Config.DB_IMS_OLD + ".publications" )
+		for row in self.cursor.fetchall( ) :
+			mappingHash[str(row['publication_pubmed_id'])] = str(row['publication_id'])
+			
+		return mappingHash
+		
+	def buildIgnoreGroupPubmedSet( self ) :
+	
+		"""Build a set of pubmed ids to ignore while adding extra pubmeds via group migration"""
+		
+		ignorePubmeds = set( )
+		self.cursor.execute( "SELECT pubmed_id FROM " + Config.DB_IMS_TRANSITION + ".ignore_group_pubmed" )
+		for row in self.cursor.fetchall( ) :
+			ignorePubmeds.add( str(row['pubmed_id']) )
+			
+		return ignorePubmeds
