@@ -17,6 +17,8 @@ class Groups( ) :
 		# Build Quick Reference Data Structures
 		self.validDatasets = self.lookups.buildValidDatasetSet( )
 		self.datasetHash = self.lookups.buildPubmedToDatasetHash( )
+		self.oldPubHash = self.lookups.buildOldPublicationIDtoPubmedID( )
+		self.ignorePubmeds = self.lookups.buildIgnoreGroupPubmedSet( )
 		
 	def migrateGroups( self ) :
 		
@@ -80,9 +82,9 @@ class Groups( ) :
 		self.cursor.execute( "SELECT * FROM " + Config.DB_IMS_OLD + ".project_pubmeds" )
 		for row in self.cursor.fetchall( ) :
 		
-			if str(row['pubmed_id']) not in self.datasetHash :
+			if str(row['pubmed_id']) not in self.datasetHash and str(row['pubmed_id']) not in self.oldPubHash and str(row['pubmed_id']) not in self.ignorePubmeds :
 			
-				insertData = [row['pubmed_id'], '-','-','-','-','-','-','-','0000-00-00','-','-','-','-','-','-','active',row['project_pubmed_timestamp'],row['project_pubmed_timestamp'], '0']
+				insertData = [row['pubmed_id'], '-','-','-','-','-','-','-','-','0000-00-00','-','-','-','-','-','-','-','-','active',row['project_pubmed_timestamp'],row['project_pubmed_timestamp'], '0']
 				
 				sqlFormat = ",".join( ['%s'] * len(insertData) )
 				self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".pubmed VALUES( %s )" % sqlFormat, insertData )
@@ -94,15 +96,17 @@ class Groups( ) :
 				
 				self.datasetHash[str(row['pubmed_id'])] = str(datasetID)
 			
-			datasetID = self.datasetHash[str(row['pubmed_id'])]
-		
-			if datasetID in self.validDatasets :
-				self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".group_datasets VALUES( %s, %s, %s, %s, %s )", [
-					row['project_pubmed_id'],
-					row['project_id'],
-					row['pubmed_id'],
-					row['project_pubmed_timestamp'],
-					row['project_pubmed_status']
-				])
+			if str(row['pubmed_id']) in self.datasetHash :
+			
+				datasetID = self.datasetHash[str(row['pubmed_id'])]
+			
+				if datasetID in self.validDatasets :
+					self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".group_datasets VALUES( %s, %s, %s, %s, %s )", [
+						row['project_pubmed_id'],
+						row['project_id'],
+						row['pubmed_id'],
+						row['project_pubmed_timestamp'],
+						row['project_pubmed_status']
+					])
 				
 		self.db.commit( )

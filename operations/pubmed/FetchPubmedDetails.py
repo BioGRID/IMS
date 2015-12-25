@@ -84,8 +84,8 @@ with Database.db as cursor :
 			time.sleep(5)
 			Database.db.commit( )
 			
-			if (batchCount % 100) == 0 :
-				break
+			# if (batchCount % 100) == 0 :
+				# break
 			
 	Database.db.commit( )
 		
