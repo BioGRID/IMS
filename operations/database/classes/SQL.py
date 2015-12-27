@@ -3,7 +3,7 @@ import sys, string
 import Config
 
 from classes import Ontologies, Datasets, Interactions, History, Participants, Projects
-from classes import Complexes, Forced, ForcedComplexes, Chemicals, PTM, Groups
+from classes import Complexes, Forced, ForcedComplexes, Chemicals, PTM, Groups, Hashes
 
 class SQL( ) :
 
@@ -371,6 +371,25 @@ class SQL( ) :
 		
 		self.writeLine( "Migrating Project Mappings" )
 		projects.migrateProjectAttributes( )
+		
+	def clean_hashes( self ) :
+	
+		"""Clean Hashes Specific Tables"""
+		self.writeHeader( "No Hashes Specific Tables to Clean" )
+
+	def build_hashes( self ) :
+	
+		"""Build Hashes in Interactions""" 
+		
+		self.writeHeader( "Building Hashes" )
+		
+		hashes = Hashes.Hashes( self.db, self.cursor )
+		
+		self.writeLine( "Building Participant Hashes" )
+		hashes.createParticipantHashes( )
+		
+		self.writeLine( "Building Attribute Hashes" )
+		hashes.createAttributeHashes( )
 		
 	def clean( self, table ) :
 	

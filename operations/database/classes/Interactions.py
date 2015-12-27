@@ -42,7 +42,7 @@ class Interactions( ) :
 		for row in self.cursor.fetchall( ) :
 			if str(row['interaction_id']) not in self.ignoreInteractionSet and str(row['publication_id']) in self.validDatasets :
 				intCount += 1
-				self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".interactions VALUES( %s, %s, %s, %s )", [row['interaction_id'], row['publication_id'], "1", "normal"] )
+				self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".interactions VALUES( %s, '-', '-', %s, %s, %s )", [row['interaction_id'], row['publication_id'], "1", "normal"] )
 				
 				activationInfo = self.activatedHash[str(row['interaction_id'])]
 				attribDate = activationInfo["DATE"]
