@@ -54,7 +54,7 @@ class ForcedComplexes( ) :
 			if str(row['publication_id']) in self.validDatasets :
 			
 					intCount += 1
-					self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".interactions VALUES( %s, %s, %s, %s )", ['0', row['publication_id'], "2", "error"] )
+					self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".interactions VALUES( %s, '-','-',%s, %s, %s )", ['0', row['publication_id'], "2", "error"] )
 					interactionID = str(self.cursor.lastrowid)
 					
 					self.forced2interaction[str(row['complex_forced_id'])] = interactionID

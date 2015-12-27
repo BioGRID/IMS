@@ -56,7 +56,7 @@ class Forced( ) :
 				if str(row['interaction_forced_id']) not in self.ignoreInteractionSet :
 			
 					intCount += 1
-					self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".interactions VALUES( %s, %s, %s, %s )", ['0', row['publication_id'], "1", "error"] )
+					self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".interactions VALUES( %s, '-','-',%s, %s, %s )", ['0', row['publication_id'], "1", "error"] )
 					interactionID = str(self.cursor.lastrowid)
 					
 					self.forced2interaction[str(row['interaction_forced_id'])] = interactionID

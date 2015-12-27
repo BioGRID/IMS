@@ -20,16 +20,16 @@ argGroup.add_argument( '--operations', '-o', nargs='*', action='store', help='Co
 argGroup.add_argument( '--list', '-l', action='store_true', help='List all of the build options available for the build command' )
 inputArgs = argParser.parse_args( )
 
-validOptions = [ "interactions", "ontologies", "datasets", "attributes", "history", "participants", "complexes", "forced", "chemicals", "ptms", "groups", "projects", "all", "core" ]
+validOptions = [ "interactions", "ontologies", "datasets", "attributes", "history", "participants", "complexes", "forced", "chemicals", "ptms", "hashes", "groups", "projects",  "all", "core" ]
 
 if inputArgs.list :
 	print "Build Options: " + ", ".join( validOptions )
 else :
 
 	if inputArgs.operations[0] == "core" :
-		inputArgs.operations = [ "attributes", "interactions", "history", "participants", "complexes", "forced", "chemicals", "ptms", "groups", "projects" ]
+		inputArgs.operations = [ "attributes", "interactions", "history", "participants", "complexes", "forced", "chemicals", "ptms", "hashes", "groups", "projects" ]
 	elif inputArgs.operations[0] == "all" :
-		inputArgs.operations = [ "ontologies", "datasets", "attributes", "interactions", "history", "participants", "complexes", "forced", "chemicals", "ptms", "groups", "projects" ]
+		inputArgs.operations = [ "ontologies", "datasets", "attributes", "interactions", "history", "participants", "complexes", "forced", "chemicals", "ptms", "hashes", "groups", "projects" ]
 
 	if inputArgs.clean :
 		for operation in inputArgs.operations :

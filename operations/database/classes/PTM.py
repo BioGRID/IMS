@@ -42,7 +42,7 @@ class PTM( ) :
 			if str(row['publication_id']) in self.validDatasets :
 				
 				intCount += 1
-				self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".interactions VALUES( %s, %s, %s, %s )", ['0', row['publication_id'], "3", "normal"] )
+				self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".interactions VALUES( %s, '-', '-', %s, %s, %s )", ['0', row['publication_id'], "3", "normal"] )
 				interactionID = str(self.cursor.lastrowid)
 				
 				self.ptm2interaction[str(row['ptm_id'])] = interactionID
@@ -112,7 +112,7 @@ class PTM( ) :
 				if str(row['publication_id']) in self.validDatasets :
 				
 					intCount += 1
-					self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".interactions VALUES( %s, %s, %s, %s )", ['0', row['publication_id'], "3", "normal"] )
+					self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".interactions VALUES( %s, '-', '-', %s, %s, %s )", ['0', row['publication_id'], "3", "normal"] )
 					interactionID = str(self.cursor.lastrowid)
 					
 					self.ptm2orphanInteraction[str(row['ptm_id'])] = interactionID
