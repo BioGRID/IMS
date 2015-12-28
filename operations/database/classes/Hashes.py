@@ -67,6 +67,6 @@ class Hashes( ) :
 		
 	def combineNumbers( self, num1, num2 ) :
 	
-		"""Combine two numbers into a single number, not by addition"""
+		"""Combine two numbers into a single number with triple zero padding in the middle, not by addition"""
 		
-		return int(str(num1) + str(num2))
+		return int(str(num1) + "000" + str(num2))
