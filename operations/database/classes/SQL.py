@@ -3,7 +3,7 @@ import sys, string
 import Config
 
 from classes import Ontologies, Datasets, Interactions, History, Participants, Projects
-from classes import Complexes, Forced, ForcedComplexes, Chemicals, PTM, Groups, Hashes
+from classes import Complexes, Forced, ForcedComplexes, Chemicals, PTM, Groups, Hashes, Matrix
 
 class SQL( ) :
 
@@ -390,6 +390,24 @@ class SQL( ) :
 		
 		self.writeLine( "Building Attribute Hashes" )
 		hashes.createAttributeHashes( )
+		
+	def clean_matrix( self ) :
+	
+		"""Clean Matrix Table"""
+		
+		self.clean( "matrix" )
+		
+	def build_matrix( self ) :
+	
+		"""Build Matrix Table"""
+		
+		self.writeHeader( "Building Matrix" )
+		self.writeLine( "Building Quick Lookup Sets" )
+		
+		matrix = Matrix.Matrix( self.db, self.cursor )
+		
+		self.writeLine( "Building Matrix Table" )
+		matrix.buildMatrix( )
 		
 	def clean( self, table ) :
 	

@@ -361,3 +361,25 @@ class Lookups( ) :
 			ignorePubmeds.add( str(row['pubmed_id']) )
 			
 		return ignorePubmeds
+		
+	def buildInteractionTypeHash( self ) :
+	
+		"""Build a lookup of interaction type names from interaction type ids"""
+		
+		mappingHash = { }
+		self.cursor.execute( "SELECT interaction_type_id, interaction_type_name FROM " + Config.DB_IMS + ".interaction_types" )
+		for row in self.cursor.fetchall( ) :
+			mappingHash[str(row['interaction_type_id'])] = row['interaction_type_name']
+			
+		return mappingHash
+		
+	def buildHistoryOperationsHash( self ) :
+	
+		"""Build a lookup of history operation names from history operation ids"""
+		
+		mappingHash = { }
+		self.cursor.execute( "SELECT history_operation_id, history_operation_name FROM " + Config.DB_IMS + ".history_operations" )
+		for row in self.cursor.fetchall( ) :
+			mappingHash[str(row['history_operation_id'])] = row['history_operation_name']
+			
+		return mappingHash
