@@ -106,6 +106,9 @@ class Forced( ) :
 				qualCount += 1
 				
 				qualification = row['interaction_forced_attribute_value'].strip( "\\" ).decode( 'string_escape' ).strip( )
+				qualification = (c for c in qualification if 0 < ord(c) < 127)
+				qualification = ''.join(qualification)
+				qualification = qualification.strip( )
 				
 				qualificationSplit = qualification.split( "|" )
 				if len(qualificationSplit) > 1 :
