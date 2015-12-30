@@ -121,6 +121,9 @@ class Complexes( ) :
 				attribUserID = activationInfo["USER_ID"]
 				
 				qualification = row['complex_qualification'].strip( "\\" ).decode( 'string_escape' ).strip( )
+				qualification = (c for c in qualification if 0 < ord(c) < 127)
+				qualification = ''.join(qualification)
+				qualification = qualification.strip( )
 				
 				matchSet = self.quoteWrap.match( qualification )
 				if matchSet :

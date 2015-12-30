@@ -179,6 +179,9 @@ class PTM( ) :
 				qualCount += 1
 				
 				qualification = row['ptm_note'].strip( "\\" ).decode( 'string_escape' ).strip( )
+				qualification = (c for c in qualification if 0 < ord(c) < 127)
+				qualification = ''.join(qualification)
+				qualification = qualification.strip( )
 				
 				matchSet = self.quoteWrap.match( qualification )
 				if matchSet :

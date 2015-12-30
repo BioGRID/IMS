@@ -38,7 +38,7 @@ class Interactions( ) :
 		"""
 		
 		intCount = 0
-		self.cursor.execute( "SELECT interaction_id, publication_id, experimental_system_id, modification_id FROM " + Config.DB_IMS_OLD + ".interactions ORDER BY interaction_id" )
+		self.cursor.execute( "SELECT interaction_id, publication_id, experimental_system_id, modification_id FROM " + Config.DB_IMS_OLD + ".interactions WHERE interaction_id='87947' ORDER BY interaction_id" )
 		for row in self.cursor.fetchall( ) :
 			if str(row['interaction_id']) not in self.ignoreInteractionSet and str(row['publication_id']) in self.validDatasets :
 				intCount += 1
@@ -111,6 +111,9 @@ class Interactions( ) :
 			attribUserID = activationInfo["USER_ID"]
 			
 			qualification = row['interaction_qualification'].strip( "\\" ).decode( 'string_escape' ).strip( )
+			qualification = (c for c in qualification if 0 < ord(c) < 127)
+			qualification = ''.join(qualification)
+			qualification = qualification.strip( )
 			
 			matchSet = self.quoteWrap.match( qualification )
 			if matchSet :
