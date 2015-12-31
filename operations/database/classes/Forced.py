@@ -351,6 +351,13 @@ class Forced( ) :
 		
 				# INTERACTOR A
 				interactorA = str(row['interactor_A_name']).strip( )
+				interactorA = (c for c in interactorA if 0 < ord(c) < 127)
+				interactorA = ''.join(interactorA)
+				interactorA = interactorA.strip( )
+				
+				if len(interactorA) <= 0 :
+					interactorA = "-"
+				
 				interactorAStatus = row['interactor_A_forced_status']
 				interactorAOrg = str(row['interactor_A_organism_id'])
 				interactorAOrg = self.maps.convertForcedOrganismID( interactorAOrg )
@@ -369,13 +376,20 @@ class Forced( ) :
 				
 				# INTERACTOR B
 				interactorB = str(row['interactor_B_name']).strip( )
+				interactorB = (c for c in interactorB if 0 < ord(c) < 127)
+				interactorB = ''.join(interactorB)
+				interactorB = interactorB.strip( )
+				
+				if len(interactorB) <= 0 :
+					interactorB = "-"
+				
 				interactorBStatus = row['interactor_B_forced_status']
 				interactorBOrg = str(row['interactor_B_organism_id'])
 				interactorBOrg = self.maps.convertForcedOrganismID( interactorBOrg )
 				interactorBType = str(row['interactor_B_type_id'])
 				
-				if interactorAType == "2" :
-					interactorAType = "4"
+				if interactorBType == "2" :
+					interactorBType = "4"
 				
 				interactorBID = interactorB
 				participantTypeID = "1"
