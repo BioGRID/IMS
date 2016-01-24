@@ -68,3 +68,9 @@ logs/
 
 # Composer
 vendor/
+app/vendor/
+
+# NPM
+node_modules/
+app/node_modules/
+npm-debug.log

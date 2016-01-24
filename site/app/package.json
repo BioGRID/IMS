@@ -1,0 +1,26 @@
+{
+  "name": "IMS",
+  "version": "4.0.0",
+  "description": "This directory contains the entirety of the BioGRID IMS Web Application.",
+  "main": "www/index.php",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+	"build-css": "./bin/compileLess.sh",
+	"copy-modules": "./bin/copyModules.sh",
+	"build" : "npm run build-css && npm run copy-modules"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/BioGRID/IMS"
+  },
+  "author": "BioGRID <biogridadmin@gmail.com>",
+  "license": "GNU LESSER GENERAL PUBLIC LICENSE 3",
+  "bugs": {
+    "url": "https://github.com/BioGRID/IMS/issues"
+  },
+  "dependencies": {
+    "jquery": "~2.2.0",
+    "bootstrap": "~3.3.6",
+    "font-awesome": "~4.5.0"
+  }
+}
