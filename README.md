@@ -15,3 +15,4 @@ To use all of the tools contained within, you require at least the following:
 
 ## Directories
 + **operations** - Tools for maintenance of Site Operation
++ **site** - The main application website
