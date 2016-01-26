@@ -1,6 +1,6 @@
 <footer id="footer" class="hidden-print secondaryContent container-fluid">
 	<section class='row'>
-		<div class="container footerText">
+		<div class="container-fluid footerText">
 			Copyright &copy; {{YEAR}}, <a href='{{COPYRIGHT_URL}}' target='_BLANK' title='{{COPYRIGHT_OWNER}}'>{{COPYRIGHT_OWNER}}</a>, All Rights Reserved.
 		</div>
 	</section>

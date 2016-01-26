@@ -6,9 +6,9 @@ To use all of the tools contained within, you require at least the following:
 
 + MySQL 5.5+ (https://www.mysql.com/)
 + PHP 5.5.9+ (http://www.php.net/)
-+ NPM
-+ Composer
-+ LESSC (to modify the look and feel of the site easily, directly in the .less files)
++ NPM (https://www.npmjs.com/)
++ Composer (https://getcomposer.org/)
++ Lessc (to modify the look and feel of the site easily, directly in the .less files) (http://lesscss.org/)
 + A web server such as Nginx (https://www.nginx.com/) or Apache (https://httpd.apache.org/)
 
 ## Directories

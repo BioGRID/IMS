@@ -14,8 +14,8 @@ class HomeController extends Controller {
 	
 	public function __construct( $twig ) {
 		parent::__construct( $twig );
-		//$this->headerParams->set( "CANONICAL", "<link rel='canonical' href='" . SITE_URL . "'>" );
-		//$this->headerParams->set( "TITLE", SITE_NAME . " | " . SITE_DESC );
+		$this->headerParams->set( "CANONICAL", "<link rel='canonical' href='" . WEB_URL . "' />" );
+		$this->headerParams->set( "TITLE", WEB_NAME . " | " . WEB_DESC );
 	}
 	
 	/**
@@ -25,19 +25,13 @@ class HomeController extends Controller {
 	 */
 	
 	public function Index( ) {
-
-		parent::renderView( '', '', false );
-	
-		// $news = new models\NewsParser( );
-		// $newsPosts = $news->parse( NEWS_FEED );
-	
-		// $params = array( "IMG_URL" => IMG_URL,
-						 // "VERSION" => "3.1.113",
-						 // "PUBLICATIONS" => "42,764",
-						 // "RAW" => "742,011",
-						 // "LATEST_NEWS" => $newsPosts );
-	
-		// $this->renderView( "home" . DS . "HomeIndex.tpl", $params, false );
+		$params = array( 
+			"WEB_NAME" => WEB_NAME,
+			"WEB_NAME_ABBR" => WEB_NAME_ABBR,
+			"WEB_DESC" => WEB_DESC,
+			"VERSION" => VERSION
+		);
+		$this->renderView( "home" . DS . "HomeIndex.tpl", $params, false );
 	}
 
 }

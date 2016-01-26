@@ -10,7 +10,7 @@
 	<meta name="robots" content="INDEX,FOLLOW">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	
-	{{CANONICAL}}
+	{{CANONICAL|raw}}
 	
 	<!-- IMS Stylesheets -->
 	<link rel="stylesheet" type="text/css" href="{{CSS_URL}}/ims.min.css" />
