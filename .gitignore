@@ -59,6 +59,7 @@ target/
 # Configs
 config.json
 config/config.json
+config.php
 
 # Misc
 .listing

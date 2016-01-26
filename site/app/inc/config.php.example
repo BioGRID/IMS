@@ -1,0 +1,106 @@
+<?php
+
+namespace IMS\app\inc;
+
+/**
+ * Config Options
+ * Below are a set of site variables that can be modified to 
+ * correctly reflect the environment used for installing the site
+ * locally on different hardware.
+ */
+
+/** 
+ * Error Handling
+ * Enable or Disable errors, useful for when testing new
+ * code or in development of new features
+ */
+
+define( "DEBUG", true );
+
+if( DEBUG ) {
+	error_reporting( E_ALL );
+	ini_set( 'display_errors', 'On' );
+} else {
+	error_reporting( E_ALL );
+	ini_set( 'display_errors', 'Off' );
+	ini_set( 'log_errors', 'On' );
+}
+
+/**
+ * Version Options
+ * Set the current version of your site
+ */
+ 
+define( "VERSION", "1.0.0.0" );
+
+/**
+ * Database Connectivity Options
+ * Fill in the following variables to allow for connections to the datbase 
+ * for your setup.
+ *
+ * - DB_IP: The IP or Hostname of your Database Server example: localhost, 192.112.132.111, www.mysite.com
+ * - DB_PORT: The port number of your MySQL Database. On most configurations, this will be 3306.
+ * - DB_USER: The username used to connect to the $DATABASE_NAME database listed above
+ * - DB_PASS: The Password associated with the above Database Username
+ * - DB_IMS: The name of the database you installed the IMS to
+ * - DB_QUICK: The nameo f the database you installed the QUICK lookup tables to
+ */
+ 
+define( "DB_IP", "" );
+define( "DB_PORT", "3306" );
+define( "DB_USER", "" );
+define( "DB_PASS", "" );
+define( "DB_IMS", "" );
+define( "DB_QUICK", "" );
+
+/**
+ * Path Options
+ * These variables pertain to the actual installation of your
+ * system in the actual file system. Modify these to accurately reflect your setup.
+ *
+ * - BASE_PATH: The parent directory where this site will reside.
+ * - WEB_PATH: Path on file system to your public site. 
+ * - APP_PATH: Path on file system to your application.
+ * 
+ * - TEMPLATE_PATH: Path on the file system to the Templates Directory
+ * - INC_PATH: Path on the file system to the Include Directory
+ */
+ 
+define( "BASE_PATH", "/<path to IMS>/site" );
+define( "WEB_PATH", BASE_PATH + "/www" );
+define( "APP_PATH", BASE_PATH + "/app" );
+
+define( "TEMPLATE_PATH", APP_PATH + "/templates" );
+define( "INC_PATH", APP_PATH + "/inc" );
+
+/** 
+ * Site Options
+ * These variables pertain to the website and public facing
+ * aspect of the IMS.
+ *
+ * - WEB_URL: The web accessible address where your site is hosted. For example: http://localhost/ims
+ * - WEB_NAME: A name for your site
+ * - WEB_NAME_ABBR: A Short version of WEB_NAME
+ * - WEB_DESC: A description for the site
+ * - COPYRIGHT_OWNER: The name you want associated with the footer for copyright purposes
+ * - COPYRIGHT_URL: The destination website you want for people who click the copyright owner name
+ *
+ * - CSS_URL: Web Address of the CSS Directory
+ * - JS_URL: Web Address of the Javascript Directory
+ * - IMG_URL: Web Address of the Images Directory
+ * - SCRIPT_URL: Web Address of the Scripts Directory
+ */
+ 
+define( "WEB_URL", "http://localhost/ims );
+define( "WEB_NAME", "Interaction Management System (IMS)" );
+define( "WEB_NAME_ABBR", "IMS" );
+define( "WEB_DESC", "The Interaction Management System is a platform for management and curation of biological data from scientific publications" );
+define( "COPYRIGHT_OWNER", "TyersLab.com" );
+define( "COPYRIGHT_URL", "http://www.tyerslab.com" );
+
+define( "CSS_URL", WEB_URL + "/css" );
+define( "JS_URL", WEB_URL + "/js" );
+define( "IMG_URL", WEB_URL + "/img" );
+define( "SCRIPT_URL", WEB_URL + "/scripts" );
+
+?>
