@@ -1,3 +1,5 @@
+</div>
+
 <footer id="footer" class="hidden-print secondaryContent container-fluid">
 	<section class='row'>
 		<div class="container-fluid footerText">
