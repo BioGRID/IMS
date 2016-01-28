@@ -20,10 +20,4 @@ $loader = new Loader( $_GET );
 $controller = $loader->createController( );
 $controller->executeAction( );
 
-// $loader = new Twig_Loader_Filesystem( TEMPLATE_PATH );
-// $twig = new Twig_Environment( $loader );
-
-// $controller = new controllers\HomeController( $twig );
-// $controller->Index( );
-
 ?>
