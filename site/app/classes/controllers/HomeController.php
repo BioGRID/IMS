@@ -37,9 +37,6 @@ class HomeController extends lib\Controller {
 		 
 		lib\Session::canAccess( "observer" );
 		
-		print_r( $_COOKIE );
-		print_r( $_SESSION );
-		
 		$params = array( 
 			"WEB_NAME" => WEB_NAME,
 			"WEB_NAME_ABBR" => WEB_NAME_ABBR,
