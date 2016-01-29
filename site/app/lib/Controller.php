@@ -86,6 +86,11 @@ abstract class Controller {
 	 */
 	
 	protected function renderView( $view, $params, $fluidNav = false ) {
+		
+		if( DEBUG ) {
+			print_r( $_COOKIE );
+			print_r( $_SESSION );
+		}
 	
 		$this->generateOverallHeader( true );
 		$this->generateNavbar( true, $fluidNav );

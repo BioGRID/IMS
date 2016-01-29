@@ -6,8 +6,100 @@ h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 { margin-top: 0px; margin-b
 .marginBot { margin-bottom: @line-height-computed; }
 .marginTopSm { margin-top: @line-height-computed / 2; }
 .marginBotSm { margin-bottom: @line-height-computed / 2; }
+.marginTopNone { margin-top: 0px; }
+.marginBotNone { margin-bottom: 0px; }
 .hidden { display: none; }
 
-#main { min-height: 96%; }
-#footer { background-color: @brand-info; }
-#footer section { padding: 10px; font-weight: bold; color: @gray-lighter; }
+.paddingSm { padding: 5px; }
+.paddingLg { padding: 15px; }
+.paddingMd { padding: 10px; }
+
+#main { 
+	min-height: 96%; 
+}
+
+#footer { 
+	background-color: @brand-info; 
+	
+	section { 
+		padding: 10px; 
+		font-weight: bold; 
+		color: @gray-lighter; 
+	}
+}
+
+.greyBG { 
+	background-color: #eee; 
+}
+
+.subhead { 
+	font-size: 14px; 
+	margin-top: 5px; 
+	color: #999; 
+	text-shadow: 0 1px 0 #FFF; 
+	margin-left: 10px; 
+}
+
+.shortcut-link {
+
+	display: inline-block;
+	color: #AAA;
+	margin-right: 20px;
+	text-shadow: 0 1px 0 #FFF;
+	transition: color .2s ease;
+    -webkit-transition: color .2s ease;
+    -moz-transition: color .2s ease;
+    -ms-transition: color .2s ease;
+    -o-transition: color .2s ease;
+	text-decoration: none;
+	
+	&:hover {
+		color: #555;
+		text-decoration: none;
+	}
+
+	.shortcut-icon { 
+	
+		position: relative;
+		font-size: 30px;
+	
+		.shortcut-alert {
+			position: absolute;
+			border-radius: 50cm;
+			-moz-border-radius: 50cm;
+			-webkit-border-radius: 50cm;
+			font-size: 11px;
+			color: #FFF;
+			top: 0;
+			right: 0;
+			background: @brand-danger;
+			border: 1px solid @brand-danger;
+			text-shadow: none;
+			font-weight: 700;
+			line-height: 16px;
+			width: 18px;
+			height: 18px;
+			text-align: center;
+		}
+	}
+}
+
+.color-panel( @bgColor, @textColor ) {
+	overflow: hidden;
+	padding: 25px 20px;
+	margin-bottom: 10px;
+	cursor: pointer;
+	border-radius: 10px;
+	-moz-border-radius: 10px;
+	-webkit-border-radius: 10px;
+	color: @textColor;
+	background-color: @bgColor;
+	
+	h3, h5 { color: @textColor; }
+	i { color: darken(@bgColor, 20%); }
+}
+
+.high-queue-panel { .color-panel( #BFCFF7, #000 ); }
+.standard-queue-panel { .color-panel( #DDD9AB, #000 ); }
+.error-queue-panel { .color-panel( #F7AF63, #000 ); }
+.recent-queue-panel { .color-panel( #9CDDC8, #000 ); }
