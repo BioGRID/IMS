@@ -41,7 +41,7 @@ while( $stmt->fetch( ) ) {
 
 $stmt->close( );
 
-$stmt = $db->prepare( "INSERT INTO " . DB_IMS . ".users VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '1' )" );
+$stmt = $db->prepare( "INSERT INTO " . DB_IMS . ".users VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '1' )" );
 
 // Set password to a BCRYPT hash based on
 // a default password since we are unable to reverse
@@ -49,7 +49,7 @@ $stmt = $db->prepare( "INSERT INTO " . DB_IMS . ".users VALUES ( ?, ?, ?, ?, ?, 
 
 foreach( $users as $userID => $userInfo ) {
 	$hash = password_hash( DEFAULT_PASSWORD, PASSWORD_BCRYPT, array( "cost" => 12 ) );
-	$stmt->bind_param( "sssssssssss", $userInfo["ID"], $userInfo["USERNAME"], $hash, $userInfo["FIRSTNAME"], $userInfo["LASTNAME"], $userInfo["EMAIL"], "0", "-", $userInfo["TIMESTAMP"], $userInfo["ROLE"], $userInfo["STATUS"] );
+	$stmt->bind_param( "sssssssssss", $userInfo["ID"], $userInfo["USERNAME"], $hash, $userInfo["FIRSTNAME"], $userInfo["LASTNAME"], $userInfo["EMAIL"], "0", "-", $userInfo["TIMESTAMP"], $userInfo["ROLE"], $userInfo["PROJECT"], $userInfo["STATUS"] );
 	$stmt->execute( );
 }
 
