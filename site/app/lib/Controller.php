@@ -142,14 +142,18 @@ abstract class Controller {
 		
 		$class = "public";
 		$isLoggedIn = false;
+		$groups = array( );
+		$group = "0";
 		
 		if( isset( $_SESSION[SESSION_NAME] ) ) {
 			$class = $_SESSION[SESSION_NAME]['CLASS'];
 			$isLoggedIn = true;
+			$groups = $_SESSION[SESSION_NAME]['GROUPS'];
+			$group = $_SESSION[SESSION_NAME]['GROUP'];
 		}
 		
 		$view = "common" . DS . "Navbar.tpl";
-		$navbarGen = new utilities\NavbarBuilder( false, "navbar-inverse", $class, $isLoggedIn );
+		$navbarGen = new utilities\NavbarBuilder( false, "navbar-inverse", $class, $isLoggedIn, $groups, $group );
 		$navbar = $navbarGen->fetchNavbar( true );
 		
 		return $this->processView( $view, array( "NAVBAR" => implode( "\n", $navbar )), $render );

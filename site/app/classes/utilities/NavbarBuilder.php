@@ -9,6 +9,7 @@ namespace IMS\app\classes\utilities;
  */
  
 use IMS\app\lib\Navbar;
+use IMS\app\lib\Session;
 
 class NavbarBuilder {
 
@@ -18,14 +19,18 @@ class NavbarBuilder {
 	
 	private $userLevel;
 	private $isLoggedIn;
+	private $groups;
+	private $group;
 
-	function __construct( $isFixed, $style, $userLevel = "public", $isLoggedIn = false ) {
+	function __construct( $isFixed, $style, $userLevel = "public", $isLoggedIn = false, $groups = array( ), $currentGroup = "0" ) {
 		$this->navbar = array( );
 		$this->navbarFixed = $isFixed;
 		$this->navbarStyle = $style;
 		
 		$this->userLevel = $userLevel;
 		$this->isLoggedIn = $isLoggedIn;
+		$this->groups = $groups;
+		$this->group = $currentGroup;
 		
 		Navbar::init( );
 	}
@@ -76,7 +81,42 @@ class NavbarBuilder {
 			$this->navbar[] = '</ul>';
 		}
 		
+		if( $this->isLoggedIn ) {
+			$this->navbar[] = $this->generateGroupSelect( );
+		}
+		
 		$this->navbar[] = '</div></div>';
+	}
+	
+	/** 
+	 * Build out the group select box that is embedded in the navbar
+	 * when a user is logged in.
+	 */
+	
+	private function generateGroupSelect( ) {
+		
+		$groupSelector = '<form class="navbar-form navbar-right" style="margin-top: 8px;"><div class="form-group">';
+		$groupSelector .= '<label for="groupSelect" style="color: #FFF; font-weight: bold;">Group:</label> ';
+		$groupSelector .= '<select name="groupSelect" style="width: 250px;" id="groupSelect" class="form-control input-sm">';
+		
+		$groupSet = array( );
+		foreach( $this->groups as $groupID => $groupInfo ) {
+			
+			$groupIndex = strtolower($groupInfo["NAME"]) . "|" . $groupID;
+			
+			if( $this->group == $groupID ) {
+				$groupSet[$groupIndex] = '<option value="' . $groupID . '" selected>' . $groupInfo["NAME"] . '</option>';
+			} else {
+				$groupSet[$groupIndex] = '<option value="' . $groupID . '">' . $groupInfo["NAME"] . '</option>';
+			}
+		}
+		
+		ksort( $groupSet );
+		$groupSelector .= implode( "", $groupSet );
+		$groupSelector .= "</select></div></form>";
+		
+		return $groupSelector;
+		
 	}
 	
 	/**

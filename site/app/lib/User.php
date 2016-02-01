@@ -181,8 +181,27 @@ class User {
 		
 		$userInfo["GROUPS"] = $this->fetchUserGroups( $userID );
 		
+		// If group is invalid, set the selected group
+		// instead to the first group in the list
+		if( !isset( $userInfo["GROUPS"][$userInfo["GROUP"]] ) ) {
+			$userInfo["GROUP"] = array_keys( $userInfo["GROUPS"] )[0];
+		}
+		
+		$this->updateGroup( $userInfo["GROUP"], $userID );
+		
 		return $userInfo;
 		
+	}
+	
+	/**
+	 * Update current group the user is accessing
+	 * in both the session and then the database
+	 * for their user ID
+	 */
+	 
+	public function updateGroup( $groupID, $userID ) {
+		$stmt = $this->db->prepare( "UPDATE " . DB_IMS . ".users SET user_lastgroup=? WHERE user_id=?" );
+		$stmt->execute( array( $groupID, $userID ) );
 	}
 	
 	/**
@@ -190,20 +209,21 @@ class User {
 	 * can display them as selectable within the site.
 	 */
 	 
-	 private function fetchUserGroups( $userID ) {
-		 
+	private function fetchUserGroups( $userID ) {
+	 
 		$stmt = $this->db->prepare( "SELECT group_id, group_name, group_default_organism_id, group_status FROM " . DB_IMS . ".groups WHERE group_id IN ( SELECT group_id FROM " . DB_IMS . ".group_users WHERE group_user_status='active' AND user_id=?)" );
 		$stmt->execute( array( $userID ) );
 
 		$groups = array( );
 		while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
-		 $group = array( "ID" => $row->group_id, "NAME" => $row->group_name, "ORGANISM_ID" => $row->group_default_organism_id, "STATUS" => $row->group_status );
-		 $groups[$group["ID"]] = $group;
+			$group = array( "ID" => $row->group_id, "NAME" => $row->group_name, "ORGANISM_ID" => $row->group_default_organism_id, "STATUS" => $row->group_status );
+			$groups[$group["ID"]] = $group;
 		}
 
+		ksort( $groups );
 		return $groups;
-		 
-	 }
+	 
+	}
 	
 	/**
 	 * Validate the password and return the USER ID if it

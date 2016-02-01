@@ -59,7 +59,8 @@ class Session {
 		
 		if( !self::isLoggedIn( ) ) {
 			$user = new User( );
-			$user->validate( );	
+			$user->validate( );
+			
 		}
 		
 		if( self::isLoggedIn( ) ) {
@@ -88,6 +89,26 @@ class Session {
 		
 		return false;
 		
+	}
+	
+	/**
+	 * Update current group the user is accessing
+	 * in both the session and then the database
+	 * for their user ID
+	 */
+	 
+	public static function updateGroup( $groupID ) {
+		if( self::isLoggedIn( ) ) {
+			
+			if( $groupID != $_SESSION[SESSION_NAME]["GROUP"] ) {
+				if( isset( $_SESSION[SESSION_NAME]["GROUPS"][$groupID] ) ) {
+					$_SESSION[SESSION_NAME]["GROUP"] = $groupID;
+					$user = new User( );
+					$user->updateGroup( $groupID, $_SESSION[SESSION_NAME]["ID"] );
+				}
+			}
+
+		}
 	}
 	
 	/**
