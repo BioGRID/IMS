@@ -14,6 +14,9 @@ namespace IMS\app\lib;
  */
 
 define( "DS", DIRECTORY_SEPARATOR );
+
+require_once __DIR__ . '/../inc/config.php';
+require_once __DIR__ . '/../vendor/autoload.php';
  
 spl_autoload_register( function( $className ) {
 	

@@ -105,10 +105,13 @@ class Session {
 					$_SESSION[SESSION_NAME]["GROUP"] = $groupID;
 					$user = new User( );
 					$user->updateGroup( $groupID, $_SESSION[SESSION_NAME]["ID"] );
+					return true;
 				}
 			}
 
 		}
+		
+		return false;
 	}
 	
 	/**

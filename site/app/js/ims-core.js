@@ -11,7 +11,24 @@
 } (function( $, window, document ) {
 
 	$(function( ) {
-		alert( "TEST" );
+		initializeUIComponents( );
 	});
+	
+	function initializeUIComponents( ) {
+		
+		$("#groupSelect").on( "change", function( ) {
+			$.ajax({
+				url: "scripts/ExecuteProcess.php",
+				method: "POST",
+				dataType: "json",
+				data: { script: "switchGroup", id: $(this).val( ) }
+			}).done( function(data) {
+				if( !$.isEmptyObject( data ) ) {
+					$(".groupName").html( data.NAME );
+				}
+			});
+		});
+		
+	}
 
 }));
