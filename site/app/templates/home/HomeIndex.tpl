@@ -73,6 +73,7 @@
 
 <div>
 	<div class='container-fluid'>
+		<h4 class='marginBotSm'><span class='groupName'>{{ GROUP_NAME }}</span> - Dataset Queues</h4>
 		<div class='col-lg-3 col-md-3 col-sm-6'>
 			<div class='high-queue-panel'>
 				<i class="fa fa-arrow-circle-o-up fa-3x pull-right"></i>

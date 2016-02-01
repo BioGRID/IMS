@@ -1,5 +1,10 @@
 #!/bin/sh -e
 
+# MAKE DIRECTORIES
+mkdir -p ../www/css
+mkdir -p ../www/fonts
+mkdir -p ../www/js
+
 # FONT AWESOME
 cp -rf node_modules/font-awesome/css/font-awesome.min.css ../www/css/
 cp -rf node_modules/font-awesome/fonts/* ../www/fonts/

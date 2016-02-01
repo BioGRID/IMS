@@ -5,9 +5,10 @@
   "main": "www/index.php",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-	"build-css": "./bin/compileLess.sh",
-	"copy-modules": "./bin/copyModules.sh",
-	"build" : "npm run build-css && npm run copy-modules"
+    "build-css": "./bin/compileLess.sh",
+    "copy-modules": "./bin/copyModules.sh",
+    "copy-js": "./bin/copyJS.sh",
+    "build": "npm run build-css && npm run copy-modules && npm run copy-js"
   },
   "repository": {
     "type": "git",
@@ -22,5 +23,6 @@
     "jquery": "~2.2.0",
     "bootstrap": "~3.3.6",
     "font-awesome": "~4.5.0"
-  }
+  },
+  "devDependencies": {}
 }

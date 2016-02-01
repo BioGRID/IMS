@@ -27,10 +27,11 @@ class Navbar {
 		
 		// LEFT SIDE OF NAVBAR
 		self::$leftNav['Home'] = array( "URL" => WEB_URL, "TITLE" => 'Return to Homepage', "STATUS" => 'public' );
+		self::$leftNav['Admin'] = array( "URL" => "#", "TITLE" => 'Administration Utilities', "STATUS" => 'poweruser', "DROPDOWN" => array( ) );
+		self::$leftNav['Admin']['DROPDOWN']['Users'] = array( "URL" => WEB_URL, "TITLE" => 'Manage Users and Permissions', "STATUS" => 'poweruser' );
 		
 		// RIGHT SIDE OF NAVBAR
-		self::$rightNav['Admin'] = array( "URL" => "#", "TITLE" => 'Administration Utilities', "STATUS" => 'poweruser', "DROPDOWN" => array( ) );
-		self::$rightNav['Admin']['DROPDOWN']['Users'] = array( "URL" => WEB_URL, "TITLE" => 'Manage Users and Permissions', "STATUS" => 'poweruser' );
+		
 		self::$rightNav['Logout'] = array( "URL" => WEB_URL . "/Home/Logout", "TITLE" => 'Logout from Site', "STATUS" => 'observer' );
 	
 	}
