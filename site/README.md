@@ -10,7 +10,6 @@ To use all of the tools contained within, you require at least the following:
 + NPM (https://www.npmjs.com/)
 + Composer (https://getcomposer.org/)
 + Lessc (to modify the look and feel of the site easily, directly in the .less files) (http://lesscss.org/)
-+ Browserify (if you make modifications, it combines the javascript files)
 + A web server such as Nginx (https://www.nginx.com/) or Apache (https://httpd.apache.org/)
 
 ## Directories

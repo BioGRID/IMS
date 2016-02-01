@@ -31,7 +31,9 @@ class PublicationController extends lib\Controller {
 			$pubmedID = filter_var( $_GET['pubmed'], FILTER_SANITIZE_NUMBER_INT );
 		}
 		
-		$params = array( "TEXT" => $pubmedID );
+		$params = array( 
+			"TEXT" => $pubmedID
+		);
 		
 		$this->headerParams->set( "CANONICAL", "<link rel='canonical' href='" . WEB_URL . "' />" );
 		$this->headerParams->set( "TITLE", WEB_NAME . " | " . WEB_DESC );

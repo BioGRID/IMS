@@ -11,6 +11,7 @@
 <!-- IMS Scripts -->
 <script type="text/javascript" src="{{JS_URL}}/jquery.min.js"></script>
 <script type="text/javascript" src="{{JS_URL}}/bootstrap.min.js"></script>
+<script type="text/javascript" src="{{JS_URL}}/ims-core.js"></script>
 {% for JS in ADDON_JS %}
 	<script type="text/javascript" src="{{JS_URL}}/{{JS}}"></script>
 {% endfor %}
