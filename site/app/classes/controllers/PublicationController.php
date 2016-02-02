@@ -9,6 +9,7 @@ namespace IMS\app\classes\controllers;
  */
  
 use IMS\app\lib;
+use IMS\app\classes\utilities;
 
 class PublicationController extends lib\Controller {
 	
@@ -31,8 +32,12 @@ class PublicationController extends lib\Controller {
 			$pubmedID = filter_var( $_GET['pubmed'], FILTER_SANITIZE_NUMBER_INT );
 		}
 		
+		$pubmedParser = new utilities\PubmedParser( );
+		$response = $pubmedParser->parse( $pubmedID );
+		
+		
 		$params = array( 
-			"TEXT" => $pubmedID
+			"TEXT" => print_r( $response, true )
 		);
 		
 		$this->headerParams->set( "CANONICAL", "<link rel='canonical' href='" . WEB_URL . "' />" );
