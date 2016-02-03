@@ -3,6 +3,6 @@
 	</aside>
 
 	<div class='pubContent'>
-
+		{{ TEXT }}
 	</div>
 </div>
