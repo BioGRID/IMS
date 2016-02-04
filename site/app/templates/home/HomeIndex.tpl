@@ -2,9 +2,9 @@
 	<div class='container-fluid'>
 	
 		<div class='pull-right col-lg-3 col-md-4 col-sm-5 col-xs-6'>
-			<form class="form-search" role="form" method="GET" action="{{ WEB_URL }}/Publication/">
+			<form class="form-search" role="form" method="GET" action="{{ WEB_URL }}/Dataset/">
 				<div class='input-group marginBotSm marginTopSm'>
-					<input type="text" name='pubmed' id='pubmed' maxlength='8' class="form-control" placeholder="Enter Pubmed" value="" autofocus>
+					<input type="text" name='datasetID' id='datasetID' maxlength='8' class="form-control" placeholder="Enter Dataset ID" value="" autofocus>
 					<span class='input-group-btn'>
 						<button class='btn btn-success' type='submit'>Search</button>
 					</span>

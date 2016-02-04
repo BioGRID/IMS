@@ -42,7 +42,7 @@ class Session {
 		if( self::isLoggedIn( ) ) {
 			// Send them to a Permission Denied Page
 			// if they are logged in, but permission was denied
-			header( "Location: " . WEB_URL . "/Home/PermissionDenied" );
+			header( "Location: " . WEB_URL . "/Error/PermissionDenied" );
 		} else {
 			// Otherwise, send them to the login page
 			header( "Location: " . WEB_URL . "/Home/Login" );

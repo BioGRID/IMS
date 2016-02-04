@@ -10,7 +10,6 @@ namespace IMS\app\lib;
  */
  
 use IMS\app\classes\controllers;
-use IMS\app\lib\Error;
  
 class Loader {
 	
@@ -103,11 +102,11 @@ class Loader {
 				$controller->setParams( $actionName, $this->option, $this->urlValues );
 				return $controller;
 			} else {
-				Error::processError( "invalidAction", $this->urlValues );
+				header( "Location: " . WEB_URL . "/Error/" );
 			}
 			
 		} else {
-			Error::processError( "invalidController", $this->urlValues );
+			header( "Location: " . WEB_URL . "/Error/" );
 		}
 		
 		return false;
