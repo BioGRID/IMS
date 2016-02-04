@@ -102,23 +102,6 @@ class HomeController extends lib\Controller {
 		lib\Session::logout( );
 		header( 'Location: ' . WEB_URL . '/' );
 	}	
-	
-	/**
-	 * Permission Denied
-	 * A static view presented when a user does not have permission to
-	 * view a certain page
-	 */
-	 
-	public function PermissionDenied( ) {
-		
-		$params = array( 
-			"WEB_URL" => WEB_URL,
-			"IMG_URL" => IMG_URL
-		);
-		
-		$this->renderView( "home" . DS . "HomePermissionDenied.tpl", $params, false );
-		
-	}
 
 }
 

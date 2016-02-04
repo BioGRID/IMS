@@ -56,6 +56,7 @@ class PubmedParser {
 		$this->pubInfo['STATUS'] = "active";
 		$this->pubInfo['MESH'] = array( );
 		$this->pubInfo['AUTHORS'] = array( );
+		$this->pubInfo['AUTHORS_LIST'] = "-";
 	}
 	
 	/**
@@ -465,9 +466,30 @@ class PubmedParser {
 			reset( $this->pubInfo['AUTHORS'] );
 			$firstAuthor = current($this->pubInfo['AUTHORS']);
 			$this->pubInfo['AUTHOR_SHORT'] = $firstAuthor['LASTNAME'] . " " . $firstAuthor['INITIALS'] . " (" . $this->pubYear . ")";
+			
+			$authorList = array( );
+			foreach( $this->pubInfo['AUTHORS'] as $author ) {
+				
+				$authorName = $author['LASTNAME'];
+				
+				if( $author['INITIALS'] != "-" ) {
+					$authorName = $authorName . " " . $author['INITIALS'];
+				}
+				
+				$authorList[] = $authorName;
+			}
+			
+			$this->pubInfo['AUTHORS_LIST'] = implode( ", ", $authorList );
+			
 		} else {
 			$this->pubInfo['AUTHOR_SHORT'] = "Unknown Authors (" . $this->pubYear . ")";
 		}
+		
+		$this->pubInfo['AUTHORS'] = json_encode( $this->pubInfo['AUTHORS'], JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES );
+		
+		$this->pubInfo['AFFILIATIONS'] = array_unique( $this->pubInfo['AFFILIATIONS'] );
+		ksort( $this->pubInfo['AFFILIATIONS'] );
+		$this->pubInfo['AFFILIATIONS'] = json_encode( $this->pubInfo['AFFILIATIONS'], JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES );
 		
 	}
 	
@@ -563,6 +585,8 @@ class PubmedParser {
 				}
 			}
 		}
+		
+		$this->pubInfo['MESH'] = json_encode( $this->pubInfo['MESH'], JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES );
 	}
 	
 	/**
