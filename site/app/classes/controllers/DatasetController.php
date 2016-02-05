@@ -15,6 +15,16 @@ class DatasetController extends lib\Controller {
 	
 	public function __construct( $twig ) {
 		parent::__construct( $twig );
+		
+		$addonJS = array( );
+		$addonJS[] = "jquery.webui-popover.min.js";
+		$addonJS[] = "ims-datasets.js";
+		
+		$addonCSS = array( );
+		$addonCSS[] = "jquery.webui-popover.min.css";
+		
+		$this->headerParams->set( 'ADDON_CSS', $addonCSS );
+		$this->footerParams->set( 'ADDON_JS', $addonJS );
 	}
 	
 	/**
@@ -54,10 +64,14 @@ class DatasetController extends lib\Controller {
 				
 				$params = array(
 					"TITLE" => $dataset['ANNOTATION']['TITLE'],
-					"DATASET_ID" => $dataset['ANNOTATION']['ID'],
+					"DATASET_ID" => $dataset['ID'],
 					"AUTHOR_LIST" => $dataset['ANNOTATION']['AUTHOR_LIST'],
 					"ABSTRACT" => $dataset['ANNOTATION']['ABSTRACT'],
-					"AVAILABILITY" => $dataset['AVAILABILITY']
+					"AVAILABILITY" => $dataset['AVAILABILITY'],
+					"AVAILABILITY_LABEL" => $dataset['AVAILABILITY_LABEL'],
+					"WEB_URL" => WEB_URL,
+					"DATASET_SOURCE_ID" => $dataset['ANNOTATION']['ID'],
+					"TYPE_NAME" => $dataset['TYPE_NAME']
 				);
 				
 				$this->headerParams->set( "CANONICAL", "<link rel='canonical' href='" . WEB_URL . "' />" );

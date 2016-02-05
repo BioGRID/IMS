@@ -22,6 +22,11 @@ if( isset( $_POST['script'] ) ) {
 			echo json_encode( $groupInfo );
 			break;
 			
+		case 'switchAvailability' :
+			$availText = $sp->switchAvailability( $_POST['id'], $_POST['value'] );
+			echo $availText;
+			break;
+			
 	}
 }
  

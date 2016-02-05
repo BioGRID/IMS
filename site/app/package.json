@@ -8,7 +8,7 @@
     "build-css": "./bin/compileLess.sh",
     "copy-modules": "./bin/copyModules.sh",
     "copy-js": "./bin/copyJS.sh",
-	"copy-scripts": "./bin/copyScripts.sh",
+    "copy-scripts": "./bin/copyScripts.sh",
     "build": "npm run build-css && npm run copy-modules && npm run copy-js && npm run copy-scripts"
   },
   "repository": {
@@ -23,7 +23,8 @@
   "dependencies": {
     "jquery": "~2.2.0",
     "bootstrap": "~3.3.6",
-    "font-awesome": "~4.5.0"
+    "font-awesome": "~4.5.0",
+    "webui-popover": "~1.2.5"
   },
   "devDependencies": {}
 }

@@ -222,7 +222,8 @@ class Datasets {
 				"REPLACEMENT_ID" => $row->dataset_source_id_replacement,
 				"REPLACEMENT_TYPE_ID" => $row->dataset_type_id_replacement,
 				"REPLACEMENT_TYPE_NAME" => "-",
-				"AVAILABILITY" => $row->dataset_availability, 
+				"AVAILABILITY" => $row->dataset_availability,
+				"AVAILABILITY_LABEL" => $this->fetchAvailabilityLabel( $row->dataset_availability ),
 				"STATUS" => $row->dataset_status,
 				"ANNOTATION" => array( )
 			);
@@ -330,6 +331,34 @@ class Datasets {
 		
 		return $annotation;
 		
+	}
+	
+	/**
+	 * Fetch Availability Label based on availability setting
+	 */
+	 
+	public function fetchAvailabilityLabel( $availability ) {
+		$availabilityLabel = "success";
+		if( $availability == "private" ) {
+			$availabilityLabel = "danger";
+		} else if( $availability == "website-only" ) {
+			$availabilityLabel = "warning";
+		}
+		
+		return $availabilityLabel;
+	}
+	
+	/**
+	 * Change availability of a dataset to a new value
+	 */
+	 
+	public function changeAvailability( $datasetID, $availability ) {
+	
+		$stmt = $this->db->prepare( "UPDATE " . DB_IMS . ".datasets SET dataset_availability=? WHERE dataset_id=?" );
+		$stmt->execute( array( $availability, $datasetID ) );
+		
+		$this->addHistory( $datasetID, 'UPDATED', "Changed Availability Setting to " . $availability );
+	
 	}
 	
 }
