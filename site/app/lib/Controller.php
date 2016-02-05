@@ -34,7 +34,8 @@ abstract class Controller {
 			"IMG_URL" => IMG_URL,
 			"YEAR" => $today['year'],
 			"TITLE" => WEB_NAME,
-			"ABBR" => WEB_NAME_ABBR
+			"ABBR" => WEB_NAME_ABBR,
+			"WEB_URL" => WEB_URL
 		));
 		
 		$this->footerParams = new utilities\Datastore( );

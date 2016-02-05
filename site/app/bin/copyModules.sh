@@ -15,3 +15,7 @@ cp -rf node_modules/bootstrap/dist/js/bootstrap.min.js ../www/js/
 
 # JQUERY
 cp -rf node_modules/jquery/dist/jquery.min.js ../www/js/
+
+# WEBUI-POPVER
+cp -rf node_modules/webui-popover/dist/jquery.webui-popover.min.js ../www/js/
+cp -rf node_modules/webui-popover/dist/jquery.webui-popover.min.css ../www/css/

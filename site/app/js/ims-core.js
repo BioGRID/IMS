@@ -16,9 +16,11 @@
 	
 	function initializeUIComponents( ) {
 		
+		var baseURL = $("head base").attr( "href" );
+		
 		$("#groupSelect").on( "change", function( ) {
 			$.ajax({
-				url: "scripts/ExecuteProcess.php",
+				url: baseURL + "/scripts/ExecuteProcess.php",
 				method: "POST",
 				dataType: "json",
 				data: { script: "switchGroup", id: $(this).val( ) }

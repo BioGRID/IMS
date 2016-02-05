@@ -9,14 +9,27 @@ namespace IMS\app\classes\utilities;
  */
  
 use IMS\app\lib;
+use IMS\app\classes\models;
  
 class ScriptProcesses {
 	
 	private $db;
 	
 	public function __construct( ) {
-		//$this->db = new PDO( DB_CONNECT, DB_USER, DB_PASS );
-		//$this->db->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
+		
+	}
+	
+	/**
+	 * Switch availability of a dataset
+	 */
+	 
+	public function switchAvailability( $datasetID, $option ) {
+		
+		$datasets = new models\Datasets( );
+		$datasets->changeAvailability( $datasetID, $option );
+		
+		$availabilityLabel = $datasets->fetchAvailabilityLabel( $option );
+		return "<span class='label label-" . $availabilityLabel . "'><span class='datasetDetailText'>" . $option . " availability</span></span>";
 	}
 	
 	/**

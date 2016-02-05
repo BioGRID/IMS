@@ -9,6 +9,7 @@
 	<meta name="application-name" content="BioGRID">
 	<meta name="robots" content="INDEX,FOLLOW">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<base href="{{ WEB_URL }}/">
 	
 	{{CANONICAL|raw}}
 	

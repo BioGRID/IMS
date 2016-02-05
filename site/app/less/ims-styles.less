@@ -19,12 +19,14 @@ h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 { margin-top: 0px; margin-b
 /* SITE COMPONENTS */
 
 .imsNav { background-color: @brand-info; }
-#main { min-height: 96%; }
+#main { height: 100%; display: table; min-height: 1040px; width: 100%; }
 .navbar { margin-bottom: 0px; }
 .primaryContent { margin-top: 10px; }
 
 #footer { 
 	background-color: @brand-info; 
+	display: table-row;
+	height: 1px;
 	
 	section { 
 		padding: 10px; 
@@ -39,6 +41,10 @@ h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 { margin-top: 0px; margin-b
 	color: #999; 
 	text-shadow: 0 1px 0 #FFF; 
 	margin-left: 10px; 
+}
+
+.label {
+	padding: 5px 10px 5px;
 }
 
 /* DASHBOARD STYLES */
@@ -113,30 +119,61 @@ h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 { margin-top: 0px; margin-b
 
 /* PUBLICATION STYLES */
 
-.pubBody {
-	min-height: 100%;
+.datasetBody {
+	height: 99%;
+	display: table;
 	width: 100%;
-	position: relative;
-	display: inline-block;
-	margin-bottom: -5px;
-}
 
-aside.pubSidebar {
-	background-color: @brand-info;
-	width: 200px;
-	top: 0;
-	left: 0;
-	bottom: 0;
-	position: absolute;
-}
-
-.pubContent {
-	min-height: 1040px;
-	position: relative;
-	float: right;
-	width: 100%;
-	padding: 10px;
-	padding-left: 210px;
+		.datasetSidebar {
+			width: 200px;
+			display: table-cell;
+			background-color: @brand-info;
+			vertical-align: top;
+			
+			.sidebarBlock {
+				border-bottom: 1px solid @brand-primary;
+				padding: 10px;
+				color: @navbar-inverse-color;
+				
+				.iconLink {
+					color: #FFF;
+					
+					&:hover {
+						color: @brand-warning;
+					}
+				}
+				
+				h2 { font-size: 18px; font-weight: bold; color: #FFF; }
+				h3 { font-size: 16px; font-weight: bold; color: @gray-light; }
+				
+				.datasetDetails {
+					margin-top: 10px;
+					cursor: pointer;
+					.datasetDetail {
+						margin-top: 10px;
+						.datasetDetailText {
+							font-size: 14px;
+						}
+					}
+				}
+				
+			}
+			
+			.sidebarLink {
+				.sidebarBlock;
+				cursor: pointer;
+				&:hover {
+					background-color: @brand-primary !important;
+				}
+			}
+			
+		}
+		
+		.datasetContent {
+			display: table-cell;
+			padding: 10px;
+		}
+		
 }
 	
 .datasetLinkouts {
