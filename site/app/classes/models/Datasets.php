@@ -44,6 +44,25 @@ class Datasets {
 	}
 	
 	/**
+	 * Build a quick lookup hash of user ids mapped to
+	 * user firstname/lastname combos
+	 */
+	 
+	private function buildUserNameHash( ) {
+	
+		$stmt = $this->db->prepare( "SELECT user_id, user_firstname, user_lastname FROM " . DB_IMS . ".users" );
+		$stmt->execute( );
+		
+		$userNames = array( );
+		while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			$userNames[$row->user_id] = $row->user_firstname . " " . $row->user_lastname;
+		}
+		
+		return $userNames;
+	
+	}
+	
+	/**
 	 * Grab a dataset by pubmed id and if it doesn't exist
 	 * add it to the database
 	 */
@@ -225,6 +244,7 @@ class Datasets {
 				"AVAILABILITY" => $row->dataset_availability,
 				"AVAILABILITY_LABEL" => $this->fetchAvailabilityLabel( $row->dataset_availability ),
 				"STATUS" => $row->dataset_status,
+				"HISTORY" => array( ),
 				"ANNOTATION" => array( )
 			);
 			
@@ -243,6 +263,10 @@ class Datasets {
 				// PREPUB
 				$dataset["ANNOTATION"] = $this->fetchPrepubAnnotation( $dataset["SOURCE_ID"] );
 			}
+			
+			$dataset["HISTORY"] = $this->fetchDatasetHistory( $dataset["ID"], true );
+			$dataset["HISTORY_CURRENT"] = $this->determineCurrentHistoryStatus( $dataset["HISTORY"] );
+			$dataset["HISTORY_LABEL"] = $this->fetchHistoryLabel( $dataset["HISTORY_CURRENT"]["MODIFICATION"] );
 			
 			return $dataset;
 			
@@ -334,6 +358,41 @@ class Datasets {
 	}
 	
 	/**
+	 * Build an associative array of history details for a publication
+	 * ignoring automated updates if ignoreAutomated is set to true.
+	 */
+	 
+	private function fetchDatasetHistory( $datasetID, $ignoreAutomated = true ) {
+		
+		$usernamesHash = $this->buildUserNameHash( );
+		
+		$stmt = null;
+		if( $ignoreAutomated ) {
+			$stmt = $this->db->prepare( "SELECT * FROM " . DB_IMS . ".dataset_history WHERE dataset_id=? AND modification_type NOT IN ('ACTIVATED','DISABLED','DEACTIVATED','UPDATED','ANNOTATED', 'ACCESSED') ORDER BY dataset_history_addeddate DESC" );
+		} else {
+			$stmt = $this->db->prepare( "SELECT * FROM " . DB_IMS . ".dataset_history WHERE dataset_id=? ORDER BY dataset_history_addeddate DESC" );
+		}
+		
+		$stmt->execute( array( $datasetID ) );
+		
+		$history = array( );
+		while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			$history[] = array(
+				"ID" => $row->dataset_history_id,
+				"MODIFICATION" => $row->modification_type,
+				"DATASET_ID" => $row->dataset_id,
+				"USER_ID" => $row->user_id,
+				"USER_NAME" => $usernamesHash[$row->user_id],
+				"COMMENT" => $row->dataset_history_comment,
+				"ADDED_DATE" => $row->dataset_history_addeddate
+			);
+		}
+		
+		return $history;
+		
+	}
+	
+	/**
 	 * Fetch Availability Label based on availability setting
 	 */
 	 
@@ -346,6 +405,67 @@ class Datasets {
 		}
 		
 		return $availabilityLabel;
+	}
+	
+	/**
+	 * Fetch History status based on history array
+	 */
+	 
+	private function determineCurrentHistoryStatus( $history ) {
+		
+		$latestHistory = "NEW";
+		$finished = false;
+		foreach( $history as $historyEntry ) {
+			switch( $historyEntry['MODIFICATION'] ) {
+				
+				case "WRONGPROJECT" :
+				case "QUALITYCONTROL" :
+				case "ABSTRACT" :
+				case "FULLTEXT" :
+				case "UNABLETOACCESS" :
+				case "INPROGRESS" :
+					$latestHistory = $historyEntry;
+					$finished = true;
+					break;
+					
+				case "ACCESSED" :
+					// Do Nothing
+					continue;
+					
+			}
+			
+			if( $finished ) {
+				break;
+			}
+		}
+		
+		return $latestHistory;
+		
+	}
+	
+	/**
+	 * Determine what display label should be used for highlighting
+	 * the selected history label status
+	 */
+		
+	public function fetchHistoryLabel( $history ) {
+			
+		switch( $history ) {
+			
+			case "WRONGPROJECT" :
+			case "QUALITYCONTROL" :
+			case "ABSTRACT" :
+			case "FULLTEXT" :
+			case "UNABLETOACCESS" :
+				return "success";
+			
+			case "INPROGRESS" :
+				return "danger";
+				
+			case "NEW" :
+				return "warning";		
+		}
+
 	}
 	
 	/**

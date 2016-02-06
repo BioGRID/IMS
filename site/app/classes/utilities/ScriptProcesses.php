@@ -29,7 +29,7 @@ class ScriptProcesses {
 		$datasets->changeAvailability( $datasetID, $option );
 		
 		$availabilityLabel = $datasets->fetchAvailabilityLabel( $option );
-		return "<span class='label label-" . $availabilityLabel . "'><span class='datasetDetailText'>" . $option . " availability</span></span>";
+		return "<span class='label label-" . $availabilityLabel . "'><span class='datasetDetailText'>" . strtoupper($option) . "</span></span>";
 	}
 	
 	/**

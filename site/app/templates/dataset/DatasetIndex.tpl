@@ -11,22 +11,42 @@
 			<h2>Dataset Summary</h2>
 			<h3>{{ TYPE_NAME }}: {{ DATASET_SOURCE_ID }}</h3>
 			<div class='datasetDetails'>
-				<div class='datasetDetail'><span id='availabilitySwitch'><span class='label label-{{ AVAILABILITY_LABEL }}'><span class='datasetDetailText'>{{ AVAILABILITY }} availability</span></span></span></div>
-				<div class='datasetDetail'><span class='label label-{{ STATUS_LABEL }}'><span class='datasetDetailText'>{{ STATUS }}</span></span></div>
+				<div class='datasetDetail marginBotSm'><span id='availabilitySwitch'><span class='label label-{{ AVAILABILITY_LABEL }}'><span class='datasetDetailText'>{{ AVAILABILITY }}</span></span></span></div>
 			</div>
+		</div>
+		<div class='sidebarBlock text-center'>
+			<h2>Current Status</h2>
+			<div class='datasetDetails'>
+				<div class='datasetDetail marginTopNone marginBotSm'><span id='statusSwitch' class='label label-{{ STATUS_LABEL }}'><span class='datasetDetailText'>{{ STATUS }}</span></span></div>
+			</div>
+			<h3>{{ HISTORY_NAME }}</h3>
+			<h4 class='paddingBotXs'>{{ HISTORY_DATE }}</h4>
+		</div>
+		<div class='sidebarLink' onClick='javascript:alert("test");''>
+			Binary Interactions
+		</div>
+		<div class='sidebarLink' onClick='javascript:alert("test");''>
+			Complexes
+		</div>
+		<div class='sidebarLink' onClick='javascript:alert("test");''>
+			PTMs
+		</div>
+		<div class='sidebarLink' onClick='javascript:alert("test");''>
+			Chemical Interactions
+		</div>
+		<div class='sidebarLink' onClick='javascript:alert("test");''>
+			Supplementary Files
+		</div>
+		<div class='sidebarLink' onClick='javascript:alert("test");''>
+			Notes
+		</div>
+		<div class='sidebarLink' onClick='javascript:alert("test");''>
+			MyLink
 		</div>
 		<div class='sidebarLink' onClick='javascript:alert("test");''>
 			MyLink
 		</div>
 		
-		<div id='availability_form' class='hidden'>
-			<select class='form-control availability_select'>
-				<option value='public'>Public</option>
-				<option value='private'>Private</option>
-				<option value='website-only'>Website-Only</option>
-			</select>
-			<button type='button' class='availability_submit btn btn-success btn-block marginTopSm'>Submit</button>
-		</div>
 	</aside>
 	
 	<div class='datasetContent'>
@@ -48,6 +68,13 @@
 			
 			<h3>{{ TITLE }}</h3>
 			<p class='marginTopSm'><strong>{{ AUTHOR_LIST }}</strong></p>
+			<p class='marginTopSm'>{{ ABSTRACT }}</p>
+			<p class='marginTopSm'>{{ ABSTRACT }}</p>
+			<p class='marginTopSm'>{{ ABSTRACT }}</p>
+			<p class='marginTopSm'>{{ ABSTRACT }}</p>
+			<p class='marginTopSm'>{{ ABSTRACT }}</p>
+			<p class='marginTopSm'>{{ ABSTRACT }}</p>
+			<p class='marginTopSm'>{{ ABSTRACT }}</p>
 			<p class='marginTopSm'>{{ ABSTRACT }}</p>
 
 		</div>

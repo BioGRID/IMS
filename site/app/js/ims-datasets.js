@@ -30,7 +30,8 @@
 				dismissable: true,
 				title: 'Change Availability',
 				content: function( ) {
-					return $("#availability_form").html( );
+					var availabilityForm = "<select class='form-control availability_select'><option value='public'>Public</option><option value='private'>Private</option><option value='website-only'>Website-Only</option></select><button type='button' class='availability_submit btn btn-success btn-block marginTopSm'>Submit</button>";
+					return availabilityForm;
 				}
 			});
 			
