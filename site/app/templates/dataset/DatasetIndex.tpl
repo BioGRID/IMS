@@ -50,7 +50,7 @@
 	</aside>
 	
 	<div class='datasetContent'>
-		<div class='datasetScroll'>
+		<div id='datasetDetails'>
 			<div class='datasetLinkouts pull-right'>LINKOUTS {{ LINKOUTS }}</div>
 			<h2 class='heading-line marginBotSm'>{{ TYPE_NAME }} ({{ DATASET_SOURCE_ID }})</h2>
 			
@@ -68,7 +68,6 @@
 			
 			<h3>{{ TITLE }}</h3>
 			<p class='marginTopSm'><strong>{{ AUTHOR_LIST }}</strong></p>
-			<p class='marginTopSm'>{{ ABSTRACT }}</p>
 			<p class='marginTopSm'>{{ ABSTRACT }}</p>
 			<p class='marginTopSm'>{{ ABSTRACT }}</p>
 			<p class='marginTopSm'>{{ ABSTRACT }}</p>
