@@ -67,11 +67,15 @@ class DatasetController extends lib\Controller {
 					"DATASET_ID" => $dataset['ID'],
 					"AUTHOR_LIST" => $dataset['ANNOTATION']['AUTHOR_LIST'],
 					"ABSTRACT" => $dataset['ANNOTATION']['ABSTRACT'],
-					"AVAILABILITY" => $dataset['AVAILABILITY'],
+					"AVAILABILITY" => strtoupper($dataset['AVAILABILITY']),
 					"AVAILABILITY_LABEL" => $dataset['AVAILABILITY_LABEL'],
 					"WEB_URL" => WEB_URL,
 					"DATASET_SOURCE_ID" => $dataset['ANNOTATION']['ID'],
-					"TYPE_NAME" => $dataset['TYPE_NAME']
+					"TYPE_NAME" => $dataset['TYPE_NAME'],
+					"STATUS_LABEL" => $dataset['HISTORY_LABEL'],
+					"STATUS" => $dataset['HISTORY_CURRENT']['MODIFICATION'],
+					"HISTORY_NAME" => $dataset['HISTORY_CURRENT']['USER_NAME'],
+					"HISTORY_DATE" => $dataset['HISTORY_CURRENT']['ADDED_DATE']
 				);
 				
 				$this->headerParams->set( "CANONICAL", "<link rel='canonical' href='" . WEB_URL . "' />" );
