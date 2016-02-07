@@ -11,6 +11,7 @@ To use all of the tools contained within, you require at least the following:
 + Python 2.7+ (https://www.python.org/)
 + MySQL 5.5+ (https://www.mysql.com/)
 + PHP 5.5.9+ (http://www.php.net/)
++ MongoDB (https://www.mongodb.org/)
 + A web server such as Nginx (https://www.nginx.com/) or Apache (https://httpd.apache.org/)
 
 ## Directories
