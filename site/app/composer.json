@@ -1,5 +1,6 @@
 {
     "require": {
-        "twig/twig": "^1.23"
+        "twig/twig": "^1.23",
+        "mongodb/mongodb": "^1.0"
     }
 }
