@@ -14,7 +14,6 @@ use \PDO;
 class Lookups {
 
 	private $db;
-	private $datasetTypes;
 
 	public function __construct( ) {
 		$this->db = new PDO( DB_CONNECT, DB_USER, DB_PASS );

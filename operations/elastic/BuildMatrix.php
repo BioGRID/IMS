@@ -7,11 +7,11 @@
  
 require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/Config.php';
-require_once __DIR__ . '/../../site/app/classes/models/Lookups.php';
+require_once __DIR__ . '/classes/Matrix.php';
 
-$lookups = new IMS\app\classes\models\Lookups( );
-$interactionTypeHash = $lookups->buildInteractionTypeHash( );
-print_r( $interactionTypeHash );
+$matrix = new Matrix( );
+
+
 
 
 
