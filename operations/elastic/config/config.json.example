@@ -1,0 +1,8 @@
+{
+	"ELASTICSEARCH" : {
+		"ES_HOST"						: "HOST NAME",
+		"ES_POST"						: "PORT",
+		"ES_INDEX"						: "NAME OF INDEX",
+		"ES_TYPE"						: "NAME OF TYPE"
+	}
+}
