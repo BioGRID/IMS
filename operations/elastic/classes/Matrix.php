@@ -39,13 +39,13 @@ class Matrix {
 		
 		$this->lookups = new IMS\app\classes\models\Lookups( );
 		$this->interactionTypesHash = $this->lookups->buildInteractionTypeHash( );
-		$this->historyOperationsHash = $this->lookups->buildHistoryOperationsHash( );
-		$this->participantTypeHash = $this->lookups->buildParticipantTypesHash( );
-		$this->participantRoleHASH = $this->lookups->buildParticipantRoleHash( );
-		$this->annotationHASH = $this->lookups->buildAnnotationHash( );
-		$this->participantTypeMappingHASH = $this->lookups->buildParticipantTypeMappingHash( );
-		$this->attributeTypeHASH = $this->lookups->buildAttributeTypeHASH( );
-		$this->ontologyTermHASH = $this->lookups->buildAttributeOntologyTermHASH( );
+		// $this->historyOperationsHash = $this->lookups->buildHistoryOperationsHash( );
+		// $this->participantTypeHash = $this->lookups->buildParticipantTypesHash( );
+		// $this->participantRoleHASH = $this->lookups->buildParticipantRoleHash( );
+		// $this->annotationHASH = $this->lookups->buildAnnotationHash( );
+		// $this->participantTypeMappingHASH = $this->lookups->buildParticipantTypeMappingHash( );
+		// $this->attributeTypeHASH = $this->lookups->buildAttributeTypeHASH( );
+		// $this->ontologyTermHASH = $this->lookups->buildAttributeOntologyTermHASH( );
 		
 		$this->hosts = array( ES_HOST . ":" . ES_PORT );
 		$this->clientBuilder = Elasticsearch\ClientBuilder::create( );
@@ -63,7 +63,8 @@ class Matrix {
 		$stmt->execute( array( $datasetID ) );
 		
 		while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
-			// Build Record
+			// Build Document
+			$document = $this->buildMatrixDocument( $row );
 			// Insert it into Elastic Search
 		}
 		
@@ -79,9 +80,28 @@ class Matrix {
 		$stmt->execute( array( $interactionID ) );
 		
 		while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
-			// Build Record
+			// Build Document
+			$document = $this->buildMatrixDocument( $row );
+			print_r( $document );
 			// Insert it into Elastic Search
 		}
+		
+	}
+	
+	/**
+	 * Build a matrix document using the structure required by our search system
+	 */
+	 
+	private function buildMatrixDocument( $interaction ) {
+		
+		$document = array( );
+		$document['interaction_id'] = $interaction->interaction_id;
+		$document['dataset_id'] = $interaction->dataset_id;
+		$document['interaction_type_id'] = $interaction->interaction_type_id;
+		$document['interaction_type_name'] = $this->interactionTypesHash[$interaction->interaction_type_id];
+		$document['interaction_state'] = $interaction->interaction_state;
+		
+		return $document;
 		
 	}
 	
