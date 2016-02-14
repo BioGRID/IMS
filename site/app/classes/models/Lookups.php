@@ -21,6 +21,25 @@ class Lookups {
 	}
 	
 	/**
+	 * Build a hash that maps user ids to a firstname/lastname combo
+	 * so we can quickly get readable user names without extra DB lookups
+	 */
+	 
+	public function buildUserNameHash( ) {
+		
+		$mappingHash = array( );
+		$stmt = $this->db->prepare( "SELECT user_id, user_firstname, user_lastname FROM " . DB_IMS . ".users" );
+		$stmt->execute( );
+		
+		while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			$mappingHash[$row->user_id] = $row->user_firstname . " " . $row->user_lastname;
+		}
+
+		return $mappingHash;
+		
+	}
+	
+	/**
 	 * Build a quick lookup hash of interaction types for rapid mapping
 	 * when fetching datasets in bulk
 	 */

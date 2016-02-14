@@ -16,6 +16,7 @@ class Matrix {
 	private $lookups;
 	
 	private $interactionTypesHash;
+	private $userNameHash;
 	private $historyOperationsHash;
 	private $participantTypeHash;
 	private $participantRoleHASH;
@@ -39,6 +40,7 @@ class Matrix {
 		
 		$this->lookups = new IMS\app\classes\models\Lookups( );
 		$this->interactionTypesHash = $this->lookups->buildInteractionTypeHash( );
+		$this->userNameHash = $this->lookups->buildUserNameHash( );
 		// $this->historyOperationsHash = $this->lookups->buildHistoryOperationsHash( );
 		// $this->participantTypeHash = $this->lookups->buildParticipantTypesHash( );
 		// $this->participantRoleHASH = $this->lookups->buildParticipantRoleHash( );
@@ -101,7 +103,30 @@ class Matrix {
 		$document['interaction_type_name'] = $this->interactionTypesHash[$interaction->interaction_type_id];
 		$document['interaction_state'] = $interaction->interaction_state;
 		
+		$document = $document + $this->fetchInteractionHistoryDetails( $interaction->interaction_id );
+		
 		return $document;
+		
+	}
+	
+	/**
+	 * Return an array containing interaction history details for mapping to a document
+	 */
+	 
+	private function fetchInteractionHistoryDetails( $interactionID ) {
+		
+		$stmt = $this->db->prepare( "SELECT modification_type, user_id, history_addeddate FROM " . DB_IMS . ".history WHERE interaction_id=? AND modification_type IN ('ACTIVATED','DISABLED') ORDER BY history_addeddate DESC LIMIT 1" );
+		$stmt->execute( array( $interactionID ) );
+		
+		$historyDetails = array( ); 
+		if( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			$historyDetails['history_status'] = $row->modification_type;
+			$historyDetails['history_user_id'] = $row->user_id;
+			$historyDetails['history_user_name'] = $this->userNameHash[$row->user_id];
+			$historyDetails['history_date'] = $row->history_addeddate;
+		}
+		
+		return $historyDetails;
 		
 	}
 	
