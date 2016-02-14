@@ -46,8 +46,8 @@ class Matrix {
 		// $this->participantRoleHASH = $this->lookups->buildParticipantRoleHash( );
 		// $this->annotationHASH = $this->lookups->buildAnnotationHash( );
 		// $this->participantTypeMappingHASH = $this->lookups->buildParticipantTypeMappingHash( );
-		// $this->attributeTypeHASH = $this->lookups->buildAttributeTypeHASH( );
-		// $this->ontologyTermHASH = $this->lookups->buildAttributeOntologyTermHASH( );
+		$this->attributeTypeHash = $this->lookups->buildAttributeTypeHASH( );
+		$this->ontologyTermHash = $this->lookups->buildAttributeOntologyTermHASH( );
 		
 		$this->hosts = array( ES_HOST . ":" . ES_PORT );
 		$this->clientBuilder = Elasticsearch\ClientBuilder::create( );
@@ -103,7 +103,8 @@ class Matrix {
 		$document['interaction_type_name'] = $this->interactionTypesHash[$interaction->interaction_type_id];
 		$document['interaction_state'] = $interaction->interaction_state;
 		
-		$document = $document + $this->fetchInteractionHistoryDetails( $interaction->interaction_id );
+		$document += $this->fetchInteractionHistoryDetails( $interaction->interaction_id );
+		$document['attributes'] = $this->fetchInteractionAttributes( $interaction->interaction_id );
 		
 		return $document;
 		
@@ -128,6 +129,69 @@ class Matrix {
 		
 		return $historyDetails;
 		
+	}
+	
+	/**
+	 * Return an array containing interaction attributes
+	 */
+	
+	private function fetchInteractionAttributes( $interactionID ) {
+	
+		$stmt = $this->db->prepare( "SELECT interaction_attribute_id, attribute_id, interaction_attribute_parent, user_id, interaction_attribute_addeddate FROM " . DB_IMS . ".interaction_attributes WHERE interaction_id=? AND interaction_attribute_status='active' ORDER BY interaction_attribute_addeddate DESC" );
+		$stmt->execute( array( $interactionID ) );
+		
+		$attDetails = array( );		
+		while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			$attDetail = array( );
+			$attDetail['interaction_attribute_id'] = $row->interaction_attribute_id;
+			$attDetail['attribute_id'] = $row->attribute_id;
+			$attDetail['attribute_parent_id'] = $row->interaction_attribute_parent;
+			$attDetail['attribute_user_id'] = $row->user_id;
+			$attDetail['attribute_user_name'] = $this->userNameHash[$row->user_id];
+			$attDetail['attribute_addeddate'] = $row->interaction_attribute_addeddate;
+			
+			$attDetail += $this->fetchAttribute( $row->attribute_id );
+			$attDetails[] = $attDetail;
+		}
+		
+		return $attDetails;
+	
+	}
+	
+	/**
+	 * Return an array of attribute details
+	 */
+	
+	private function fetchAttribute( $attributeID ) {
+	
+		$stmt = $this->db->prepare( "SELECT attribute_value, attribute_type_id FROM " . DB_IMS . ".attributes WHERE attribute_id=? LIMIT 1" );
+		$stmt->execute( array( $attributeID ) );
+		
+		$attribute = array( ); 
+		if( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			$attribute['attribute_value'] = $row->attribute_value;
+			$attribute['attribute_type_id'] = $row->attribute_type_id;
+			
+			$attributeTypeInfo = $this->attributeTypeHash[$row->attribute_type_id];
+			$attribute['attribute_type_name'] = $attributeTypeInfo->attribute_type_name;
+			$attribute['attribute_type_shortcode'] = $attributeTypeInfo->attribute_type_shortcode;
+			$attribute['attribute_type_category_id'] = $attributeTypeInfo->attribute_type_category_id;
+			$attribute['attribute_type_category_name'] = $attributeTypeInfo->attribute_type_category_name;
+			$attribute['ontology_term_id'] = '0';
+			$attribute['ontology_term_official_id'] = '0';
+			
+			// FOR ONTOLOGY TERMS ONLY
+			if( $attribute['attribute_type_category_id'] == "1" ) {
+				$ontologyInfo = $this->ontologyTermHash[$row->attribute_value];
+				$attribute['attribute_value'] = $ontologyInfo->ontology_term_name;
+				$attribute['ontology_term_id'] = $row->attribute_value;
+				$attribute['ontology_term_official_id'] = $ontologyInfo->ontology_term_official_id;
+			}
+			
+		}
+		
+		return $attribute;
+	
 	}
 	
 }
