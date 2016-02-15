@@ -11,9 +11,8 @@ require_once __DIR__ . '/classes/Matrix.php';
 
 //115451
 $matrix = new Matrix( );
-$matrix->buildMatrixByInteraction( "521082" );
-
-
+$matrix->initialize( );
+//$matrix->buildMatrixByInteraction( "1434467" );
 
 
 ?>

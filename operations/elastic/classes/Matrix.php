@@ -17,7 +17,6 @@ class Matrix {
 	
 	private $interactionTypesHash;
 	private $userNameHash;
-	private $historyOperationsHash;
 	private $participantTypeHash;
 	private $participantRoleHASH;
 	private $annotationHASH;
@@ -41,11 +40,10 @@ class Matrix {
 		$this->lookups = new IMS\app\classes\models\Lookups( );
 		$this->interactionTypesHash = $this->lookups->buildInteractionTypeHash( );
 		$this->userNameHash = $this->lookups->buildUserNameHash( );
-		// $this->historyOperationsHash = $this->lookups->buildHistoryOperationsHash( );
-		// $this->participantTypeHash = $this->lookups->buildParticipantTypesHash( );
-		// $this->participantRoleHASH = $this->lookups->buildParticipantRoleHash( );
-		// $this->annotationHASH = $this->lookups->buildAnnotationHash( );
-		// $this->participantTypeMappingHASH = $this->lookups->buildParticipantTypeMappingHash( );
+		$this->participantTypeHash = $this->lookups->buildParticipantTypesHash( );
+		$this->participantRoleHash = $this->lookups->buildParticipantRoleHash( );
+		$this->annotationHash = $this->lookups->buildAnnotationHash( );
+		$this->participantTypeMappingHash = $this->lookups->buildParticipantTypeMappingHash( );
 		$this->attributeTypeHash = $this->lookups->buildAttributeTypeHASH( );
 		$this->ontologyTermHash = $this->lookups->buildAttributeOntologyTermHASH( );
 		
@@ -105,6 +103,7 @@ class Matrix {
 		
 		$document += $this->fetchInteractionHistoryDetails( $interaction->interaction_id );
 		$document['attributes'] = $this->fetchInteractionAttributes( $interaction->interaction_id );
+		$document['participants'] = $this->fetchInteractionParticipants( $interaction->interaction_id );
 		
 		return $document;
 		
@@ -137,7 +136,7 @@ class Matrix {
 	
 	private function fetchInteractionAttributes( $interactionID ) {
 	
-		$stmt = $this->db->prepare( "SELECT interaction_attribute_id, attribute_id, interaction_attribute_parent, user_id, interaction_attribute_addeddate FROM " . DB_IMS . ".interaction_attributes WHERE interaction_id=? AND interaction_attribute_status='active' ORDER BY interaction_attribute_addeddate DESC" );
+		$stmt = $this->db->prepare( "SELECT interaction_attribute_id, attribute_id, interaction_attribute_parent, user_id, interaction_attribute_addeddate FROM " . DB_IMS . ".interaction_attributes WHERE interaction_id=? AND interaction_attribute_status='active' ORDER BY interaction_attribute_addeddate ASC" );
 		$stmt->execute( array( $interactionID ) );
 		
 		$attDetails = array( );		
@@ -192,6 +191,187 @@ class Matrix {
 		
 		return $attribute;
 	
+	}
+	
+	/**
+	 * Return an array containing interaction participants
+	 */
+	
+	private function fetchInteractionParticipants( $interactionID ) {
+	
+		$stmt = $this->db->prepare( "SELECT interaction_participant_id, participant_id, participant_role_id FROM " . DB_IMS . ".interaction_participants WHERE interaction_id=? AND interaction_participant_status='active'" );
+		$stmt->execute( array( $interactionID ) );
+		
+		$partDetails = array( );		
+		while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			$partDetail = array( );
+			$partDetail['interaction_participant_id'] = $row->interaction_participant_id;
+			$partDetail['participant_id'] = $row->participant_id;
+			$partDetail['participant_role_id'] = $row->participant_role_id;
+			$partDetail['participant_role_name'] = $this->participantRoleHash[$row->participant_role_id];
+			$partDetail['participant_type_id'] = $this->participantTypeMappingHash[$row->participant_id];
+			$partDetail['participant_type_name'] = $this->participantTypeHash[$partDetail['participant_type_id']];
+			
+			$partDetail += $this->fetchParticipantAnnotation( $row->participant_id );
+			
+			// NEED TO ADD PARTICIPANT ATTRIBUTES HERE AS WELL FOR ALLELES
+			$partDetail['attributes'] = $this->fetchInteractionParticipantAttributes( $row->interaction_participant_id );
+			
+			$partDetails[] = $partDetail;
+		}
+		
+		return $partDetails;
+	
+	}
+	
+	/**
+	 * Return an array of annotation for a given participant
+	 */
+	
+	private function fetchParticipantAnnotation( $participantID ) {
+		return $this->annotationHash[$participantID];
+	}
+	
+	/**
+	 * Return an array containing interaction participant attributes
+	 */
+	
+	private function fetchInteractionParticipantAttributes( $interactionParticipantID ) {
+	
+		$stmt = $this->db->prepare( "SELECT interaction_participant_attribute_id, attribute_id, interaction_participant_attribute_parent, user_id, interaction_participant_attribute_addeddate FROM " . DB_IMS . ".interaction_participant_attributes WHERE interaction_participant_id=? AND interaction_participant_attribute_status='active' ORDER BY interaction_participant_attribute_addeddate ASC" );
+		$stmt->execute( array( $interactionParticipantID ) );
+		
+		$attDetails = array( );		
+		while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			$attDetail = array( );
+			$attDetail['interaction_participant_attribute_id'] = $row->interaction_participant_attribute_id;
+			$attDetail['attribute_id'] = $row->attribute_id;
+			$attDetail['attribute_parent_id'] = $row->interaction_participant_attribute_parent;
+			$attDetail['attribute_user_id'] = $row->user_id;
+			$attDetail['attribute_user_name'] = $this->userNameHash[$row->user_id];
+			$attDetail['attribute_addeddate'] = $row->interaction_participant_attribute_addeddate;
+			
+			$attDetail += $this->fetchAttribute( $row->attribute_id );
+			$attDetails[] = $attDetail;
+		}
+		
+		return $attDetails;
+	
+	}
+	
+	/**
+	 * Initialize the publications index from scratch
+	 */
+	 
+	public function initialize( ) {
+		
+		// DELETE EXISTING INDEX
+
+		$params = array( 
+			"index" => ES_INDEX
+		);
+
+		$response = $this->client->indices( )->delete( $params );
+		print_r( $response );
+		
+		// CREATE NEW INDEX
+
+		$params = array( 
+			"index" => ES_INDEX,
+			"body" => array( 
+				"settings" => array( 
+					"number_of_shards" => 1,
+					"number_of_replicas" => 0
+				)
+			)
+		);
+		
+		// ADD A MAPPING
+		
+		$response = $this->client->indices( )->create( $params );
+		print_r( $response );
+		
+		$params = array( 
+			"index" => ES_INDEX,
+			"type" => ES_TYPE,
+			"body" => array( 
+				"interaction" => array( 
+					"_all" => array( "enabled" => true ),
+					"_source" => array( "enabled" => true ),
+					"properties" => array( 
+						"interaction_id" => array( "type" => "integer" ),
+						"dataset_id" => array( "type" => "integer" ),
+						"interaction_type_id" => array( "type" => "integer" ),
+						"interaction_state" => array( "type" => "string", "index" => "not_analyzed" ),
+						"history_status" => array( "type" => "string", "index" => "not_analyzed" ),
+						"history_user_id" => array( "type" => "integer" ),
+						"history_user_name" => array( "type" => "string", "index" => "analyzed" ),
+						"history_date" => array( "type" => "date" ),
+						"attributes" => array( "type" => "nested", "properties" => array(  
+							"interaction_attribute_id" => array( "type" => "integer" ),
+							"attribute_id" => array( "type" => "integer" ),
+							"attribute_parent_id" => array( "type" => "integer" ),
+							"attribute_user_id" => array( "type" => "integer" ),
+							"attribute_user_name" => array( "type" => "string", "index" => "analyzed" ),
+							"attribute_addeddate" => array( "type" => "date" ),
+							"attribute_value" => array( "type" => "string", "index" => "not_analyzed", "fields" => array( 
+								"full" => array( "type" => "string", "index" => "analyzed" )
+							)),
+							"attribute_type_id" => array( "type" => "integer" ),
+							"attribute_type_name" => array( "type" => "string", "index" => "not_analyzed" ),
+							"attribute_type_shortcode" => array( "type" => "string", "index" => "not_analyzed" ),
+							"attribute_type_category_id" => array( "type" => "integer" ),
+							"attribute_type_category_name" => array( "type" => "string", "index" => "not_analyzed" ),
+							"ontology_term_id" => array( "type" => "integer" ),
+							"ontology_term_official_id" => array( "type" => "string", "index" => "not_analyzed" )
+						)),
+						"participants" => array( "type" => "nested", "properties" => array( 
+							"interaction_participant_id" => array( "type" => "integer" ),
+							"participant_id" => array( "type" => "integer" ),
+							"participant_role_id" => array( "type" => "integer" ),
+							"participant_role_name" => array( "type" => "string", "index" => "not_analyzed" ),
+							"participant_type_id" => array( "type" => "integer" ),
+							"participant_type_name" => array( "type" => "string", "index" => "not_analyzed" ),
+							"primary_name" => array( "type" => "string", "index" => "not_analyzed", "fields" => array( 
+								"full" => array( "type" => "string", "index" => "analyzed" )
+							)),
+							"systematic_name" => array( "type" => "string", "index" => "not_analyzed", "fields" => array( 
+								"full" => array( "type" => "string", "index" => "analyzed" )
+							)),
+							"aliases" => array( "type" => "string", "index" => "not_analyzed", "fields" => array( 
+								"full" => array( "type" => "string", "index" => "analyzed" )
+							)),
+							"organism_id" => array( "type" => "integer" ),
+							"organism_official_name" => array( "type" => "string", "index" => "not_analyzed" ),
+							"organism_abbreviation" => array( "type" => "string", "index" => "not_analyzed" ),
+							"organism_strain" => array( "type" => "string", "index" => "not_analyzed" ),
+							"attributes" => array( "type" => "nested", "properties" => array( 
+								"interaction_attribute_id" => array( "type" => "integer" ),
+								"attribute_id" => array( "type" => "integer" ),
+								"attribute_parent_id" => array( "type" => "integer" ),
+								"attribute_user_id" => array( "type" => "integer" ),
+								"attribute_user_name" => array( "type" => "string", "index" => "analyzed" ),
+								"attribute_addeddate" => array( "type" => "date" ),
+								"attribute_value" => array( "type" => "string", "index" => "not_analyzed", "fields" => array( 
+									"full" => array( "type" => "string", "index" => "analyzed" )
+								)),
+								"attribute_type_id" => array( "type" => "integer" ),
+								"attribute_type_name" => array( "type" => "string", "index" => "not_analyzed" ),
+								"attribute_type_shortcode" => array( "type" => "string", "index" => "not_analyzed" ),
+								"attribute_type_category_id" => array( "type" => "integer" ),
+								"attribute_type_category_name" => array( "type" => "string", "index" => "not_analyzed" ),
+								"ontology_term_id" => array( "type" => "integer" ),
+								"ontology_term_official_id" => array( "type" => "string", "index" => "not_analyzed" )
+							))
+						))
+					)
+				)
+			)
+		);
+		
+		$response = $this->client->indices( )->putMapping( $params );
+		print_r( $response );
+		
 	}
 	
 }
