@@ -246,18 +246,43 @@ class Lookups {
 		$stmt = $this->db->prepare( "SELECT official_symbol, aliases, systematic_name, organism_id, organism_official_name, organism_abbreviation, organism_strain FROM " . DB_QUICK . ".quick_annotation WHERE gene_id=? LIMIT 1" );
 		$stmt->execute( array( $geneID ) );
 		
+		$annotation = array( 
+			"primary_name" => "",
+			"systematic_name" => "",
+			"aliases" => array( ),
+			"organism_id" => "",
+			"organism_official_name" => "",
+			"organism_abbreviation" => "",
+			"organism_strain" => ""
+		);
+		
 		if( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
 		
 			if( $row->aliases != "-" ) {
-				$row->aliases = explode( "|", $row->aliases );
-			} else {
-				$row->aliases = array( );
+				$annotation['aliases'] = explode( "|", $row->aliases );
+			} 
+			
+			$annotation['primary_name'] = $row->official_symbol;
+			$annotation['aliases'][] = $row->official_symbol;
+			
+			if( $row->systematic_name != "-" ) {
+				$annotation['systematic_name'] = $row->systematic_name;
+				$annotation['aliases'][] = $row->systematic_name;
+			}
+		
+			
+			$annotation['organism_id'] = $row->organism_id;
+			$annotation['organism_official_name'] = $row->organism_official_name;
+			$annotation['organism_abbreviation'] = $row->organism_abbreviation;
+			
+			if( $row->organism_strain != "-" ) {
+				$annotation['organism_strain'] = $row->organism_strain;
 			}
 				
-			return $row;
+			
 		}
 		
-		return false;
+		return $annotation;
 		
 	}
 	
@@ -270,19 +295,41 @@ class Lookups {
 		$stmt = $this->db->prepare( "SELECT uniprot_identifier_value, uniprot_aliases, uniprot_name, uniprot_source, organism_id, organism_official_name, organism_abbreviation, organism_strain FROM " . DB_QUICK . ".quick_uniprot WHERE uniprot_id=? LIMIT 1" );
 		$stmt->execute( array( $uniprotID ) );
 		
+		$annotation = array( 
+			"primary_name" => "",
+			"systematic_name" => "",
+			"aliases" => array( ),
+			"organism_id" => "",
+			"organism_official_name" => "",
+			"organism_abbreviation" => "",
+			"organism_strain" => ""
+		);
+		
 		if( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
 		
 			if( $row->uniprot_aliases != "-" ) {
-				$row->uniprot_aliases = explode( "|", $row->uniprot_aliases );
-			} else {
-				$row->uniprot_aliases = array( );
+				$annotation['aliases'] = explode( "|", $row->uniprot_aliases );
+			} 
+			
+			$annotation['primary_name'] = $row->uniprot_identifier_value;
+			$annotation['aliases'][] = $row->uniprot_identifier_value;
+			
+			if( $row->uniprot_name != "-" ) {
+				$annotation['systematic_name'] = $row->uniprot_name;
+				$annotation['aliases'][] = $row->uniprot_name;
 			}
-				
-			return $row;
+			
+			$annotation['organism_id'] = $row->organism_id;
+			$annotation['organism_official_name'] = $row->organism_official_name;
+			$annotation['organism_abbreviation'] = $row->organism_abbreviation;
+			
+			if( $row->organism_strain != "-" ) {
+				$annotation['organism_strain'] = $row->organism_strain;
+			}
 			
 		}
 			
-		return false;
+		return $annotation;
 		
 	}
 	
@@ -295,25 +342,45 @@ class Lookups {
 		$stmt = $this->db->prepare( "SELECT refseq_accession, refseq_gi, refseq_aliases, refseq_uniprot_aliases, organism_id, organism_official_name, organism_abbreviation, organism_strain, gene_id FROM " . DB_QUICK . ".quick_refseq WHERE refseq_id=? LIMIT 1" );
 		$stmt->execute( array( $refseqID ) );
 		
+		$annotation = array( 
+			"primary_name" => "",
+			"systematic_name" => "",
+			"aliases" => array( ),
+			"organism_id" => "",
+			"organism_official_name" => "",
+			"organism_abbreviation" => "",
+			"organism_strain" => ""
+		);
+		
 		if( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
 		
 			if( $row->refseq_aliases != "-" ) {
-				$row->refseq_aliases = explode( "|", $row->refseq_aliases );
-			} else {
-				$row->refseq_aliases = array( );
-			}
+				$annotation['aliases'] = explode( "|", $row->refseq_aliases );
+			} 
 				
 			if( $row->refseq_uniprot_aliases != "-" ) {
-				$row->refseq_uniprot_aliases = explode( "|", $row->refseq_uniprot_aliases );
-			} else {
-				$row->refseq_uniprot_aliases = array( );
+				$annotation['aliases'] += explode( "|", $row->refseq_uniprot_aliases );
+			} 
+			
+			$annotation['primary_name'] = $row->refseq_accession;
+			$annotation['aliases'][] = $row->refseq_accession;
+			
+			if( $row->refseq_gi != "-" ) {
+				$annotation['systematic_name'] = $row->refseq_gi;
+				$annotation['aliases'][] = $row->refseq_gi;
 			}
-				
-			return $row;
+			
+			$annotation['organism_id'] = $row->organism_id;
+			$annotation['organism_official_name'] = $row->organism_official_name;
+			$annotation['organism_abbreviation'] = $row->organism_abbreviation;
+			
+			if( $row->organism_strain != "-" ) {
+				$annotation['organism_strain'] = $row->organism_strain;
+			}
 			
 		}
 			
-		return false;
+		return $annotation;
 		
 	}
 	
@@ -326,25 +393,37 @@ class Lookups {
 		$stmt = $this->db->prepare( "SELECT chemical_name, chemical_synonyms, chemical_brands, chemical_formula, chemical_type, chemical_source FROM " . DB_QUICK . ".quick_chemicals WHERE chemical_id=? LIMIT 1" );
 		$stmt->execute( array( $chemicalID ) );
 		
+		$annotation = array( 
+			"primary_name" => "",
+			"systematic_name" => "",
+			"aliases" => array( ),
+			"organism_id" => "",
+			"organism_official_name" => "",
+			"organism_abbreviation" => "",
+			"organism_strain" => ""
+		);
+		
 		if( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
 			
 			if( $row->chemical_synonyms != "-" ) {
-				$row->chemical_synonyms = explode( "|", $row->chemical_synonyms );
-			} else {
-				$row->chemical_synonyms = array( );
-			}
+				$annotation['aliases'] = explode( "|", $row->chemical_synonyms );
+			} 
 				
 			if( $row->chemical_brands != "-" ) {
-				$row->chemical_brands = explode( "|", $row->chemical_brands );
-			} else {
-				$row->chemical_brands = array( );
+				$annotation['aliases'] += explode( "|", $row->chemical_brands );
+			} 
+			
+			$annotation['primary_name'] = $row->chemical_name;
+			$annotation['aliases'][] = $row->chemical_name;
+			
+			if( $row->chemical_formula != "-" ) {
+				$annotation['systematic_name'] = $row->chemical_formula;
+				$annotation['aliases'][] = $row->chemical_formula;
 			}
-				
-			return $row;
 		
 		}
 			
-		return false;
+		return $annotation;
 		
 	}
 	
@@ -357,16 +436,34 @@ class Lookups {
 		$stmt = $this->db->prepare( "SELECT unknown_participant_value, organism_id FROM " . DB_IMS . ".unknown_participants WHERE unknown_participant_id=? LIMIT 1" );
 		$stmt->execute( array( $unknownID ) );
 		
+		$annotation = array( 
+			"primary_name" => "",
+			"systematic_name" => "",
+			"aliases" => array( ),
+			"organism_id" => "",
+			"organism_official_name" => "",
+			"organism_abbreviation" => "",
+			"organism_strain" => ""
+		);
+		
 		if( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
-			$organismInfo = $this->fetchOrganismInfoFromOrganismID( $row->organism_id );
-			$row->organism_official_name = $organismInfo->organism_official_name;
-			$row->organism_abbreviation = $organismInfo->organism_abbreviation;
-			$row->organism_strain = $organismInfo->organism_strain;
 			
-			return $row;
+			$annotation['primary_name'] = $row->unknown_participant_value;
+			$annotation['aliases'][] = $row->unknown_participant_value;
+			
+			$organismInfo = $this->fetchOrganismInfoFromOrganismID( $row->organism_id );
+			
+			$annotation['organism_id'] = $organismInfo->organism_id;
+			$annotation['organism_official_name'] = $organismInfo->organism_official_name;
+			$annotation['organism_abbreviation'] = $organismInfo->organism_abbreviation;
+			
+			if( $organismInfo->organism_strain != "-" ) {
+				$annotation['organism_strain'] = $organismInfo->organism_strain;
+			}
+			
 		}
 		
-		return false;
+		return $annotation;
 		
 	}
 	
@@ -376,7 +473,7 @@ class Lookups {
 		
 	public function fetchOrganismInfoFromOrganismID( $organismID ) {
 		
-		$stmt = $this->db->prepare( "SELECT organism_official_name, organism_abbreviation, organism_strain FROM " . DB_QUICK . ".quick_organisms WHERE organism_id=? LIMIT 1" );
+		$stmt = $this->db->prepare( "SELECT organism_id, organism_official_name, organism_abbreviation, organism_strain FROM " . DB_QUICK . ".quick_organisms WHERE organism_id=? LIMIT 1" );
 		$stmt->execute( array( $organismID ) );
 		
 		if( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
