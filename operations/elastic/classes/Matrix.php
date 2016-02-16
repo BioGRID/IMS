@@ -38,14 +38,6 @@ class Matrix {
 		$this->db->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
 		
 		$this->lookups = new IMS\app\classes\models\Lookups( );
-		$this->interactionTypesHash = $this->lookups->buildInteractionTypeHash( );
-		$this->userNameHash = $this->lookups->buildUserNameHash( );
-		$this->participantTypeHash = $this->lookups->buildParticipantTypesHash( );
-		$this->participantRoleHash = $this->lookups->buildParticipantRoleHash( );
-		$this->annotationHash = $this->lookups->buildAnnotationHash( );
-		$this->participantTypeMappingHash = $this->lookups->buildParticipantTypeMappingHash( );
-		$this->attributeTypeHash = $this->lookups->buildAttributeTypeHASH( );
-		$this->ontologyTermHash = $this->lookups->buildAttributeOntologyTermHASH( );
 		
 		$this->hosts = array( ES_HOST . ":" . ES_PORT );
 		$this->clientBuilder = Elasticsearch\ClientBuilder::create( );
@@ -54,10 +46,27 @@ class Matrix {
 	}
 	
 	/**
+	 * Build quick lookups for batch processing
+	 */
+	 
+	private function buildQuickLookups( ) {
+		$this->interactionTypesHash = $this->lookups->buildInteractionTypeHash( );
+		$this->userNameHash = $this->lookups->buildUserNameHash( );
+		$this->participantTypeHash = $this->lookups->buildParticipantTypesHash( );
+		$this->participantRoleHash = $this->lookups->buildParticipantRoleHash( );
+		$this->annotationHash = $this->lookups->buildAnnotationHash( );
+		$this->participantTypeMappingHash = $this->lookups->buildParticipantTypeMappingHash( );
+		$this->attributeTypeHash = $this->lookups->buildAttributeTypeHASH( );
+		$this->ontologyTermHash = $this->lookups->buildAttributeOntologyTermHASH( );
+	}
+	
+	/**
 	 * Build the matrix by fetching interactions by dataset id
 	 */
 	 
 	public function buildMatrixByDataset( $datasetID ) {
+		
+		$this->buildQuickLookups( );
 		
 		$stmt = $this->db->prepare( "SELECT * FROM " . DB_IMS . ".interactions WHERE dataset_id=?" );
 		$stmt->execute( array( $datasetID ) );
@@ -76,14 +85,26 @@ class Matrix {
 	 
 	public function buildMatrixByInteraction( $interactionID ) {
 		
+		$this->buildQuickLookups( );
+		
 		$stmt = $this->db->prepare( "SELECT * FROM " . DB_IMS . ".interactions WHERE interaction_id=?" );
 		$stmt->execute( array( $interactionID ) );
 		
 		while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
 			// Build Document
 			$document = $this->buildMatrixDocument( $row );
-			print_r( $document );
+
+			// Build Param Format
+			$params = array( 
+				"index" => ES_INDEX,
+				"type" => ES_TYPE,
+				"id" => $row->interaction_id,
+				"body" => $document
+			);
+			
 			// Insert it into Elastic Search
+			$response = $this->client->index( $params );
+				
 		}
 		
 	}
@@ -123,7 +144,7 @@ class Matrix {
 			$historyDetails['history_status'] = $row->modification_type;
 			$historyDetails['history_user_id'] = $row->user_id;
 			$historyDetails['history_user_name'] = $this->userNameHash[$row->user_id];
-			$historyDetails['history_date'] = $row->history_addeddate;
+			$historyDetails['history_date'] = date( 'Y/m/d H:i:s', strtotime( $row->history_addeddate ));
 		}
 		
 		return $historyDetails;
@@ -147,7 +168,7 @@ class Matrix {
 			$attDetail['attribute_parent_id'] = $row->interaction_attribute_parent;
 			$attDetail['attribute_user_id'] = $row->user_id;
 			$attDetail['attribute_user_name'] = $this->userNameHash[$row->user_id];
-			$attDetail['attribute_addeddate'] = $row->interaction_attribute_addeddate;
+			$attDetail['attribute_addeddate'] = date( 'Y/m/d H:i:s', strtotime( $row->interaction_attribute_addeddate ));
 			
 			$attDetail += $this->fetchAttribute( $row->attribute_id );
 			$attDetails[] = $attDetail;
@@ -249,7 +270,7 @@ class Matrix {
 			$attDetail['attribute_parent_id'] = $row->interaction_participant_attribute_parent;
 			$attDetail['attribute_user_id'] = $row->user_id;
 			$attDetail['attribute_user_name'] = $this->userNameHash[$row->user_id];
-			$attDetail['attribute_addeddate'] = $row->interaction_participant_attribute_addeddate;
+			$attDetail['attribute_addeddate'] = date( 'Y/m/d H:i:s', strtotime( $row->interaction_participant_attribute_addeddate ));
 			
 			$attDetail += $this->fetchAttribute( $row->attribute_id );
 			$attDetails[] = $attDetail;
@@ -281,7 +302,17 @@ class Matrix {
 			"body" => array( 
 				"settings" => array( 
 					"number_of_shards" => 1,
-					"number_of_replicas" => 0
+					"number_of_replicas" => 0,
+					"index" => array(
+						"analysis" => array(
+							"analyzer" => array( 
+								"keyword_analyzer" => array(
+									"tokenizer" => "keyword",
+									"filter" => "lowercase"
+								)
+							)
+						)
+					)
 				)
 			)
 		);
@@ -302,66 +333,66 @@ class Matrix {
 						"interaction_id" => array( "type" => "integer" ),
 						"dataset_id" => array( "type" => "integer" ),
 						"interaction_type_id" => array( "type" => "integer" ),
-						"interaction_state" => array( "type" => "string", "index" => "not_analyzed" ),
-						"history_status" => array( "type" => "string", "index" => "not_analyzed" ),
+						"interaction_state" => array( "type" => "string", "analyzer" => "keyword_analyzer" ),
+						"history_status" => array( "type" => "string", "analyzer" => "keyword_analyzer" ),
 						"history_user_id" => array( "type" => "integer" ),
-						"history_user_name" => array( "type" => "string", "index" => "analyzed" ),
-						"history_date" => array( "type" => "date" ),
+						"history_user_name" => array( "type" => "string" ),
+						"history_date" => array( "type" => "date", "format" => "yyyy/MM/dd HH:mm:ss" ),
 						"attributes" => array( "type" => "nested", "properties" => array(  
 							"interaction_attribute_id" => array( "type" => "integer" ),
 							"attribute_id" => array( "type" => "integer" ),
 							"attribute_parent_id" => array( "type" => "integer" ),
 							"attribute_user_id" => array( "type" => "integer" ),
-							"attribute_user_name" => array( "type" => "string", "index" => "analyzed" ),
-							"attribute_addeddate" => array( "type" => "date" ),
-							"attribute_value" => array( "type" => "string", "index" => "not_analyzed", "fields" => array( 
-								"full" => array( "type" => "string", "index" => "analyzed" )
+							"attribute_user_name" => array( "type" => "string" ),
+							"attribute_addeddate" => array( "type" => "date", "format" => "yyyy/MM/dd HH:mm:ss" ),
+							"attribute_value" => array( "type" => "string", "analyzer" => "keyword_analyzer", "fields" => array( 
+								"full" => array( "type" => "string" )
 							)),
 							"attribute_type_id" => array( "type" => "integer" ),
-							"attribute_type_name" => array( "type" => "string", "index" => "not_analyzed" ),
-							"attribute_type_shortcode" => array( "type" => "string", "index" => "not_analyzed" ),
+							"attribute_type_name" => array( "type" => "string", "analyzer" => "keyword_analyzer" ),
+							"attribute_type_shortcode" => array( "type" => "string", "analyzer" => "keyword_analyzer" ),
 							"attribute_type_category_id" => array( "type" => "integer" ),
-							"attribute_type_category_name" => array( "type" => "string", "index" => "not_analyzed" ),
+							"attribute_type_category_name" => array( "type" => "string", "analyzer" => "keyword_analyzer" ),
 							"ontology_term_id" => array( "type" => "integer" ),
-							"ontology_term_official_id" => array( "type" => "string", "index" => "not_analyzed" )
+							"ontology_term_official_id" => array( "type" => "string", "analyzer" => "keyword_analyzer" )
 						)),
 						"participants" => array( "type" => "nested", "properties" => array( 
 							"interaction_participant_id" => array( "type" => "integer" ),
 							"participant_id" => array( "type" => "integer" ),
 							"participant_role_id" => array( "type" => "integer" ),
-							"participant_role_name" => array( "type" => "string", "index" => "not_analyzed" ),
+							"participant_role_name" => array( "type" => "string", "analyzer" => "keyword_analyzer" ),
 							"participant_type_id" => array( "type" => "integer" ),
-							"participant_type_name" => array( "type" => "string", "index" => "not_analyzed" ),
-							"primary_name" => array( "type" => "string", "index" => "not_analyzed", "fields" => array( 
-								"full" => array( "type" => "string", "index" => "analyzed" )
+							"participant_type_name" => array( "type" => "string", "analyzer" => "keyword_analyzer" ),
+							"primary_name" => array( "type" => "string", "analyzer" => "keyword_analyzer", "fields" => array( 
+								"full" => array( "type" => "string" )
 							)),
-							"systematic_name" => array( "type" => "string", "index" => "not_analyzed", "fields" => array( 
-								"full" => array( "type" => "string", "index" => "analyzed" )
+							"systematic_name" => array( "type" => "string", "analyzer" => "keyword_analyzer", "fields" => array( 
+								"full" => array( "type" => "string" )
 							)),
-							"aliases" => array( "type" => "string", "index" => "not_analyzed", "fields" => array( 
-								"full" => array( "type" => "string", "index" => "analyzed" )
+							"aliases" => array( "type" => "string", "analyzer" => "keyword_analyzer", "fields" => array( 
+								"full" => array( "type" => "string" )
 							)),
 							"organism_id" => array( "type" => "integer" ),
-							"organism_official_name" => array( "type" => "string", "index" => "not_analyzed" ),
-							"organism_abbreviation" => array( "type" => "string", "index" => "not_analyzed" ),
-							"organism_strain" => array( "type" => "string", "index" => "not_analyzed" ),
+							"organism_official_name" => array( "type" => "string", "analyzer" => "keyword_analyzer" ),
+							"organism_abbreviation" => array( "type" => "string", "analyzer" => "keyword_analyzer" ),
+							"organism_strain" => array( "type" => "string", "analyzer" => "keyword_analyzer" ),
 							"attributes" => array( "type" => "nested", "properties" => array( 
 								"interaction_attribute_id" => array( "type" => "integer" ),
 								"attribute_id" => array( "type" => "integer" ),
 								"attribute_parent_id" => array( "type" => "integer" ),
 								"attribute_user_id" => array( "type" => "integer" ),
-								"attribute_user_name" => array( "type" => "string", "index" => "analyzed" ),
-								"attribute_addeddate" => array( "type" => "date" ),
-								"attribute_value" => array( "type" => "string", "index" => "not_analyzed", "fields" => array( 
-									"full" => array( "type" => "string", "index" => "analyzed" )
+								"attribute_user_name" => array( "type" => "string", "analyzer" => "keyword_analyzer" ),
+								"attribute_addeddate" => array( "type" => "date", "format" => "yyyy/MM/dd HH:mm:ss" ),
+								"attribute_value" => array( "type" => "string", "analyzer" => "keyword_analyzer", "fields" => array( 
+									"full" => array( "type" => "string" )
 								)),
 								"attribute_type_id" => array( "type" => "integer" ),
-								"attribute_type_name" => array( "type" => "string", "index" => "not_analyzed" ),
-								"attribute_type_shortcode" => array( "type" => "string", "index" => "not_analyzed" ),
+								"attribute_type_name" => array( "type" => "string", "analyzer" => "keyword_analyzer" ),
+								"attribute_type_shortcode" => array( "type" => "string", "analyzer" => "keyword_analyzer" ),
 								"attribute_type_category_id" => array( "type" => "integer" ),
-								"attribute_type_category_name" => array( "type" => "string", "index" => "not_analyzed" ),
+								"attribute_type_category_name" => array( "type" => "string", "analyzer" => "keyword_analyzer" ),
 								"ontology_term_id" => array( "type" => "integer" ),
-								"ontology_term_official_id" => array( "type" => "string", "index" => "not_analyzed" )
+								"ontology_term_official_id" => array( "type" => "string", "analyzer" => "keyword_analyzer" )
 							))
 						))
 					)
@@ -372,6 +403,14 @@ class Matrix {
 		$response = $this->client->indices( )->putMapping( $params );
 		print_r( $response );
 		
+	}
+	
+	/**
+	 * Submit a search to elastic search and return the response
+	 */
+	 
+	public function search( $params ) {
+		return $this->client->search( $params );
 	}
 	
 }
