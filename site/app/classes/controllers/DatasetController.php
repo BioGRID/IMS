@@ -18,10 +18,13 @@ class DatasetController extends lib\Controller {
 		
 		$addonJS = array( );
 		$addonJS[] = "jquery.webui-popover.min.js";
+		$addonJS[] = "jquery.dataTables.js";
+		$addonJS[] = "dataTables.bootstrap.js";
 		$addonJS[] = "ims-datasets.js";
 		
 		$addonCSS = array( );
 		$addonCSS[] = "jquery.webui-popover.min.css";
+		$addonCSS[] = "dataTables.bootstrap.css";
 		
 		$this->headerParams->set( 'ADDON_CSS', $addonCSS );
 		$this->footerParams->set( 'ADDON_JS', $addonJS );

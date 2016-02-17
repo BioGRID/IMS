@@ -16,6 +16,22 @@
 		
 	function initializeDatasetUI( ) {
 		setupAvailabilitySwitch( );
+		setupDataTables( );
+	}
+	
+	function setupDataTables( ) {
+		
+		var baseURL = $("head base").attr( "href" );
+		
+		$("#interactionTable").DataTable({
+			processing: true,
+			serverSide: true,
+			searchDelay: 5000,
+			ajax : {
+				url: baseURL + "/scripts/LoadInteractions.php",
+				type: 'POST'
+			}
+		});
 	}
 		
 	function setupAvailabilitySwitch( ) {

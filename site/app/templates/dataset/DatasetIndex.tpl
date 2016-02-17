@@ -69,14 +69,23 @@
 			<h3>{{ TITLE }}</h3>
 			<p class='marginTopSm'><strong>{{ AUTHOR_LIST }}</strong></p>
 			<p class='marginTopSm'>{{ ABSTRACT }}</p>
-			<p class='marginTopSm'>{{ ABSTRACT }}</p>
-			<p class='marginTopSm'>{{ ABSTRACT }}</p>
-			<p class='marginTopSm'>{{ ABSTRACT }}</p>
-			<p class='marginTopSm'>{{ ABSTRACT }}</p>
-			<p class='marginTopSm'>{{ ABSTRACT }}</p>
-			<p class='marginTopSm'>{{ ABSTRACT }}</p>
-			<p class='marginTopSm'>{{ ABSTRACT }}</p>
-
+			
+			<div>
+				<table id='interactionTable' class='table table-striped table-bordered'>
+					<thead>
+						<th>Bait</th>
+						<th>Prey</th>
+						<th>Bait Org</th>
+						<th>Prey Org</th>
+						<th>System</th>
+						<th>User</th>
+						<th>Date</th>
+						<th>Other</th>
+						<th>Options</th>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</div>
 		</div>
 		
 	</div>

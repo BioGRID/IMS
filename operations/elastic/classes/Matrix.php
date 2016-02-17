@@ -27,6 +27,8 @@ class Matrix {
 	private $hosts;
 	private $clientBuilder;
 	private $client;
+	
+	private $BULK_BATCH_SIZE = 500;
 
 	/**
 	 * Establish a database connection and also build several quick
@@ -71,12 +73,42 @@ class Matrix {
 		$stmt = $this->db->prepare( "SELECT * FROM " . DB_IMS . ".interactions WHERE dataset_id=?" );
 		$stmt->execute( array( $datasetID ) );
 		
+		// Build Param Format
+		$params = array( 
+			"body" => array( )
+		);
+		
+		$documentCount = 0;
 		while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			
+			$documentCount++;
+			
+			$params["body"][] = array( 
+				"index" => array( 
+					"_index" => ES_INDEX,
+					"_type" => ES_TYPE,
+					"_id" => $row->interaction_id
+				)
+			);
+			
 			// Build Document
 			$document = $this->buildMatrixDocument( $row );
-			// Insert it into Elastic Search
+			$params["body"][] = $document;
+
+			if( ($documentCount % $this->BULK_BATCH_SIZE) == 0 ) {
+				// Insert it into Elastic Search
+				$responses = $this->client->bulk( $params );
+				$params["body"] = array( );
+				print_r( $responses );
+			}
+			
 		}
 		
+		if( sizeof( $params["body"] ) > 0 ) {
+			$responses = $this->client->bulk( $params );
+			$params["body"] = array( );
+			print_r( $responses );
+		}
 	}
 	
 	/**
