@@ -22,30 +22,13 @@
 			<h3>{{ HISTORY_NAME }}</h3>
 			<h4 class='paddingBotXs'>{{ HISTORY_DATE }}</h4>
 		</div>
-		<div class='sidebarLink' onClick='javascript:alert("test");''>
-			Binary Interactions
-		</div>
-		<div class='sidebarLink' onClick='javascript:alert("test");''>
-			Complexes
-		</div>
-		<div class='sidebarLink' onClick='javascript:alert("test");''>
-			PTMs
-		</div>
-		<div class='sidebarLink' onClick='javascript:alert("test");''>
-			Chemical Interactions
-		</div>
-		<div class='sidebarLink' onClick='javascript:alert("test");''>
-			Supplementary Files
-		</div>
-		<div class='sidebarLink' onClick='javascript:alert("test");''>
-			Notes
-		</div>
-		<div class='sidebarLink' onClick='javascript:alert("test");''>
-			MyLink
-		</div>
-		<div class='sidebarLink' onClick='javascript:alert("test");''>
-			MyLink
-		</div>
+		
+		{% for SECTION in SUBSECTIONS %}
+			<div class='sidebarLink' data-type='{{ SECTION.type }}'>
+				<i class='fa fa-lg fa-angle-right pull-right'></i>
+				{{ SECTION.text }} 
+			</div>
+		{% endfor %}
 		
 	</aside>
 	
@@ -70,23 +53,14 @@
 			<p class='marginTopSm'><strong>{{ AUTHOR_LIST }}</strong></p>
 			<p class='marginTopSm'>{{ ABSTRACT }}</p>
 			
-			<div>
-				<table id='interactionTable' class='table table-striped table-bordered'>
-					<thead>
-						<th>Bait</th>
-						<th>Prey</th>
-						<th>Bait Org</th>
-						<th>Prey Org</th>
-						<th>System</th>
-						<th>User</th>
-						<th>Date</th>
-						<th>Other</th>
-						<th>Options</th>
-					</thead>
-					<tbody></tbody>
-				</table>
-			</div>
 		</div>
+		
+		{% for SECTION in SUBSECTIONS %}
+			<div id='section-{{ SECTION.type }}' class='datasetSubsection' data-type='{{ SECTION.type }}'>
+				<h3 class='marginBotSm'>{{ SECTION.text }}</h3>
+				<div class='section-body'></div>
+			</div>
+		{% endfor %}
 		
 	</div>
 	

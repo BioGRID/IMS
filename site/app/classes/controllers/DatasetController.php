@@ -65,6 +65,11 @@ class DatasetController extends lib\Controller {
 					}
 				}
 				
+				$subsections = array( );
+				$subsections[] = array( "text" => "Binary Interactions", "type" => "1" );
+				$subsections[] = array( "text" => "Complexes", "type" => "2" );
+				$subsections[] = array( "text" => "Chemical Interactions", "type" => "3" );
+				
 				$params = array(
 					"TITLE" => $dataset['ANNOTATION']['TITLE'],
 					"DATASET_ID" => $dataset['ID'],
@@ -78,7 +83,8 @@ class DatasetController extends lib\Controller {
 					"STATUS_LABEL" => $dataset['HISTORY_LABEL'],
 					"STATUS" => $dataset['HISTORY_CURRENT']['MODIFICATION'],
 					"HISTORY_NAME" => $dataset['HISTORY_CURRENT']['USER_NAME'],
-					"HISTORY_DATE" => $dataset['HISTORY_CURRENT']['ADDED_DATE']
+					"HISTORY_DATE" => $dataset['HISTORY_CURRENT']['ADDED_DATE'],
+					"SUBSECTIONS" => $subsections
 				);
 				
 				$this->headerParams->set( "CANONICAL", "<link rel='canonical' href='" . WEB_URL . "' />" );

@@ -16,22 +16,68 @@
 		
 	function initializeDatasetUI( ) {
 		setupAvailabilitySwitch( );
-		setupDataTables( );
+		setupSidebarLinks( );
+		//setupDataTables( );
 	}
 	
-	function setupDataTables( ) {
+	function setupSidebarLinks( ) {
+		
+		$(".datasetSidebar").on( "click", ".sidebarLink", function( ) {
+			$(".sidebarLink").removeClass( "active" );
+			$(this).addClass( "active" );
+			var type = $(this).attr( "data-type" );
+			
+			$(".datasetSubsection").each( function( index ) {
+				var sectionType = $(this).attr( "data-type" );
+				if( sectionType != type ) {
+					$(this).hide( );
+				}
+			});
+			
+			var section = $("#section-" + type);
+			section.slideDown( 500 );
+			setupDataTables( section );
+			
+		});
+		
+	}
+	
+	function setupDataTables( section ) {
 		
 		var baseURL = $("head base").attr( "href" );
+		var sectionBody = section.find( '.section-body' );
+		var sectionType = section.attr( "data-type" );
+		var table = "#dataTable-" + sectionType;
 		
-		$("#interactionTable").DataTable({
-			processing: true,
-			serverSide: true,
-			searchDelay: 5000,
-			ajax : {
-				url: baseURL + "/scripts/LoadInteractions.php",
-				type: 'POST'
-			}
-		});
+		if( !$.fn.DataTable.isDataTable( table )) {
+			
+			$.ajax({
+				
+				url: baseURL + "/scripts/FormatTable.php",
+				beforeSend: function( ) {
+					sectionBody.html( "LOADING <i class='fa fa-spinner fa-spin fa-lg'></i>" );
+				},
+				data: { type: sectionType },
+				method: "POST"
+				
+			}).done( function( results ) {
+				
+				sectionBody.html( results );
+				
+				$(table).DataTable({
+					processing: true,
+					serverSide: true,
+					searchDelay: 5000,
+					ajax : {
+						url: baseURL + "/scripts/LoadInteractions.php",
+						type: 'POST'
+					}
+				});
+				
+			});
+				
+		} 
+		
 	}
 		
 	function setupAvailabilitySwitch( ) {
