@@ -176,6 +176,19 @@ h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 { margin-top: 0px; margin-b
 				&:hover {
 					background-color: @brand-primary !important;
 				}
+				
+				&.active {
+					background-color: @brand-primary !important;
+					i {
+						color: #FFF;
+					}
+				}
+				
+				i {
+					color: @brand-info;
+					margin-top: 3px;
+				}
+				
 			}
 			
 		}
@@ -183,6 +196,10 @@ h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 { margin-top: 0px; margin-b
 		.datasetContent {
 			display: table-cell;
 			padding: 10px;
+			
+			.datasetSubsection {
+				display: none;
+			}
 		}
 		
 }
