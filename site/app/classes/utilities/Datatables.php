@@ -20,13 +20,23 @@ class Datatables {
 	
 	public function fetchTableStructure( $typeID ) {
 		
-		$tableHeader = "<table id='dataTable-" . $typeID . "' class='table table-striped table-bordered'>";
-		$tableFooter = "<tbody></tbody></table>";
-		
 		switch( $typeID ) {
 			
 			case "1" :
-				return $tableHeader . "<thead><th>Bait</th><th>Prey</th><th>Bait Org</th><th>Prey Org</th><th>System</th><th>User</th><th>Date</th><th>Other</th><th>Options</th></thead>" . $tableFooter;
+				$columns = array( 
+					array( "title" => "", "data" => "CHECK", "orderable" => false, "sortable" => false, "className" => "text-center" ),
+					array( "title" => "Bait", "data" => "BAIT" ),
+					array( "title" => "Prey", "data" => "HIT" ),
+					array( "title" => "Bait Org", "data" => "ORG_BAIT" ),
+					array( "title" => "Prey Org", "data" => "ORG_HIT" ),
+					array( "title" => "System", "data" => "SYSTEM" ),
+					array( "title" => "User", "data" => "USER" ),
+					array( "title" => "Date", "data" => "DATE" ),
+					array( "title" => "Attributes", "data" => "ATTRIBUTES" ),
+					array( "title" => "State", "data" => "STATE" )
+				);
+				
+				return json_encode( $columns );
 			
 		}
 		

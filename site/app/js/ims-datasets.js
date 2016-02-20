@@ -54,20 +54,17 @@
 			$.ajax({
 				
 				url: baseURL + "/scripts/FormatTable.php",
-				beforeSend: function( ) {
-					sectionBody.html( "LOADING <i class='fa fa-spinner fa-spin fa-lg'></i>" );
-				},
 				data: { type: sectionType },
-				method: "POST"
+				method: "POST",
+				dataType: "json"
 				
 			}).done( function( results ) {
-				
-				sectionBody.html( results );
 				
 				$(table).DataTable({
 					processing: true,
 					serverSide: true,
-					searchDelay: 5000,
+					columns: results,
+					order: [[7,'desc']],
 					ajax : {
 						url: baseURL + "/scripts/LoadInteractions.php",
 						type: 'POST'

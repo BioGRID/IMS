@@ -58,7 +58,9 @@
 		{% for SECTION in SUBSECTIONS %}
 			<div id='section-{{ SECTION.type }}' class='datasetSubsection' data-type='{{ SECTION.type }}'>
 				<h3 class='marginBotSm'>{{ SECTION.text }}</h3>
-				<div class='section-body'></div>
+				<div class='section-body'>
+					<table id='dataTable-{{ SECTION.type }}' class='table table-striped table-bordered table-responsive table-condensed' width="100%"></table>
+				</div>
 			</div>
 		{% endfor %}
 		
