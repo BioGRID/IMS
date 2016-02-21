@@ -57,7 +57,18 @@
 		
 		{% for SECTION in SUBSECTIONS %}
 			<div id='section-{{ SECTION.type }}' class='datasetSubsection' data-type='{{ SECTION.type }}'>
-				<h3 class='marginBotSm'>{{ SECTION.text }}</h3>
+			
+				<div class='pull-right col-lg-3 col-md-4 col-sm-5 col-xs-6'>
+					<div class='input-group marginBotSm marginTopSm'>
+						<input type="text" name='dataTable-{{ SECTION.type }}-filterTerm' id='dataTable-{{ SECTION.type }}-filterTerm' class="form-control" placeholder="Enter Filter Term" value="" autofocus>
+						<span class='input-group-btn'>
+							<button class='btn btn-success' id='dataTable-{{ SECTION.type }}-submit'>Filter <i class='fa fa-check'></i></button>
+						</span>
+					</div>
+				</div>
+			
+				<h3>{{ SECTION.text }}</h3>
+				<div class='subhead dataTable-info marginBotSm'></div>
 				<div class='section-body'>
 					<table id='dataTable-{{ SECTION.type }}' class='table table-striped table-bordered table-responsive table-condensed' width="100%"></table>
 				</div>

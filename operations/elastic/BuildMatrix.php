@@ -11,7 +11,8 @@ require_once __DIR__ . '/classes/Matrix.php';
 
 //115451
 $matrix = new Matrix( );
-//$matrix->initialize( );
+$matrix->initialize( );
+$matrix->buildMatrixByAll( );
 //$matrix->buildMatrixByDataset( "115451" );
 //$matrix->buildMatrixByInteraction( "1434467" );
 
@@ -51,20 +52,20 @@ $matrix = new Matrix( );
 	// )
 // );
 
-$params = array(
-	"index" => ES_INDEX,
-	"type" => ES_TYPE,
-	"body" => array(
-		"query" => array( 
-			"term" => array( 
-				"dataset_id" => 115351
-			)
-		)
-	)
-);
+// $params = array(
+	// "index" => ES_INDEX,
+	// "type" => ES_TYPE,
+	// "body" => array(
+		// "query" => array( 
+			// "term" => array( 
+				// "dataset_id" => 115351
+			// )
+		// )
+	// )
+// );
 
-$response = $matrix->search( $params );
-print_r( $response );		
+// $response = $matrix->search( $params );
+// print_r( $response );		
 				
 
 ?>

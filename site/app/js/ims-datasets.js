@@ -60,21 +60,40 @@
 				
 			}).done( function( results ) {
 				
-				$(table).DataTable({
+				var datatable = $(table).DataTable({
 					processing: true,
 					serverSide: true,
 					columns: results,
+					pageLength: 1000,
+					deferRender: true,
 					order: [[7,'desc']],
 					ajax : {
 						url: baseURL + "/scripts/LoadInteractions.php",
 						type: 'POST'
-					}
+					},
+					infoCallback: function( settings, start, end, max, total, pre ) {
+						var subhead = section.find( '.dataTable-info' );
+						subhead.html( pre );
+					},
+					dom : "<'row'<'col-sm-12'tr>><'row'<'col-sm-5'i><'col-sm-7'p>>"
+				});
+				
+				$("#dataTable-" + sectionType + "-submit").click( function( ) {
+					datatableFilterGlobal( datatable, $("#dataTable-" + sectionType + "-filterTerm").val( ), true, false ); 
 				});
 				
 			});
 				
 		} 
 		
+	}
+	
+	function datatableFilterGlobal( datatable, filterVal, isRegex, isSmartSearch ) {
+		datatable.search( filterVal, isRegex, isSmartSearch, true ).draw( );
+	}
+	
+	function datatableFilterColumn( datatable, filterVal, columnIndex, isRegex, isSmartSearch ) {
+		datatable.filter( filterVal, columnIndex, isRegex, isSmartSearch ).draw( );
 	}
 		
 	function setupAvailabilitySwitch( ) {

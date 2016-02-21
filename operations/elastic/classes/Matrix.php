@@ -28,7 +28,7 @@ class Matrix {
 	private $clientBuilder;
 	private $client;
 	
-	private $BULK_BATCH_SIZE = 500;
+	private $BULK_BATCH_SIZE = 1000;
 
 	/**
 	 * Establish a database connection and also build several quick
@@ -60,6 +60,55 @@ class Matrix {
 		$this->participantTypeMappingHash = $this->lookups->buildParticipantTypeMappingHash( );
 		$this->attributeTypeHash = $this->lookups->buildAttributeTypeHASH( );
 		$this->ontologyTermHash = $this->lookups->buildAttributeOntologyTermHASH( );
+	}
+	
+	/**
+	 * Build the matrix by fetching all interactions
+	 */
+	 
+	public function buildMatrixByAll( ) {
+		
+		$this->buildQuickLookups( );
+		
+		$stmt = $this->db->prepare( "SELECT * FROM " . DB_IMS . ".interactions" );
+		$stmt->execute( array( $datasetID ) );
+		
+		// Build Param Format
+		$params = array( 
+			"body" => array( )
+		);
+		
+		$documentCount = 0;
+		while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			
+			$documentCount++;
+			
+			$params["body"][] = array( 
+				"index" => array( 
+					"_index" => ES_INDEX,
+					"_type" => ES_TYPE,
+					"_id" => $row->interaction_id
+				)
+			);
+			
+			// Build Document
+			$document = $this->buildMatrixDocument( $row );
+			$params["body"][] = $document;
+
+			if( ($documentCount % $this->BULK_BATCH_SIZE) == 0 ) {
+				// Insert it into Elastic Search
+				$responses = $this->client->bulk( $params );
+				$params["body"] = array( );
+				print_r( $responses );
+			}
+			
+		}
+		
+		if( sizeof( $params["body"] ) > 0 ) {
+			$responses = $this->client->bulk( $params );
+			$params["body"] = array( );
+			print_r( $responses );
+		}
 	}
 	
 	/**
