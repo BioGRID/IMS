@@ -17,7 +17,5 @@
 	
 	define( 'ES_HOST', $data['ELASTICSEARCH']['ES_HOST'] );
 	define( 'ES_PORT', $data['ELASTICSEARCH']['ES_PORT'] );
-	define( 'ES_INDEX', $data['ELASTICSEARCH']['ES_INDEX'] );
-	define( 'ES_TYPE', $data['ELASTICSEARCH']['ES_TYPE'] );
 
 ?>

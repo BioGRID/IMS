@@ -1,16 +1,16 @@
 <?php
 
 /**
- * Datasets
- * This model class is for handling data processing for new
- * and existing datasets stored in the database.
+ * ElasticSearch
+ * This class is for processing data from the IMS into the 
+ * elastic search engine in large batches.
  */
 
 use \PDO;
 
 require_once __DIR__ . '/../../../site/app/classes/models/Lookups.php';
  
-class Matrix {
+class ElasticSearch {
 
 	private $db;
 	private $lookups;
@@ -29,6 +29,7 @@ class Matrix {
 	private $client;
 	
 	private $BULK_BATCH_SIZE = 1000;
+	
 
 	/**
 	 * Establish a database connection and also build several quick
@@ -63,15 +64,18 @@ class Matrix {
 	}
 	
 	/**
-	 * Build the matrix by fetching all interactions
+	 * Build the Interaction Index by fetching all interactions
 	 */
 	 
-	public function buildMatrixByAll( ) {
+	public function buildInteractionIndexByAll( ) {
+		
+		$ES_INDEX = "interactions";
+		$ES_TYPE = "interaction";
 		
 		$this->buildQuickLookups( );
 		
 		$stmt = $this->db->prepare( "SELECT * FROM " . DB_IMS . ".interactions" );
-		$stmt->execute( array( $datasetID ) );
+		$stmt->execute( );
 		
 		// Build Param Format
 		$params = array( 
@@ -85,21 +89,21 @@ class Matrix {
 			
 			$params["body"][] = array( 
 				"index" => array( 
-					"_index" => ES_INDEX,
-					"_type" => ES_TYPE,
+					"_index" => $ES_INDEX,
+					"_type" => $ES_TYPE,
 					"_id" => $row->interaction_id
 				)
 			);
 			
 			// Build Document
-			$document = $this->buildMatrixDocument( $row );
+			$document = $this->buildInteractionDocument( $row );
 			$params["body"][] = $document;
 
 			if( ($documentCount % $this->BULK_BATCH_SIZE) == 0 ) {
 				// Insert it into Elastic Search
 				$responses = $this->client->bulk( $params );
 				$params["body"] = array( );
-				print_r( $responses );
+				//print_r( $responses );
 			}
 			
 		}
@@ -107,15 +111,18 @@ class Matrix {
 		if( sizeof( $params["body"] ) > 0 ) {
 			$responses = $this->client->bulk( $params );
 			$params["body"] = array( );
-			print_r( $responses );
+			//print_r( $responses );
 		}
 	}
 	
 	/**
-	 * Build the matrix by fetching interactions by dataset id
+	 * Build the InteractionIndex by fetching interactions by dataset id
 	 */
 	 
-	public function buildMatrixByDataset( $datasetID ) {
+	public function buildInteractionIndexByDataset( $datasetID ) {
+		
+		$ES_INDEX = "interactions";
+		$ES_TYPE = "interaction";
 		
 		$this->buildQuickLookups( );
 		
@@ -134,21 +141,21 @@ class Matrix {
 			
 			$params["body"][] = array( 
 				"index" => array( 
-					"_index" => ES_INDEX,
-					"_type" => ES_TYPE,
+					"_index" => $ES_INDEX,
+					"_type" => $ES_TYPE,
 					"_id" => $row->interaction_id
 				)
 			);
 			
 			// Build Document
-			$document = $this->buildMatrixDocument( $row );
+			$document = $this->buildInteractionDocument( $row );
 			$params["body"][] = $document;
 
 			if( ($documentCount % $this->BULK_BATCH_SIZE) == 0 ) {
 				// Insert it into Elastic Search
 				$responses = $this->client->bulk( $params );
 				$params["body"] = array( );
-				print_r( $responses );
+				//print_r( $responses );
 			}
 			
 		}
@@ -156,15 +163,18 @@ class Matrix {
 		if( sizeof( $params["body"] ) > 0 ) {
 			$responses = $this->client->bulk( $params );
 			$params["body"] = array( );
-			print_r( $responses );
+			//print_r( $responses );
 		}
 	}
 	
 	/**
-	 *  Build the matrix by fetching interactions by interaction_id
+	 *  Build the InteractionIndex by fetching interactions by interaction_id
 	 */
 	 
-	public function buildMatrixByInteraction( $interactionID ) {
+	public function buildInteractionIndexByInteraction( $interactionID ) {
+		
+		$ES_INDEX = "interactions";
+		$ES_TYPE = "interaction";
 		
 		$this->buildQuickLookups( );
 		
@@ -173,12 +183,12 @@ class Matrix {
 		
 		while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
 			// Build Document
-			$document = $this->buildMatrixDocument( $row );
+			$document = $this->buildInteractionDocument( $row );
 
 			// Build Param Format
 			$params = array( 
-				"index" => ES_INDEX,
-				"type" => ES_TYPE,
+				"index" => $ES_INDEX,
+				"type" => $ES_TYPE,
 				"id" => $row->interaction_id,
 				"body" => $document
 			);
@@ -191,10 +201,10 @@ class Matrix {
 	}
 	
 	/**
-	 * Build a matrix document using the structure required by our search system
+	 * Build a interaction document using the structure required by our search system
 	 */
 	 
-	private function buildMatrixDocument( $interaction ) {
+	private function buildInteractionDocument( $interaction ) {
 		
 		$document = array( );
 		$document['interaction_id'] = $interaction->interaction_id;
@@ -362,15 +372,18 @@ class Matrix {
 	}
 	
 	/**
-	 * Initialize the publications index from scratch
+	 * Initialize the interactions index from scratch
 	 */
 	 
-	public function initialize( ) {
+	public function initializeInteractionsIndex( ) {
+		
+		$ES_INDEX = "interactions";
+		$ES_TYPE = "interaction";
 		
 		// DELETE EXISTING INDEX
 
 		$params = array( 
-			"index" => ES_INDEX
+			"index" => $ES_INDEX
 		);
 
 		$response = $this->client->indices( )->delete( $params );
@@ -379,11 +392,12 @@ class Matrix {
 		// CREATE NEW INDEX
 
 		$params = array( 
-			"index" => ES_INDEX,
+			"index" => $ES_INDEX,
 			"body" => array( 
 				"settings" => array( 
 					"number_of_shards" => 1,
 					"number_of_replicas" => 0,
+					"max_result_window" => 200000,
 					"index" => array(
 						"analysis" => array(
 							"analyzer" => array( 
@@ -404,8 +418,8 @@ class Matrix {
 		print_r( $response );
 		
 		$params = array( 
-			"index" => ES_INDEX,
-			"type" => ES_TYPE,
+			"index" => $ES_INDEX,
+			"type" => $ES_TYPE,
 			"body" => array( 
 				"interaction" => array( 
 					"_all" => array( "enabled" => true ),
@@ -484,6 +498,232 @@ class Matrix {
 		$response = $this->client->indices( )->putMapping( $params );
 		print_r( $response );
 		
+	}
+	
+	/**
+	 * Initialize the datasets index from scratch
+	 */
+	 
+	public function initializeDatasetsIndex( ) {
+		
+		$ES_INDEX = "datasets";
+		$ES_TYPE = "dataset";
+		
+		// DELETE EXISTING INDEX
+
+		$params = array( 
+			"index" => $ES_INDEX
+		);
+
+		$response = $this->client->indices( )->delete( $params );
+		print_r( $response );
+		
+		// CREATE NEW INDEX
+
+		$params = array( 
+			"index" => $ES_INDEX,
+			"body" => array( 
+				"settings" => array( 
+					"number_of_shards" => 1,
+					"number_of_replicas" => 0,
+					"index" => array(
+						"analysis" => array(
+							"analyzer" => array( 
+								"keyword_analyzer" => array(
+									"tokenizer" => "keyword",
+									"filter" => "lowercase"
+								)
+							)
+						)
+					)
+				)
+			)
+		);
+		
+		// ADD A MAPPING
+		
+		$response = $this->client->indices( )->create( $params );
+		print_r( $response );
+		
+		$params = array( 
+			"index" => $ES_INDEX,
+			"type" => $ES_TYPE,
+			"body" => array( 
+				"dataset" => array( 
+					"_all" => array( "enabled" => true ),
+					"_source" => array( "enabled" => true ),
+					"properties" => array( 
+						"dataset_id" => array( "type" => "integer" ),
+						"dataset_size" => array( "type" => "integer" ),
+						"interactions" => array( "type" => "nested", "properties" => array(  
+							"interaction_type_id" => array( "type" => "integer" ),
+							"activated_count" => array( "type" => "integer" ),
+							"disabled_count" => array( "type" => "integer" ),
+							"combined_count" => array( "type" => "integer" )
+						))
+					)
+				)
+			)
+		);
+		
+		$response = $this->client->indices( )->putMapping( $params );
+		print_r( $response );
+		
+	}
+	
+	/**
+	 * Build the Datasets Index by fetching all datasets
+	 */
+	 
+	public function buildDatasetsIndexByAll( ) {
+		
+		$ES_INDEX = "datasets";
+		$ES_TYPE = "dataset";
+		
+		$stmt = $this->db->prepare( "SELECT dataset_id FROM " . DB_IMS . ".datasets" );
+		$stmt->execute( );
+		
+		// Build Param Format
+		$params = array( 
+			"body" => array( )
+		);
+		
+		$documentCount = 0;
+		while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			
+			$documentCount++;
+			
+			$params["body"][] = array( 
+				"index" => array( 
+					"_index" => $ES_INDEX,
+					"_type" => $ES_TYPE,
+					"_id" => $row->dataset_id
+				)
+			);
+			
+			// Build Document
+			$document = $this->buildDatasetDocument( $row );
+			$params["body"][] = $document;
+
+			if( ($documentCount % $this->BULK_BATCH_SIZE) == 0 ) {
+				// Insert it into Elastic Search
+				$responses = $this->client->bulk( $params );
+				$params["body"] = array( );
+				//print_r( $responses );
+			}
+			
+		}
+		
+		if( sizeof( $params["body"] ) > 0 ) {
+			$responses = $this->client->bulk( $params );
+			$params["body"] = array( );
+			//print_r( $responses );
+		}
+	}
+	
+	/**
+	 * Build a dataset document using the structure required by our search system
+	 */
+	 
+	private function buildDatasetDocument( $dataset ) {
+		
+		$document = array( );
+		$document['dataset_id'] = $dataset->dataset_id;
+		$document['dataset_size'] = $this->fetchDatasetInteractionSize( $dataset->dataset_id );
+		$document['interactions'] = $this->fetchDatasetInteractionStats( $dataset->dataset_id );
+		
+		return $document;
+		
+	}
+	
+	/**
+	 * Fetch the total number of interactions, regardless of status for a total dataset size
+	 */
+	 
+	private function fetchDatasetInteractionSize( $datasetID ) {
+		
+		$stmt = $this->db->prepare( "SELECT COUNT(*) as intCount FROM " . DB_IMS . ".interactions WHERE dataset_id=? GROUP BY dataset_id LIMIT 1" );
+		$stmt->execute( array( $datasetID ) );
+		
+		if( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			return $row->intCount;
+		} 
+		
+		return 0;
+		
+	}
+	
+	/**
+	 * Fetch the total number of interactions, regardless of status for a total dataset size
+	 */
+	 
+	private function fetchDatasetInteractionStats( $datasetID ) {
+		
+		$ES_INDEX = "interactions";
+		$ES_TYPE = "interaction";
+		
+		$stmt = $this->db->prepare( "SELECT interaction_type_id, COUNT(*) as intCount FROM " . DB_IMS . ".interactions WHERE dataset_id=? GROUP BY interaction_type_id ORDER BY interaction_type_id ASC" );
+		$stmt->execute( array( $datasetID ) );
+		
+		$interactionStats = array( );
+		while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			
+			$stats = array( );
+			$stats['interaction_type_id'] = $row->interaction_type_id;
+			$stats['combined_count'] = $row->intCount;
+			
+			$params = array(
+				"index" => $ES_INDEX,
+				"type" => $ES_TYPE,
+				"body" => array(
+					"query" => array( 
+						"bool" => array( 
+							"must" => array( 
+								array( "match" => array( "dataset_id" => $datasetID )),
+								array( "match" => array( "interaction_type_id" => $row->interaction_type_id )),
+								array( "match" => array( "history_status" => "activated" ))
+							)
+						)
+					)
+				)
+			);
+			
+			$response = $this->getCount( $params );
+			$stats['activated_count'] = $response['count'];
+			
+			$params = array(
+				"index" => $ES_INDEX,
+				"type" => $ES_TYPE,
+				"body" => array(
+					"query" => array( 
+						"bool" => array( 
+							"must" => array( 
+								array( "match" => array( "dataset_id" => $datasetID )),
+								array( "match" => array( "interaction_type_id" => $row->interaction_type_id )),
+								array( "match" => array( "history_status" => "disabled" ))
+							)
+						)
+					)
+				)
+			);
+			
+			$response = $this->getCount( $params );
+			$stats['disabled_count'] = $response['count'];
+			
+			$interactionStats[] = $stats;
+			
+		}
+		
+		return $interactionStats;
+		
+	}
+	
+	/** 
+	 * Submit a search to elastic search and return a count response
+	 */
+	 
+	public function getCount( $params ) {
+		return $this->client->count( $params );
 	}
 	
 	/**
