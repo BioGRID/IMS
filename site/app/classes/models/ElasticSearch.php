@@ -29,6 +29,14 @@ class ElasticSearch {
 		return $this->client->search( $params );
 	}
 	
+	/**
+	 *
+	 */
+	 
+	public function get( $params ) {
+		return $this->client->get( $params );
+	}
+	
 }
 
 ?>

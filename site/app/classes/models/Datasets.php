@@ -15,6 +15,7 @@ class Datasets {
 
 	private $db;
 	private $datasetTypes;
+	private $interactionTypes;
 
 	public function __construct( ) {
 		$this->db = new PDO( DB_CONNECT, DB_USER, DB_PASS );
@@ -22,6 +23,7 @@ class Datasets {
 		
 		// Setup Quick Lookup Hashes
 		$this->datasetTypes = $this->buildDatasetTypeHash( );
+		$this->interactionTypes = $this->buildInteractionTypeHash( );
 	}
 	
 	/**
@@ -41,6 +43,37 @@ class Datasets {
 		
 		return $datasetTypes;
 	
+	}
+	
+	/**
+	 * Build a quick lookup hash of interaction types for rapid mapping
+	 * when fetching datasets
+	 */
+	 
+	private function buildInteractionTypeHash( ) {
+	
+		$stmt = $this->db->prepare( "SELECT interaction_type_id, interaction_type_name FROM " . DB_IMS . ".interaction_types" );
+		$stmt->execute( );
+		
+		$intTypes = array( );
+		while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			$intTypes[$row->interaction_type_id] = $row->interaction_type_name;
+		}
+		
+		return $intTypes;
+	
+	}
+	
+	/** 
+	 * Get interaction type name from interaction type id
+	 */
+	 
+	public function getInteractionTypeName( $interactionTypeID ) {
+		if( isset( $this->interactionTypes[$interactionTypeID] ) ){
+			return $this->interactionTypes[$interactionTypeID];
+		}
+		
+		return "";
 	}
 	
 	/**
