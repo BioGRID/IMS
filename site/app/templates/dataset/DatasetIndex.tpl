@@ -33,7 +33,8 @@
 	</aside>
 	
 	<div class='datasetContent'>
-		<div id='datasetDetails'>
+	
+		<div class='datasetHeader'>
 			<div class='datasetLinkouts pull-right'>LINKOUTS {{ LINKOUTS }}</div>
 			<h2 class='heading-line marginBotSm'>{{ TYPE_NAME }} ({{ DATASET_SOURCE_ID }})</h2>
 			
@@ -49,16 +50,45 @@
 				</div>
 			</div>
 			
-			<h3>{{ TITLE }}</h3>
-			<p class='marginTopSm'><strong>{{ AUTHOR_LIST }}</strong></p>
-			<p class='marginTopSm'>{{ ABSTRACT }}</p>
+			<div class='datasetDetailsWrap'>
+				<h3>{{ TITLE }}</h3>
+				<p class='marginTopSm'><strong>{{ AUTHOR_LIST }}</strong></p>
+				<p class='marginTopSm'>{{ ABSTRACT }}</p>
+			</div>
+			
+			<div class='text-center'><a id='datasetDetailsToggle'><i class='fa fa-lg fa-angle-double-up'></i> Collapse Dataset Details <i class='fa fa-lg fa-angle-double-up'></i></a></div>
 			
 		</div>
 		
 		{% for SECTION in SUBSECTIONS %}
-			<div id='section-{{ SECTION.type }}' class='datasetSubsection' data-type='{{ SECTION.type }}'>
-				<h3 class='marginBotSm'>{{ SECTION.text }}</h3>
-				<div class='section-body'></div>
+		
+			<div id='section-{{ SECTION.type }}' class='datasetSubsection' data-type='{{ SECTION.type }}' data-activated='{{ SECTION.activated }}' data-disabled='{{ SECTION.disabled }}' data-combined='{{ SECTION.combined }}'>
+			
+				<hr />
+			
+				<div class='pull-right col-lg-3 col-md-4 col-sm-5 col-xs-6' style='padding-right: 0'>
+					<div class='input-group marginBotSm marginTopSm'>
+						<input type="text" name='dataTable-{{ SECTION.type }}-filterTerm' id='dataTable-{{ SECTION.type }}-filterTerm' class="form-control" placeholder="Enter Filter Term" value="" autofocus>
+						<span class='input-group-btn'>
+							<button class='btn btn-success' id='dataTable-{{ SECTION.type }}-submit'>Filter <i class='fa fa-check'></i></button>
+						</span>
+					</div>
+				</div>
+			
+				<h3>{{ SECTION.text }}</h3>
+				<div class='subhead dataTable-info marginBotSm'></div>
+				<div class='dataTable-tools'>
+					<button type='button' class='btn btn-primary btn-sm'>Check All</button>
+					<div class='pull-right col-lg-2' style='padding-right: 0'>
+						<select class='form-control input-sm statusSelect' id='dataTable-{{ SECTION.type }}-statusSelect'>
+							<option value='activated' selected>View Activated Interactions</option>
+							<option value='disabled'>View Disabled Interactions</option>
+						</select>
+					</div>
+				</div>
+				<div class='section-body'>
+					<table id='dataTable-{{ SECTION.type }}' class='table table-striped table-bordered table-responsive table-condensed' width="100%"></table>
+				</div>
 			</div>
 		{% endfor %}
 		

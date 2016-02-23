@@ -65,10 +65,19 @@ class DatasetController extends lib\Controller {
 					}
 				}
 				
+				$es = new models\ElasticSearch( );
+				$response = $es->get( array( "index" => "datasets", "type" => "dataset", "id" => $dataset['ID'] ));
+				
 				$subsections = array( );
-				$subsections[] = array( "text" => "Binary Interactions", "type" => "1" );
-				$subsections[] = array( "text" => "Complexes", "type" => "2" );
-				$subsections[] = array( "text" => "Chemical Interactions", "type" => "3" );
+				foreach( $response['_source']['interactions'] as $subsection ) {
+					$subsections[] = array( 
+						"text" => $datasets->getInteractionTypeName( $subsection['interaction_type_id'] ), 
+						"type" => $subsection['interaction_type_id'], 
+						"activated" => $subsection['activated_count'], 
+						"disabled" => $subsection['disabled_count'], 
+						"combined" => $subsection['combined_count'] 
+					);
+ 				}
 				
 				$params = array(
 					"TITLE" => $dataset['ANNOTATION']['TITLE'],
@@ -84,7 +93,9 @@ class DatasetController extends lib\Controller {
 					"STATUS" => $dataset['HISTORY_CURRENT']['MODIFICATION'],
 					"HISTORY_NAME" => $dataset['HISTORY_CURRENT']['USER_NAME'],
 					"HISTORY_DATE" => $dataset['HISTORY_CURRENT']['ADDED_DATE'],
-					"SUBSECTIONS" => $subsections
+					"SUBSECTIONS" => $subsections,
+					"SHOW_ACCESSED" => "hidden",
+					"SHOW_INPROGRESS" => "hidden"
 				);
 				
 				$this->headerParams->set( "CANONICAL", "<link rel='canonical' href='" . WEB_URL . "' />" );
