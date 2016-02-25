@@ -21,10 +21,6 @@
 		//setupDataTables( );
 	}
 	
-	function setupViewChangeSelect( section, datatable ) {
-
-	}
-	
 	function setupHeaderCollapseToggle( ) {
 		$("#datasetDetailsToggle").on( "click", function( ) {
 			var detailsWrap = $(this).parent( ).parent( ).find( ".datasetDetailsWrap" );
@@ -97,7 +93,14 @@
 					ajax : {
 						url: baseURL + "/scripts/LoadInteractions.php",
 						type: 'POST',
-						data: { type: sectionType, datasetID: dsetID, activated: sectionActivated, disabled: sectionDisabled, combined: sectionCombined, status: sectionStatus }
+						data: function( d ) {  
+							d.type = sectionType;
+							d.datasetID = dsetID; 
+							d.activated = sectionActivated;
+							d.disabled = sectionDisabled;
+							d.combined = sectionCombined; 
+							d.status = $("#dataTable-" + d.type + "-statusSelect").val( );
+						}
 					},
 					infoCallback: function( settings, start, end, max, total, pre ) {
 						var subhead = section.find( '.dataTable-info' );
@@ -117,23 +120,52 @@
 	function initializeDatatableTools( datatable, sectionType ) {
 		
 		// SETUP Global Filter
+		// By Button Click
 		$("#dataTable-" + sectionType + "-submit").click( function( ) {
-			datatableFilterGlobal( datatable, $("#dataTable-" + sectionType + "-filterTerm").val( ), true, false ); 
+			datatableFilterGlobal( datatable, $("#dataTable-" + sectionType + "-filterTerm").val( ), true, false, sectionType ); 
+		});
+		
+		// By Pressing the Enter Key
+		$("#dataTable-" + sectionType + "-filterTerm").keyup( function( e ) {
+			if( e.keyCode == 13 ) {
+				datatableFilterGlobal( datatable, $(this).val( ), true, false, sectionType ); 
+			}
 		});
 		
 		// SETUP View Change Dropdown List
 		$("#dataTable-" + sectionType + "-statusSelect").change( function( ) {
-			alert( "TEST" );
+			datatable.ajax.reload( );
+			setCheckAllButtonStatus( sectionType, status, "Check All", false );
+		});
+		
+		// SETUP Check All Button
+		$("#dataTable-" + sectionType + "-checkAll").click( function( ) {
+			var statusText = $(this).attr( "data-status" );
+			
+			if( statusText == "check" ) {
+				setCheckAllButtonStatus( sectionType, "uncheck", "Uncheck All", true );
+			} else if( statusText == "uncheck" ) {
+				setCheckAllButtonStatus( sectionType, "check", "Check All", false );
+			}
+			
 		});
 	
 	}
 	
-	function datatableFilterGlobal( datatable, filterVal, isRegex, isSmartSearch ) {
-		datatable.search( filterVal, isRegex, isSmartSearch, true ).draw( );
+	function setCheckAllButtonStatus( sectionType, statusText, statusHTML, propVal ) {
+		$("#dataTable-" + sectionType + " :checkbox").prop( "checked", propVal );
+		$("#dataTable-" + sectionType + "-checkAll").attr( "data-status", statusText );
+		$("#dataTable-" + sectionType + "-checkAll > .checkButtonText").html( statusHTML );
 	}
 	
-	function datatableFilterColumn( datatable, filterVal, columnIndex, isRegex, isSmartSearch ) {
+	function datatableFilterGlobal( datatable, filterVal, isRegex, isSmartSearch, sectionType ) {
+		datatable.search( filterVal, isRegex, isSmartSearch, true ).draw( );
+		setCheckAllButtonStatus( sectionType, "check", "Check All", false );
+	}
+	
+	function datatableFilterColumn( datatable, filterVal, columnIndex, isRegex, isSmartSearch, sectionType ) {
 		datatable.filter( filterVal, columnIndex, isRegex, isSmartSearch ).draw( );
+		setCheckAllButtonStatus( sectionType, "check", "Check All", false );
 	}
 		
 	function setupAvailabilitySwitch( ) {
