@@ -276,6 +276,7 @@ class Lookups {
 			$annotation['organism_abbreviation'] = $row->organism_abbreviation;
 			
 			if( $row->organism_strain != "-" ) {
+				$annotation['organism_abbreviation'] .= " (" . $row->organism_strain . ")";
 				$annotation['organism_strain'] = $row->organism_strain;
 			}
 				
@@ -324,6 +325,7 @@ class Lookups {
 			$annotation['organism_abbreviation'] = $row->organism_abbreviation;
 			
 			if( $row->organism_strain != "-" ) {
+				$annotation['organism_abbreviation'] .= " (" . $row->organism_strain . ")";
 				$annotation['organism_strain'] = $row->organism_strain;
 			}
 			
@@ -375,6 +377,7 @@ class Lookups {
 			$annotation['organism_abbreviation'] = $row->organism_abbreviation;
 			
 			if( $row->organism_strain != "-" ) {
+				$annotation['organism_abbreviation'] .= " (" . $row->organism_strain . ")";
 				$annotation['organism_strain'] = $row->organism_strain;
 			}
 			
@@ -458,6 +461,7 @@ class Lookups {
 			$annotation['organism_abbreviation'] = $organismInfo->organism_abbreviation;
 			
 			if( $organismInfo->organism_strain != "-" ) {
+				$annotation['organism_abbreviation'] .= " (" . $organismInfo->organism_strain . ")";
 				$annotation['organism_strain'] = $organismInfo->organism_strain;
 			}
 			

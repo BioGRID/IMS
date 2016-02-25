@@ -18,6 +18,7 @@
 		setupHeaderCollapseToggle( );
 		setupAvailabilitySwitch( );
 		setupSidebarLinks( );
+		//setupAttributeIcons( );
 		//setupDataTables( );
 	}
 	
@@ -135,7 +136,7 @@
 		// SETUP View Change Dropdown List
 		$("#dataTable-" + sectionType + "-statusSelect").change( function( ) {
 			datatable.ajax.reload( );
-			setCheckAllButtonStatus( sectionType, status, "Check All", false );
+			setCheckAllButtonStatus( sectionType, "check", false );
 		});
 		
 		// SETUP Check All Button
@@ -143,29 +144,28 @@
 			var statusText = $(this).attr( "data-status" );
 			
 			if( statusText == "check" ) {
-				setCheckAllButtonStatus( sectionType, "uncheck", "Uncheck All", true );
+				setCheckAllButtonStatus( sectionType, "uncheck", true );
 			} else if( statusText == "uncheck" ) {
-				setCheckAllButtonStatus( sectionType, "check", "Check All", false );
+				setCheckAllButtonStatus( sectionType, "check", false );
 			}
 			
 		});
 	
 	}
 	
-	function setCheckAllButtonStatus( sectionType, statusText, statusHTML, propVal ) {
+	function setCheckAllButtonStatus( sectionType, statusText, propVal ) {
 		$("#dataTable-" + sectionType + " :checkbox").prop( "checked", propVal );
 		$("#dataTable-" + sectionType + "-checkAll").attr( "data-status", statusText );
-		$("#dataTable-" + sectionType + "-checkAll > .checkButtonText").html( statusHTML );
 	}
 	
 	function datatableFilterGlobal( datatable, filterVal, isRegex, isSmartSearch, sectionType ) {
 		datatable.search( filterVal, isRegex, isSmartSearch, true ).draw( );
-		setCheckAllButtonStatus( sectionType, "check", "Check All", false );
+		setCheckAllButtonStatus( sectionType, "check", false );
 	}
 	
 	function datatableFilterColumn( datatable, filterVal, columnIndex, isRegex, isSmartSearch, sectionType ) {
 		datatable.filter( filterVal, columnIndex, isRegex, isSmartSearch ).draw( );
-		setCheckAllButtonStatus( sectionType, "check", "Check All", false );
+		setCheckAllButtonStatus( sectionType, "check", false );
 	}
 		
 	function setupAvailabilitySwitch( ) {
@@ -208,5 +208,14 @@
 		});
 			
 	}
+	
+	// function setupAttributeIcons( ) {
+		
+		// $('.datasetContent').on( "click", ".attributeIcon", function( ) {
+			// $(this).webuiPopover( {trigger: 'manual'} );
+			// $(this).webuiPopover( 'show' );
+		// });
+		
+	// }
 
 }));

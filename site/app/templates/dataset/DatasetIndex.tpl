@@ -78,7 +78,7 @@
 				<h3>{{ SECTION.text }}</h3>
 				<div class='subhead dataTable-info marginBotSm'></div>
 				<div class='dataTable-tools'>
-					<button type='button' id='dataTable-{{ SECTION.type }}-checkAll' data-status='check' class='btn btn-primary btn-sm'><i class='fa fa-check'></i> <span class='checkButtonText'>Check All</span></button>
+					<button type='button' id='dataTable-{{ SECTION.type }}-checkAll' data-status='check' class='btn btn-primary btn-sm'><i class='fa fa-check'></i> </button>
 					<div class='pull-right col-lg-2' style='padding-right: 0'>
 						<select class='form-control input-sm statusSelect' id='dataTable-{{ SECTION.type }}-statusSelect'>
 							<option value='activated' selected>View Activated Interactions ({{ SECTION.activated }})</option>
