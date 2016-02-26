@@ -27,7 +27,7 @@ if inputArgs.list :
 else :
 
 	if inputArgs.operations[0] == "core" :
-		inputArgs.operations = [ "attributes", "interactions", "history", "participants", "complexes", "forced", "chemicals", "ptms", "hashes", "groups", "projects", "matrix" ]
+		inputArgs.operations = [ "attributes", "interactions", "history", "participants", "complexes", "forced", "chemicals", "ptms", "hashes", "groups", "projects" ]
 	elif inputArgs.operations[0] == "all" :
 		inputArgs.operations = [ "ontologies", "datasets", "attributes", "interactions", "history", "participants", "complexes", "forced", "chemicals", "ptms", "hashes", "groups", "projects", "matrix" ]
 

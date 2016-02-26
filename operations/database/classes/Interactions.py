@@ -57,7 +57,7 @@ class Interactions( ) :
 				# is the Experimental System 
 				modificationID = self.modHash[str(row['modification_id'])]
 				if str(row['experimental_system_id']) == '9' :
-					interactionAttribID = self.dbProcessor.processInteractionAttribute( row['interaction_id'], modificationID, "12", attribDate, "0", attribUserID, 'active' )
+					interactionAttribID = self.dbProcessor.processInteractionAttribute( row['interaction_id'], modificationID, "12", attribDate, interactionAttribID, attribUserID, 'active' )
 				
 				if (intCount % 10000) == 0 :
 					self.db.commit( )

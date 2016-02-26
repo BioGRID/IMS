@@ -78,6 +78,9 @@ class SQL( ) :
 		self.writeLine( "Migrating Pre-Pub" )
 		datasets.migratePrepub( )
 		
+		self.writeLine( "Adding ACTIVATED History" )
+		datasets.addActivatedHistory( )
+		
 		self.writeLine( "Migrating History" )
 		datasets.migrateHistory( )
 		

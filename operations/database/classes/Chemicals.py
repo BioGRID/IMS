@@ -36,7 +36,7 @@ class Chemicals( ) :
 			if str(row['publication_id']) in self.validDatasets :
 				
 				intCount += 1
-				self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".interactions VALUES( %s, '-', '-', %s, %s, %s )", ['0', row['publication_id'], "1", "normal"] )
+				self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".interactions VALUES( %s, '-', '-', %s, %s, %s )", ['0', row['publication_id'], "7", "normal"] )
 				interactionID = str(self.cursor.lastrowid)
 				
 				userID = str(row['user_id'])
