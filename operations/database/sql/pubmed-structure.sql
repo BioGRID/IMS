@@ -19,7 +19,7 @@ CREATE TABLE `pubmed` (
   `pubmed_pmcid` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `pubmed_doi` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `pubmed_article_ids` text COLLATE utf8mb4_unicode_ci NOT NULL,
-  `pubmed_status` enum('active','inactive','retracted','erratum') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'active',
+  `pubmed_status` enum('active','inactive','retracted','erratum','partialretracted') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'active',
   `pubmed_addeddate` datetime NOT NULL,
   `pubmed_lastupdated` datetime DEFAULT NULL,
   `pubmed_isannotated` tinyint(1) NOT NULL,

@@ -262,6 +262,36 @@ class ElasticSearch {
 			$attDetail['attribute_addeddate'] = date( 'Y/m/d H:i:s', strtotime( $row->interaction_attribute_addeddate ));
 			
 			$attDetail += $this->fetchAttribute( $row->attribute_id );
+			$attDetail['attributes'] = $this->fetchAttributeChildren( $row->interaction_attribute_id );
+			
+			$attDetails[] = $attDetail;
+			
+		}
+		
+		return $attDetails;
+	
+	}
+	
+	/** 
+	 * Return an array containing attributes that are children of the parent attribute
+	 */
+	
+	private function fetchAttributeChildren( $interactionAttributeID ) {
+	
+		$stmt = $this->db->prepare( "SELECT interaction_attribute_id, attribute_id, interaction_attribute_parent, user_id, interaction_attribute_addeddate FROM " . DB_IMS . ".interaction_attributes WHERE interaction_attribute_parent=? AND interaction_attribute_status='active' ORDER BY interaction_attribute_addeddate ASC" );
+		$stmt->execute( array( $interactionAttributeID ) );
+		
+		$attDetails = array( );		
+		while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			$attDetail = array( );
+			$attDetail['interaction_attribute_id'] = $row->interaction_attribute_id;
+			$attDetail['attribute_id'] = $row->attribute_id;
+			$attDetail['attribute_parent_id'] = $row->interaction_attribute_parent;
+			$attDetail['attribute_user_id'] = $row->user_id;
+			$attDetail['attribute_user_name'] = $this->userNameHash[$row->user_id];
+			$attDetail['attribute_addeddate'] = date( 'Y/m/d H:i:s', strtotime( $row->interaction_attribute_addeddate ));
+			
+			$attDetail += $this->fetchAttribute( $row->attribute_id );
 			$attDetails[] = $attDetail;
 		}
 		
@@ -449,7 +479,25 @@ class ElasticSearch {
 							"attribute_type_category_id" => array( "type" => "integer" ),
 							"attribute_type_category_name" => array( "type" => "string", "analyzer" => "keyword_analyzer" ),
 							"ontology_term_id" => array( "type" => "integer" ),
-							"ontology_term_official_id" => array( "type" => "string", "analyzer" => "keyword_analyzer" )
+							"ontology_term_official_id" => array( "type" => "string", "analyzer" => "keyword_analyzer" ),
+							"attributes" => array( "type" => "nested", "properties" => array( 
+								"interaction_attribute_id" => array( "type" => "integer" ),
+								"attribute_id" => array( "type" => "integer" ),
+								"attribute_parent_id" => array( "type" => "integer" ),
+								"attribute_user_id" => array( "type" => "integer" ),
+								"attribute_user_name" => array( "type" => "string", "analyzer" => "keyword_analyzer" ),
+								"attribute_addeddate" => array( "type" => "date", "format" => "yyyy/MM/dd HH:mm:ss" ),
+								"attribute_value" => array( "type" => "string", "analyzer" => "keyword_analyzer", "fields" => array( 
+									"full" => array( "type" => "string" )
+								)),
+								"attribute_type_id" => array( "type" => "integer" ),
+								"attribute_type_name" => array( "type" => "string", "analyzer" => "keyword_analyzer" ),
+								"attribute_type_shortcode" => array( "type" => "string", "analyzer" => "keyword_analyzer" ),
+								"attribute_type_category_id" => array( "type" => "integer" ),
+								"attribute_type_category_name" => array( "type" => "string", "analyzer" => "keyword_analyzer" ),
+								"ontology_term_id" => array( "type" => "integer" ),
+								"ontology_term_official_id" => array( "type" => "string", "analyzer" => "keyword_analyzer" )
+							))
 						)),
 						"participants" => array( "type" => "nested", "properties" => array( 
 							"interaction_participant_id" => array( "type" => "integer" ),

@@ -19,13 +19,6 @@ DB_PASS = data['DB']['DB_PASS']
 DB_QUICK = data['DB']['DB_QUICK']
 DB_IMS = data['DB']['DB_IMS']
 
-# MONGO VARS
-MONGO_HOST = data['MONGO']['MONGO_HOST']
-MONGO_PORT = data['MONGO']['MONGO_PORT']
-MONGO_USER = data['MONGO']['MONGO_USER']
-MONGO_PASS = data['MONGO']['MONGO_PASS']
-MONGO_IMS = data['MONGO']['MONGO_IMS']
-
 with open( BASE_DIR + "/config/config.json", "r" ) as configFile :
 	data = configFile.read( )
 

@@ -12,7 +12,6 @@ require_once __DIR__ . '/classes/ElasticSearch.php';
 //115451
 $es = new ElasticSearch( );
 $es->initializeInteractionsIndex( );
-$es->buildInteractionIndexByAll( );		
-				
+$es->buildInteractionIndexByAll( );
 
 ?>

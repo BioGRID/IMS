@@ -130,6 +130,28 @@ class Datasets( ) :
 				'-', 
 				row['progress_timestamp']
 			])
+			
+		self.db.commit( )
+			
+	def addActivatedHistory( self ) :
+		
+		"""
+		Insert Operation
+			-> IMS4: dataset_history
+		"""
+		
+		self.cursor.execute( "SELECT * FROM " + Config.DB_IMS + ".datasets" )
+		for row in self.cursor.fetchall( ) :
+			self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".dataset_history VALUES( %s, %s, %s, %s, %s, %s )", [
+				'0',
+				'ACTIVATED',
+				row['dataset_id'],
+				'1',
+				'Activated New Dataset',
+				row['dataset_addeddate']
+			])
+			
+		self.db.commit( )
 		
 	def validatePubmed( self, pubmedID ) :
 		

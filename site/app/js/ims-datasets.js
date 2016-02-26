@@ -18,11 +18,9 @@
 		setupHeaderCollapseToggle( );
 		setupAvailabilitySwitch( );
 		setupSidebarLinks( );
+		setupAttributeIcons( );
+		setupParticipantPopover( );
 		//setupDataTables( );
-	}
-	
-	function setupViewChangeSelect( section, datatable ) {
-
 	}
 	
 	function setupHeaderCollapseToggle( ) {
@@ -97,7 +95,14 @@
 					ajax : {
 						url: baseURL + "/scripts/LoadInteractions.php",
 						type: 'POST',
-						data: { type: sectionType, datasetID: dsetID, activated: sectionActivated, disabled: sectionDisabled, combined: sectionCombined, status: sectionStatus }
+						data: function( d ) {  
+							d.type = sectionType;
+							d.datasetID = dsetID; 
+							d.activated = sectionActivated;
+							d.disabled = sectionDisabled;
+							d.combined = sectionCombined; 
+							d.status = $("#dataTable-" + d.type + "-statusSelect").val( );
+						}
 					},
 					infoCallback: function( settings, start, end, max, total, pre ) {
 						var subhead = section.find( '.dataTable-info' );
@@ -117,64 +122,192 @@
 	function initializeDatatableTools( datatable, sectionType ) {
 		
 		// SETUP Global Filter
+		// By Button Click
 		$("#dataTable-" + sectionType + "-submit").click( function( ) {
-			datatableFilterGlobal( datatable, $("#dataTable-" + sectionType + "-filterTerm").val( ), true, false ); 
+			datatableFilterGlobal( datatable, $("#dataTable-" + sectionType + "-filterTerm").val( ), true, false, sectionType ); 
+		});
+		
+		// By Pressing the Enter Key
+		$("#dataTable-" + sectionType + "-filterTerm").keyup( function( e ) {
+			if( e.keyCode == 13 ) {
+				datatableFilterGlobal( datatable, $(this).val( ), true, false, sectionType ); 
+			}
 		});
 		
 		// SETUP View Change Dropdown List
 		$("#dataTable-" + sectionType + "-statusSelect").change( function( ) {
-			alert( "TEST" );
+			datatable.ajax.reload( );
+			setCheckAllButtonStatus( sectionType, "check", false );
+		});
+		
+		// SETUP Check All Button
+		$("#dataTable-" + sectionType + "-checkAll").click( function( ) {
+			var statusText = $(this).attr( "data-status" );
+			
+			if( statusText == "check" ) {
+				setCheckAllButtonStatus( sectionType, "uncheck", true );
+			} else if( statusText == "uncheck" ) {
+				setCheckAllButtonStatus( sectionType, "check", false );
+			}
+			
 		});
 	
 	}
 	
-	function datatableFilterGlobal( datatable, filterVal, isRegex, isSmartSearch ) {
-		datatable.search( filterVal, isRegex, isSmartSearch, true ).draw( );
+	function setCheckAllButtonStatus( sectionType, statusText, propVal ) {
+		$("#dataTable-" + sectionType + " :checkbox").prop( "checked", propVal );
+		$("#dataTable-" + sectionType + "-checkAll").attr( "data-status", statusText );
 	}
 	
-	function datatableFilterColumn( datatable, filterVal, columnIndex, isRegex, isSmartSearch ) {
+	function datatableFilterGlobal( datatable, filterVal, isRegex, isSmartSearch, sectionType ) {
+		datatable.search( filterVal, isRegex, isSmartSearch, true ).draw( );
+		setCheckAllButtonStatus( sectionType, "check", false );
+	}
+	
+	function datatableFilterColumn( datatable, filterVal, columnIndex, isRegex, isSmartSearch, sectionType ) {
 		datatable.filter( filterVal, columnIndex, isRegex, isSmartSearch ).draw( );
+		setCheckAllButtonStatus( sectionType, "check", false );
 	}
 		
 	function setupAvailabilitySwitch( ) {
 		
-		var availabilitySwitch = 
-			$('#availabilitySwitch').webuiPopover({
-				trigger: 'manual',
-				placement: 'right',
-				closeable: true,
-				animation: 'pop',
-				type: 'html',
-				dismissable: true,
-				title: 'Change Availability',
-				content: function( ) {
-					var availabilityForm = "<select class='form-control availability_select'><option value='public'>Public</option><option value='private'>Private</option><option value='website-only'>Website-Only</option></select><button type='button' class='availability_submit btn btn-success btn-block marginTopSm'>Submit</button>";
-					return availabilityForm;
+		$('.datasetSidebar').on( "click", "#availabilitySwitch", function( event ) {
+			
+			var availabilityPopup = $(this).qtip({
+				overwrite: false,
+				content: {
+					text: function( event, api ) {
+						var availabilityForm = "<select class='form-control availability_select'><option value='public'>Public</option><option value='private'>Private</option><option value='website-only'>Website-Only</option></select><button type='button' class='availability_submit btn btn-success btn-block marginTopSm'>Submit</button>";
+						return availabilityForm;
+					},
+					title: {
+						text: "<strong>Change Availability</strong>",
+						button: true
+					}
+				},
+				style: {
+					classes: 'qtip-bootstrap',
+					width: '250px'
+				},
+				position: {
+					my: 'left center',
+					at: 'right center'
+				},
+				show: {
+					event: event.type,
+					ready: true,
+					solo: true
+				},
+				hide: {
+					delay: 3000,
+					fixed: true,
+					leave: false
 				}
+			}, event);
+			
+			$("body").on( "click", ".availability_submit", function( ) {
+			
+				var selectVal = $(this).parent( ).find( ".availability_select" ).val( );
+				var datasetID = $("#datasetID").val( );
+				var baseURL = $("head base").attr( "href" );
+				
+				$.ajax({
+					url: baseURL + "/scripts/ExecuteProcess.php",
+					method: "POST",
+					dataType: "html",
+					data: { script: "switchAvailability", id: datasetID, value: selectVal }
+				}).done( function(data) {
+					$("#availabilitySwitch").html(data);
+					availabilityPopup.qtip( 'hide' );
+				});
+				
 			});
+				
+		});
 			
-		$("body").on( "click", ".availability_submit", function( ) {
+	}
+	
+	function setupParticipantPopover( ) {
+		
+		$(".datasetContent").on( 'click', '.participantPopover', function( event ) {
 			
-			var selectVal = $(this).parent( ).find( ".availability_select" ).val( );
-			var datasetID = $("#datasetID").val( );
-			var baseURL = $("head base").attr( "href" );
-			
-			$.ajax({
-				url: baseURL + "/scripts/ExecuteProcess.php",
-				method: "POST",
-				dataType: "html",
-				data: { script: "switchAvailability", id: datasetID, value: selectVal }
-			}).done( function(data) {
-				$("#availabilitySwitch").html(data);
-				availabilitySwitch.webuiPopover( 'toggle' );
-			});
+			$(this).qtip({
+				overwrite: false,
+				content: {
+					text: function( event, api ) {
+						return $(this).parent( ).find( '.participantContent' ).html( );
+					},
+					title: {
+						text: function( event, api ) {
+							return "<strong>" + $(this).data( "title" ) + "</strong>";
+						},
+						button: true
+					}
+				},
+				style: {
+					classes: 'qtip-bootstrap',
+					width: '300px'
+				},
+				position: {
+					my: 'left bottom',
+					at: 'right top'
+				},
+				show: {
+					event: event.type,
+					ready: true,
+					solo: true
+				},
+				hide: {
+					delay: 1000,
+					fixed: true,
+					event: 'mouseleave'
+				}
+			}, event);
 			
 		});
 		
-		$(".datasetDetails").on( "click", "#availabilitySwitch", function( ) {
-			availabilitySwitch.webuiPopover( 'toggle' );
-		});
+	}
+	
+	function setupAttributeIcons( ) {
+		
+		$(".datasetContent").on( 'mouseover', '.attributeIcon', function( event ) {
 			
+			$(this).qtip({
+				overwrite: false,
+				content: {
+					text: function( event, api ) {
+						return $(this).parent( ).find( '.attributeContent' ).html( );
+					},
+					title: {
+						text: function( event, api ) {
+							return "<strong>" + $(this).data( "title" ) + "</strong>";
+						},
+						button: true
+					}
+				},
+				style: {
+					classes: 'qtip-bootstrap',
+					width: '600px'
+				},
+				position: {
+					my: 'bottom center',
+					at: 'top center',
+					viewport: $(".datasetContent")
+				},
+				show: {
+					event: event.type,
+					ready: true,
+					solo: true
+				},
+				hide: {
+					delay: 1000,
+					fixed: true,
+					event: 'mouseleave'
+				}
+			}, event);
+			
+		});
+		
 	}
 
 }));

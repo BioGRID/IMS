@@ -56,7 +56,7 @@
 				<p class='marginTopSm'>{{ ABSTRACT }}</p>
 			</div>
 			
-			<div class='text-center'><a id='datasetDetailsToggle'><i class='fa fa-lg fa-angle-double-up'></i> Collapse Dataset Details <i class='fa fa-lg fa-angle-double-up'></i></a></div>
+			<div class='text-center'><a id='datasetDetailsToggle'><i class='fa fa-lg fa-angle-double-up'></i> <span class='datasetDetailsToggleText'>Collapse Dataset Details</span> <i class='fa fa-lg fa-angle-double-up'></i></a></div>
 			
 		</div>
 		
@@ -78,11 +78,11 @@
 				<h3>{{ SECTION.text }}</h3>
 				<div class='subhead dataTable-info marginBotSm'></div>
 				<div class='dataTable-tools'>
-					<button type='button' class='btn btn-primary btn-sm'>Check All</button>
+					<button type='button' id='dataTable-{{ SECTION.type }}-checkAll' data-status='check' class='btn btn-primary btn-sm'><i class='fa fa-check'></i> </button>
 					<div class='pull-right col-lg-2' style='padding-right: 0'>
 						<select class='form-control input-sm statusSelect' id='dataTable-{{ SECTION.type }}-statusSelect'>
-							<option value='activated' selected>View Activated Interactions</option>
-							<option value='disabled'>View Disabled Interactions</option>
+							<option value='activated' selected>View Activated Interactions ({{ SECTION.activated }})</option>
+							<option value='disabled'>View Disabled Interactions ({{ SECTION.disabled }})</option>
 						</select>
 					</div>
 				</div>
