@@ -421,6 +421,18 @@ class Datasets {
 			);
 		}
 		
+		if( sizeof( $history ) <= 0 ) {
+			$history[] = array(
+				"ID" => 0,
+				"MODIFICATION" => "NEW",
+				"DATASET_ID" => $datasetID,
+				"USER_ID" => 0,
+				"USER_NAME" => "",
+				"COMMENT" => "",
+				"ADDED_DATE" => ""
+			);
+		}
+		
 		return $history;
 		
 	}
@@ -457,6 +469,7 @@ class Datasets {
 				case "FULLTEXT" :
 				case "UNABLETOACCESS" :
 				case "INPROGRESS" :
+				case "NEW";
 					$latestHistory = $historyEntry;
 					$finished = true;
 					break;

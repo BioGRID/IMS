@@ -185,7 +185,7 @@ class InteractionTables {
 		foreach( $participants as $participant ) {
 			
 			if( $this->matchesQueries( $participant, $columnInfo['query'] )) {
-				$participantList[] = $this->formatCol( $participant[$columnInfo['value']], $columnInfo );
+				$participantList[] = $this->formatCol( $participant[$columnInfo['value']], $columnInfo, $participant );
 			}
 			
 		}
@@ -205,7 +205,7 @@ class InteractionTables {
 		foreach( $attributes as $attribute ) {
 			
 			if( $this->matchesQueries( $attribute, $columnInfo['query'] )) {
-				$attributeList[] = $this->formatCol( $attribute[$columnInfo['value']], $columnInfo );
+				$attributeList[] = $this->formatCol( $attribute[$columnInfo['value']], $columnInfo, $attribute );
 			}
 			
 		}
@@ -222,24 +222,100 @@ class InteractionTables {
 	private function fetchAttributeIcons( $attributes, $columnInfo ) {
 		
 		$attributeList = array( );
+		$attributeChildren = array( );
 		foreach( $attributes as $attribute ) {
 			
 			if( !$this->matchesQueries( $attribute, $columnInfo['ignore'] ) ) {
 				if( !isset( $attributeList[$attribute['attribute_type_category_id']] )) {
 					$attributeList[$attribute['attribute_type_category_id']] = array( );
 				}
+				
+				if( $attribute['attribute_parent_id'] == 0 ) {
+					$attributeList[$attribute['attribute_type_category_id']][$attribute['attribute_id']] = $attribute;
+				} else {
+					
+					if( !isset( $attributeChildren[$attribute['attribute_parent_id']] )) {
+						$attributeChildren[$attribute['attribute_parent_id']] = array( );
+					} 
+					
+					$attributeChildren[$attribute['attribute_parent_id']][] = $attribute;
+					
+				}
 			}
 		}
 		
 		ksort( $attributeList );
 		$attributeIcons = array( );
-		foreach( $attributeList as $attributeTypeCategoryID => $attributeDetails ) {
-			 $icon = $this->fetchAttributeIcon( $attributeTypeCategoryID );
-			 $text = "<div class='webui-popver-content'>TEST " . $icon . "</div>";
-			 $attributeIcons[] = $icon . $text;
+		foreach( $attributeList as $attributeTypeCategoryID => $attributes ) {
+			$content = array( );
+			foreach( $attributes as $attribute ) {
+			
+				$children = array( );
+				if( isset( $attributeChildren[$attribute['interaction_attribute_id']] )) {
+					$children = $attributeChildren[$attribute['interaction_attribute_id']];
+				}
+
+				$content[] = $this->fetchAttributeContent( $attribute, $children );
+				
+			}
+			
+			$content = "<span class='attributeContent'><ul><li>" . implode( "</li><li>", $content ) . "</li></ul></span>";
+			$icon = $this->fetchAttributeIcon( $attributeTypeCategoryID );
+			
+			$attributeIcons[] = "<span class='attribute'>" . $icon . $content . "</span>";
+			
 		}
 		
 		return $attributeIcons;
+	}
+	
+	/**
+	 * Fetch all subattributes attached to an attribute or participant and attach them all
+	 * to a single icon.
+	 */
+	 
+	private function fetchCombinedAttributeIcon( $attributes ) {
+		
+		$attributeList = array( );
+		foreach( $attributes as $attribute ) {
+			$attributeList[] = $this->fetchAttributeContent( $attribute, array( ) );
+		}
+		
+		$content = "<span class='attributeContent'><ul><li>" . implode( "</li><li>", $attributeList ) . "</li></ul></span>";
+		$icon = $this->fetchAttributeIcon( "0" );
+		
+		return " <span class='attribute'>" . $icon . $content . "</span>";
+		
+	}
+	
+	/** 
+	 * Fetch an attributes content based on the attribute category type ID and the data
+	 * for the attribute that was passed in
+	 */
+	 
+	private function fetchAttributeContent( $attribute, $children ) {
+		
+		$term = "<strong>" . $attribute['attribute_type_name'] . "</strong>: ";
+		$term .= $attribute['attribute_value'];
+		
+		// Ontology Term
+		if( $attribute['attribute_type_category_id'] == "1" ) { 
+			$term .= " (" . $attribute['ontology_term_official_id'] . ")";
+		}
+		
+		$childrenSet = array( );
+		foreach( $children as $child ) {
+			$childrenSet[] = $child['attribute_value'];
+		}
+		
+		if( sizeof( $childrenSet ) > 0 ) {
+			$term .= " [" . implode( " | ", $childrenSet ) . "]";
+		}
+		
+		$term .= " - <span class='attributeUser'>" . $attribute['attribute_user_name'] . " (" . date( 'Y-m-d', strtotime( $attribute['attribute_addeddate'] )) . ")</span>";
+		
+		return $term;
+		
 	}
 	
 	/**
@@ -250,40 +326,53 @@ class InteractionTables {
 	private function fetchAttributeIcon( $attributeTypeCategoryID ) {
 		
 		$icon = "flask";
+		$title = "Attribute";
 		
 		switch( $attributeTypeCategoryID ) {
 			
 			case "1" : // Ontology Term
 				$icon = "tags";
+				$title = "Ontology Terms";
 				break;
 				
 			case "2" : // Quantitative Score
 				$icon = "bar-chart-o";
+				$title = "Quantitative Scores";
 				break;
 				
 			case "3" : // Note
 				$icon = "edit";
+				$title = "Notes";
 				break;
 				
 			case "4" : // PTM Detail
 				$icon = "key";
+				$title = "PTM Detail";
 				break;
 				
 			case "5" : // Participant Tag
 				$icon = "star";
+				$title = "Participant Tag";
 				break;
 				
 			case "6" : // File
 				$icon = "file-text-o";
+				$title = "Upload File";
 				break;
 				
 			case "7" : // External Database ID
 				$icon = "external-link";
+				$title = "External Link";
+				break;
+				
+			case "0" : // Combined Icon
+				$icon = "sitemap";
+				$title = "Attributes";
 				break;
 			
 		}
 		
-		return "<i class='attributeIcon fa fa-lg fa-" . $icon . "'></i>";
+		return "<i data-title='" . $title . "' class='attributeIcon fa fa-lg fa-" . $icon . "'></i>";
 		
 	}
 	
@@ -311,14 +400,14 @@ class InteractionTables {
 	 * as to how it should be generated.
 	 */
 	 
-	private function formatCol( $value, $columnInfo ) {
+	private function formatCol( $value, $columnInfo, $data = array( ) ) {
 		
 		// If the func option is set, we are running the value through a 
 		// specified function or set of functions
 		
 		if( isset( $columnInfo['func'] )) {
 			foreach( $columnInfo['func'] as $func ) {
-				$value = $this->processFunc( $value, $func );
+				$value = $this->processFunc( $value, $func, $data );
 			}
 		}
 		
@@ -328,7 +417,9 @@ class InteractionTables {
 		
 		if( isset( $columnInfo['html'] )) {
 			$value = str_replace( "{{VALUE}}", $value, $columnInfo['html'] );
-		} 
+		} else if( isset( $data['attributes'] ) && sizeof( $data['attributes'] ) > 0 ) {
+			$value = $value . $this->fetchCombinedAttributeIcon( $data['attributes'] );
+		}
 		
 		return $value;
 		
@@ -339,12 +430,31 @@ class InteractionTables {
 	 * to pre-process the results
 	 */
 	 
-	private function processFunc( $value, $func ) {
+	private function processFunc( $value, $func, $data ) {
 		
 		switch( strtolower($func) ) {
 			
 			case "date" :
 				return date( 'Y-m-d', strtotime( $value ));
+				
+			case "participant-norole" :
+				
+				$participantContent = array( );
+				if( sizeof( $data['aliases'] ) > 0 ) {
+					$participantContent[] = "<strong>Aliases:</strong> " . implode( ", ", $data['aliases'] );
+				}
+				
+				$participantContent[] = "<strong>Type:</strong> " . $data['participant_type_name'];
+				$participantContent[] = "<strong>Role:</strong> " . $data['participant_role_name'];
+				
+				if( $data['organism_id'] != "" ) {
+					$participantContent[] = "<strong>Organism:</strong> " . $data['organism_official_name'];
+					if( $data['organism_strain'] != "" ) {
+						$participantContent[] = "<strong>Organism Strain:</strong> " . $data['organism_strain'];
+					}
+				}
+				
+				return '<div class="participantWrap"><a data-title="' . $value . '" class="participantPopover"><strong>' . $value . '</strong></a><span class="participantContent"><ul><li>' . implode( "</li><li>", $participantContent ). '</li></ul></span></div>';
 				
 		}
 		

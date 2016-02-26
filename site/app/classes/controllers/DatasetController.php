@@ -17,13 +17,13 @@ class DatasetController extends lib\Controller {
 		parent::__construct( $twig );
 		
 		$addonJS = array( );
-		$addonJS[] = "jquery.webui-popover.min.js";
+		$addonJS[] = "jquery.qtip.min.js";
 		$addonJS[] = "jquery.dataTables.js";
 		$addonJS[] = "dataTables.bootstrap.js";
 		$addonJS[] = "ims-datasets.js";
 		
 		$addonCSS = array( );
-		$addonCSS[] = "jquery.webui-popover.min.css";
+		$addonCSS[] = "jquery.qtip.min.css";
 		$addonCSS[] = "dataTables.bootstrap.css";
 		
 		$this->headerParams->set( 'ADDON_CSS', $addonCSS );

@@ -16,11 +16,11 @@ cp -rf node_modules/bootstrap/dist/js/bootstrap.min.js ../www/js/
 # JQUERY
 cp -rf node_modules/jquery/dist/jquery.min.js ../www/js/
 
-# WEBUI-POPVER
-cp -rf node_modules/webui-popover/dist/jquery.webui-popover.min.js ../www/js/
-cp -rf node_modules/webui-popover/dist/jquery.webui-popover.min.css ../www/css/
-
 # DATATABLES
 cp -rf node_modules/datatables.net/js/jquery.dataTables.js ../www/js/
 cp -rf node_modules/datatables.net-bs/js/dataTables.bootstrap.js ../www/js/
 cp -rf node_modules/datatables.net-bs/css/dataTables.bootstrap.css ../www/css/
+
+# QTIP2
+cp -rf node_modules/qtip2/dist/jquery.qtip.min.js ../www/js/
+cp -rf node_modules/qtip2/dist/jquery.qtip.min.css ../www/css/
