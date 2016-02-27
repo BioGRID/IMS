@@ -8,6 +8,7 @@
 	define( 'DB_USER', $data['DB']['DB_USER'] );
 	define( 'DB_PASS', $data['DB']['DB_PASS'] );
 	define( 'DB_IMS', $data['DB']['DB_IMS'] );
+	define( "DB_CONNECT", 'mysql:host=' . DB_HOST . ';port=3306;dbname=' . DB_IMS . ';charset=utf8' );
 	
 	$data = file_get_contents( 'config/config.json' );
 	$data = json_decode( $data, true );

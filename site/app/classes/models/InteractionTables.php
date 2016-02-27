@@ -7,7 +7,8 @@ namespace IMS\app\classes\models;
  * Methods for creating and outputting interaction tables with
  * customized options when fetching interaction data.
  */
- 
+
+use \PDO;
 use IMS\app\classes\models\ElasticSearch;
 use \Monolog\Logger;
 use \Monolog\Handler\StreamHandler;
@@ -16,9 +17,13 @@ class InteractionTables {
 	
 	private $es;
 	private $log;
+	private $db;
 	
 	function __construct( ) {
 		$this->es = new ElasticSearch( );
+		$this->db = new PDO( DB_CONNECT, DB_USER, DB_PASS );
+		$this->db->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
+		
 		$this->log = new Logger( 'Load Interactions Log' );
 		$this->log->pushHandler( new StreamHandler( __DIR__ . '/../../../www/logs/LoadInteractions.log', Logger::DEBUG ));
 	}
@@ -40,80 +45,13 @@ class InteractionTables {
 	 
 	public function fetchColumns( $typeID ) {
 		
+		$stmt = $this->db->prepare( "SELECT interaction_type_columns FROM " . DB_IMS . ".interaction_types WHERE interaction_type_id=?" );
+		$stmt->execute( array( $typeID ) );
+		
 		$columns = array( );
-		$columns[0] = array( 
-			"title" => "",
-			"orderable" => false,
-			"sortable" => false,
-			"className" => "text-center",
-			"type" => "direct",
-			"value" => "interaction_id",
-			"html" => "<div class='checkbox'><label><input type='checkbox' value='{{VALUE}}'></label></div>"
-		);
-		
-		$columns[1] = array( 
-			"title" => "Bait",
-			"type" => "participant",
-			"value" => "primary_name",
-			"query" => array( "participant_role_id" => "2" ),
-			"func" => array( "participant-norole" )
-		);
-		
-		$columns[2] = array( 
-			"title" => "Prey",
-			"type" => "participant",
-			"value" => "primary_name",
-			"query" => array( "participant_role_id" => "3" ),
-			"func" => array( "participant-norole" )
-		);
-		
-		$columns[3] = array( 
-			"title" => "Bait Org",
-			"type" => "participant",
-			"value" => "organism_abbreviation",
-			"query" => array( "participant_role_id" => "2" )
-		);
-		
-		$columns[4] = array( 
-			"title" => "Prey Org",
-			"type" => "participant",
-			"value" => "organism_abbreviation",
-			"query" => array( "participant_role_id" => "3" )
-		);
-		
-		$columns[5] = array( 
-			"title" => "System",
-			"type" => "attribute",
-			"value" => "attribute_value",
-			"query" => array( "attribute_type_id" => "11" )
-		);
-		
-		$columns[6] = array( 
-			"title" => "User",
-			"type" => "direct",
-			"value" => "history_user_name"
-		);
-		
-		$columns[7] = array( 
-			"title" => "Date",
-			"type" => "direct",
-			"value" => "history_date",
-			"func" => array( "date" )
-		);
-		
-		$columns[8] = array( 
-			"title" => "Attributes",
-			"type" => "attribute_icons",
-			"value" => "interaction_id",
-			"ignore" => array( "attribute_type_id" => "11" ),
-			"className" => "text-center"
-		);
-		
-		$columns[9] = array( 
-			"title" => "State",
-			"type" => "direct",
-			"value" => "interaction_state"
-		);
+		if( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			$columns = json_decode( $row->interaction_type_columns, true );
+		} 
 		
 		return $columns;
 		
@@ -190,6 +128,10 @@ class InteractionTables {
 			
 		}
 		
+		if( isset( $columnInfo['list'] ) && $columnInfo['list'] == "unique" ) {
+			$participantList = array_unique( $participantList );
+		}
+		
 		return $participantList;
 		
 	}
@@ -225,7 +167,7 @@ class InteractionTables {
 		$attributeChildren = array( );
 		foreach( $attributes as $attribute ) {
 			
-			if( !$this->matchesQueries( $attribute, $columnInfo['ignore'] ) ) {
+			if( !$this->matchesIgnores( $attribute, $columnInfo['ignore'] ) ) {
 				if( !isset( $attributeList[$attribute['attribute_type_category_id']] )) {
 					$attributeList[$attribute['attribute_type_category_id']] = array( );
 				}
@@ -327,6 +269,7 @@ class InteractionTables {
 		
 		$icon = "flask";
 		$title = "Attribute";
+		$size = "lg";
 		
 		switch( $attributeTypeCategoryID ) {
 			
@@ -366,13 +309,14 @@ class InteractionTables {
 				break;
 				
 			case "0" : // Combined Icon
-				$icon = "sitemap";
+				$icon = "arrow-circle-up";
 				$title = "Attributes";
+				$size = "sm";
 				break;
 			
 		}
 		
-		return "<i data-title='" . $title . "' class='attributeIcon fa fa-lg fa-" . $icon . "'></i>";
+		return "<i data-title='" . $title . "' class='attributeIcon fa fa-" . $size . " fa-" . $icon . "'></i>";
 		
 	}
 	
@@ -393,6 +337,25 @@ class InteractionTables {
 		
 		return True;
 		
+	}
+	
+	/** 
+	 * Test to see if the nested value in the elastic search document
+	 * matches a set of ignore parameters
+	 */
+	 
+	private function matchesIgnores( $nestedDoc, $ignores ) {
+	
+		foreach( $ignores as $ignore ) {
+			foreach( $ignore as $ignoreIndex => $ignoreVal ) {
+				if( isset( $nestedDoc[$ignoreIndex] ) && $nestedDoc[$ignoreIndex] == $ignoreVal ) {
+					return True;
+				}
+			}
+		}
+		
+		return False;
+	
 	}
 	
 	/**
@@ -417,7 +380,7 @@ class InteractionTables {
 		
 		if( isset( $columnInfo['html'] )) {
 			$value = str_replace( "{{VALUE}}", $value, $columnInfo['html'] );
-		} else if( isset( $data['attributes'] ) && sizeof( $data['attributes'] ) > 0 ) {
+		} else if( isset( $data['attributes'] ) && sizeof( $data['attributes'] ) > 0 && !isset( $columnInfo['noattribs'] ) ) {
 			$value = $value . $this->fetchCombinedAttributeIcon( $data['attributes'] );
 		}
 		
@@ -454,7 +417,7 @@ class InteractionTables {
 					}
 				}
 				
-				return '<div class="participantWrap"><a data-title="' . $value . '" class="participantPopover"><strong>' . $value . '</strong></a><span class="participantContent"><ul><li>' . implode( "</li><li>", $participantContent ). '</li></ul></span></div>';
+				return '<span class="participantWrap"><a data-title="' . $value . '" class="participantPopover"><strong>' . $value . '</strong></a><span class="participantContent"><ul><li>' . implode( "</li><li>", $participantContent ). '</li></ul></span></span>';
 				
 		}
 		

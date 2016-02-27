@@ -81,8 +81,8 @@
 					<button type='button' id='dataTable-{{ SECTION.type }}-checkAll' data-status='check' class='btn btn-primary btn-sm'><i class='fa fa-check'></i> </button>
 					<div class='pull-right col-lg-2' style='padding-right: 0'>
 						<select class='form-control input-sm statusSelect' id='dataTable-{{ SECTION.type }}-statusSelect'>
-							<option value='activated' selected>View Activated Interactions ({{ SECTION.activated }})</option>
-							<option value='disabled'>View Disabled Interactions ({{ SECTION.disabled }})</option>
+							<option value='activated' selected>View Activated ({{ SECTION.activated }})</option>
+							<option value='disabled'>View Disabled ({{ SECTION.disabled }})</option>
 						</select>
 					</div>
 				</div>
