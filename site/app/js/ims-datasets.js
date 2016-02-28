@@ -108,7 +108,7 @@
 						var subhead = section.find( '.dataTable-info' );
 						subhead.html( pre );
 					},
-					dom : "<'row'<'col-sm-12'tr>><'row'<'col-sm-5'i><'col-sm-7'p>>"
+					dom : "<'row'<'col-sm-12'rt>><'row'<'col-sm-5'i><'col-sm-7'p>>"
 				});
 				
 				initializeDatatableTools( datatable, sectionType );

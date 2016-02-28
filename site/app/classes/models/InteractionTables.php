@@ -33,8 +33,8 @@ class InteractionTables {
 	 * to manipulate exactly what is shown to the user.
 	 */
 	 
-	public function fetchInteractions( $datasetID, $typeID, $status, $searchTerm, $start, $length ) {
-		$params = $this->fetchParams( $datasetID, $typeID, $status, $searchTerm, $start, $length );
+	public function fetchInteractions( $datasetID, $typeID, $status, $searchTerm, $start, $length, $order, $columns ) {
+		$params = $this->fetchParams( $datasetID, $typeID, $status, $searchTerm, $start, $length, $order, $columns );
 		return $this->es->search( $params );
 	}
 	
@@ -463,7 +463,7 @@ class InteractionTables {
 	 * passed in to this function.
 	 */
 	 
-	private function fetchParams( $datasetID, $typeID, $status, $searchTerm, $start, $length ) {
+	private function fetchParams( $datasetID, $typeID, $status, $searchTerm, $start, $length, $order, $columns ) {
 		
 		$params = array(
 			"index" => "interactions",
@@ -475,7 +475,7 @@ class InteractionTables {
 		);
 		
 		$params["body"]["query"] = $this->fetchGlobalQueryParams( $datasetID, $typeID, $status, $searchTerm );
-		$params["body"]["sort"] = $this->fetchSortParams( );
+		$params["body"]["sort"] = $this->fetchSortParams( $order, $columns );
 		
 		return $params;
 	
@@ -499,26 +499,78 @@ class InteractionTables {
 		
 		if( strlen( $searchTerm ) > 0 ) {
 			$queryParams["bool"]["must"][] = array( "match" => array( "_all" => $searchTerm ) );
+			// $queryParams["bool"]["must"][] = array( 
+				// "nested" => array( 
+					// "path" => "participants",
+					// "query" => array( 
+						// "bool" => array( 
+							// "must" => array( 
+								// array( "match" => array( "participants.participant_role_id" => "2" )),
+								// array( "match" => array( "participants.primary_name" => $searchTerm ))
+							// )
+						// )
+					// )
+				// )
+			// );
 		}
 		
 		return $queryParams;
 		
 	}
-	
+	 
 	/** 
 	 * Fetch elastic search formatted sort query based on the type of search being performed
 	 * and the input parameters specificing what kind of sorting needs to be applied.
 	 */
 	 
-	private function fetchSortParams( ) {
+	private function fetchSortParams( $order, $columns ) {
 		
 		// Default sorting is to sort the interactions from newest
 		// to oldest based on the history_date document entry
 		
-		$sortParams = array( 
-			"history_date" => array( "order" => "desc" )
-		);
+		// "participants.primary_name" => array( 
+					// "order" => "desc",
+					// "nested_path" => "participants",
+					// "nested_filter" => array( 
+						// "term" => array( "participants.participant_role_id" => 3 )
+					// )
+				// )
 		
+		$sortParams = array( );
+		
+		if( sizeof( $order ) > 0 ) {
+			
+			$columnInfo = $columns[$order[0]['column']];
+			$direction = $order[0]['dir'];
+			
+			if( $columnInfo['type'] == "attribute" || $columnInfo['type'] == "participant" ) {
+				
+				$path = $columnInfo['type'] . "s";
+				$sortTerm = $path . "." . $columnInfo['value'];
+				
+				$filters = array( );
+				foreach( $columnInfo['query'] as $queryIndex => $queryVal ) {
+					$filters[] = array( "term" => array( $path . "." . $queryIndex => $queryVal ));
+				}
+		
+				$sortParams = array( 
+					$sortTerm => array( 
+						"order" => $direction,
+						"nested_path" => $path,
+						"nested_filter" => $filters
+					)
+				);
+			
+			} else {
+				
+				$sortParams = array( 
+					$columnInfo['value'] => array( "order" => $direction )
+				);
+			}
+			
+		} 
+		
+		$this->log->addInfo( print_r( $sortParams, true ) );			
 		return $sortParams;
 	}
 	
