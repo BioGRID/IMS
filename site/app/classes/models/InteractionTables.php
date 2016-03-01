@@ -309,7 +309,7 @@ class InteractionTables {
 				break;
 				
 			case "0" : // Combined Icon
-				$icon = "arrow-circle-up";
+				$icon = "info-circle";
 				$title = "Attributes";
 				$size = "sm";
 				break;

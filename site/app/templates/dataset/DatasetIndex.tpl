@@ -76,7 +76,7 @@
 				</div>
 			
 				<h3>{{ SECTION.text }}</h3>
-				<div class='subhead dataTable-info marginBotSm'></div>
+				<div class='subhead dataTable-info marginBotSm'>Loading Data...</div>
 				<div class='dataTable-tools'>
 					<button type='button' id='dataTable-{{ SECTION.type }}-checkAll' data-status='check' class='btn btn-primary btn-sm'><i class='fa fa-check'></i> </button>
 					<div class='pull-right col-lg-2' style='padding-right: 0'>
