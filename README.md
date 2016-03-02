@@ -3,7 +3,7 @@ This resource contains the complete BIoGRID Interaction Management System (IMS) 
 
 ## Development Status
 + **Unstable** - In Development
-+ Current Version: **4.0.1.1 ALPHA**
++ Current Version: **4.0.1.3 ALPHA**
 
 ## System Requirements
 To use all of the tools contained within, you require at least the following:
@@ -11,7 +11,7 @@ To use all of the tools contained within, you require at least the following:
 + Python 2.7+ (https://www.python.org/)
 + MySQL 5.5+ (https://www.mysql.com/)
 + PHP 5.5.9+ (http://www.php.net/)
-+ MongoDB (https://www.mongodb.org/)
++ ElasticSearch 2.2+ (https://www.elastic.co/products/elasticsearch)
 + A web server such as Nginx (https://www.nginx.com/) or Apache (https://httpd.apache.org/)
 
 ## Directories
