@@ -62,12 +62,12 @@ class InteractionTables {
 	 * with correct column configuration based on type.
 	 */
 	
-	public function formatResults( $response, $columns ) {
+	public function formatResults( $response, $columns, $typeID ) {
 		
 		$data = array( );
 		if( $response['hits']['total'] > 0 ) {
 			foreach( $response['hits']['hits'] as $hit ) {
-				$data[] = $this->formatRow( $hit, $columns );
+				$data[] = $this->formatRow( $hit, $columns, $typeID );
 			}
 		}
 		
@@ -80,7 +80,7 @@ class InteractionTables {
 	 * document fetched from ElasticSearch
 	 */
 	 
-	private function formatRow( $hit, $columns ) {
+	private function formatRow( $hit, $columns, $typeID ) {
 		
 		$row = array( );
 		foreach( $columns as $columnIndex => $columnInfo ) {
@@ -88,16 +88,20 @@ class InteractionTables {
 			$colVal = "";
 			if( $columnInfo['type'] == "direct" ) {
 				$colVal = $hit['_source'][$columnInfo['value']];
-				$colVal = $this->formatCol( $colVal, $columnInfo );
+				$colVal = $this->formatCol( $colVal, $columnInfo, array( ), $typeID );
 			} else if( $columnInfo['type'] == "participant" ) {
-				$colVal = $this->fetchParticipants( $hit['_source']['participants'], $columnInfo );
+				$colVal = $this->fetchParticipants( $hit['_source']['participants'], $columnInfo, $typeID );
 				$colVal = implode( ", ", $colVal );
 			} else if( $columnInfo['type'] == "attribute" ) {
-				$colVal = $this->fetchAttributes( $hit['_source']['attributes'], $columnInfo );
+				$colVal = $this->fetchAttributes( $hit['_source']['attributes'], $columnInfo, $typeID );
 				$colVal = implode( ", ", $colVal );
 			} else if( $columnInfo['type'] == "attribute_icons" ) {
-				$colVal = $this->fetchAttributeIcons( $hit['_source']['attributes'], $columnInfo );
-				$colVal = implode( " ", $colVal );
+				$colVal = $this->fetchAttributeIcons( $hit['_source']['attributes'], $columnInfo, $typeID );
+				if( sizeof( $colVal ) > 0 ) {
+					$colVal = implode( " ", $colVal );
+				} else {
+					$colVal = "-";
+				}
 			}
 			
 			if($hit['_source']['interaction_state'] == "error" ) {
@@ -117,13 +121,13 @@ class InteractionTables {
 	 * display for a particular column.
 	 */
 	 
-	private function fetchParticipants( $participants, $columnInfo ) {
+	private function fetchParticipants( $participants, $columnInfo, $typeID ) {
 		
 		$participantList = array( );
 		foreach( $participants as $participant ) {
 			
 			if( $this->matchesQueries( $participant, $columnInfo['query'] )) {
-				$participantList[] = $this->formatCol( $participant[$columnInfo['value']], $columnInfo, $participant );
+				$participantList[] = $this->formatCol( $participant[$columnInfo['value']], $columnInfo, $participant, $typeID );
 			}
 			
 		}
@@ -141,13 +145,13 @@ class InteractionTables {
 	 * for this particular column.
 	 */
 	 
-	private function fetchAttributes( $attributes, $columnInfo ) {
+	private function fetchAttributes( $attributes, $columnInfo, $typeID ) {
 	
 		$attributeList = array( );
 		foreach( $attributes as $attribute ) {
 			
 			if( $this->matchesQueries( $attribute, $columnInfo['query'] )) {
-				$attributeList[] = $this->formatCol( $attribute[$columnInfo['value']], $columnInfo, $attribute );
+				$attributeList[] = $this->formatCol( $attribute[$columnInfo['value']], $columnInfo, $attribute, $typeID );
 			}
 			
 		}
@@ -161,14 +165,15 @@ class InteractionTables {
 	 * display for each type.
 	 */
 	 
-	private function fetchAttributeIcons( $attributes, $columnInfo ) {
+	private function fetchAttributeIcons( $attributes, $columnInfo, $typeID ) {
 		
 		$attributeList = array( );
 		$attributeChildren = array( );
+		
 		foreach( $attributes as $attribute ) {
 			
 			if( !$this->matchesIgnores( $attribute, $columnInfo['ignore'] ) ) {
-				if( !isset( $attributeList[$attribute['attribute_type_category_id']] )) {
+				if( !isset( $attributeList[$attribute['attribute_type_category_id']]) && $attribute['attribute_parent_id'] == 0 ) {
 					$attributeList[$attribute['attribute_type_category_id']] = array( );
 				}
 				
@@ -197,7 +202,7 @@ class InteractionTables {
 					$children = $attributeChildren[$attribute['interaction_attribute_id']];
 				}
 
-				$content[] = $this->fetchAttributeContent( $attribute, $children );
+				$content[] = $this->fetchAttributeContent( $attribute, $children, $typeID );
 				
 			}
 			
@@ -216,11 +221,11 @@ class InteractionTables {
 	 * to a single icon.
 	 */
 	 
-	private function fetchCombinedAttributeIcon( $attributes ) {
+	private function fetchCombinedAttributeIcon( $attributes, $typeID ) {
 		
 		$attributeList = array( );
 		foreach( $attributes as $attribute ) {
-			$attributeList[] = $this->fetchAttributeContent( $attribute, array( ) );
+			$attributeList[] = $this->fetchAttributeContent( $attribute, array( ), $typeID );
 		}
 		
 		$content = "<span class='attributeContent'><ul><li>" . implode( "</li><li>", $attributeList ) . "</li></ul></span>";
@@ -235,14 +240,15 @@ class InteractionTables {
 	 * for the attribute that was passed in
 	 */
 	 
-	private function fetchAttributeContent( $attribute, $children ) {
+	private function fetchAttributeContent( $attribute, $children, $typeID ) {
 		
-		$term = "<strong>" . $attribute['attribute_type_name'] . "</strong>: ";
-		$term .= $attribute['attribute_value'];
+		$term = "<strong>" . $attribute['attribute_type_name'] . " [<a data-type='" . $typeID . "' class='dataTable-attribute-searchTag'>@" . $attribute['attribute_type_shortcode'] . "</a>]</strong>: ";
 		
 		// Ontology Term
 		if( $attribute['attribute_type_category_id'] == "1" ) { 
-			$term .= " (" . $attribute['ontology_term_official_id'] . ")";
+			$term .= $attribute['attribute_value'] . " (<span class='dataTable-attribute-value'>" . $attribute['ontology_term_official_id'] . "</span>)";
+		} else {
+			$term .= "<span class='dataTable-attribute-value'>" . $attribute['attribute_value'] . "</span>";
 		}
 		
 		$childrenSet = array( );
@@ -363,7 +369,7 @@ class InteractionTables {
 	 * as to how it should be generated.
 	 */
 	 
-	private function formatCol( $value, $columnInfo, $data = array( ) ) {
+	private function formatCol( $value, $columnInfo, $data = array( ), $typeID ) {
 		
 		// If the func option is set, we are running the value through a 
 		// specified function or set of functions
@@ -381,7 +387,7 @@ class InteractionTables {
 		if( isset( $columnInfo['html'] )) {
 			$value = str_replace( "{{VALUE}}", $value, $columnInfo['html'] );
 		} else if( isset( $data['attributes'] ) && sizeof( $data['attributes'] ) > 0 && !isset( $columnInfo['noattribs'] ) ) {
-			$value = $value . $this->fetchCombinedAttributeIcon( $data['attributes'] );
+			$value = $value . $this->fetchCombinedAttributeIcon( $data['attributes'], $typeID );
 		}
 		
 		return $value;
@@ -429,7 +435,7 @@ class InteractionTables {
 	 * interaction type
 	 */
 	 
-	public function fetchColumnHeaderDefinitions( $columns ) {
+	public function fetchColumnHeaderDefinitions( $columns, $type ) {
 		
 		$columnSet = array( );
 		foreach( $columns as $columnIndex => $columnInfo ) {
@@ -437,6 +443,10 @@ class InteractionTables {
 			$column = array( );
 			$column["title"] = $columnInfo["title"];
 			$column["data"] = $columnIndex;
+			
+			if(isset( $columnInfo['search'] ) && strlen($columnInfo['search']) > 0) {
+				$column["title"] .= " [<a data-type='" . $type . "' class='dataTable-searchTag'>" . $columnInfo["search"] . "</a>]";
+			}
 			
 			if(isset( $column['orderable'] )) {
 				$column["orderable"] = $columnInfo["orderable"];
@@ -512,9 +522,53 @@ class InteractionTables {
 					// )
 				// )
 			// );
+			
+			// $queryParams["bool"]["must"][] = array( 
+				// "nested" => array( 
+					// "path" => "attributes",
+					// "query" => array( 
+						// "bool" => array( 
+							// "must" => array( 
+								// array( "match" => array( "attributes.attribute_value" => $searchTerm ))
+							// )
+						// )
+					// )
+				// )
+			// );
 		}
 		
 		return $queryParams;
+		
+	}
+	
+	/**
+	 * Tokenize the search term passed in and return for use in creating search params
+	 */
+	 
+	public function tokenizeSearchTerm( $searchTerm ) {
+		
+		$searchTerms = array( );
+		$searchTerm = trim( $searchTerm );
+		$tokenizedTerms = str_getcsv( $searchTerm, " ", '"' );
+		
+		foreach( $tokenizedTerms as $term ) {
+			
+			$searchTag = "_all";
+			$searchTerm = $term;
+			if( preg_match( '/^([#@][A-Z-]+):(.*)$/iUs', $term, $matches )) {
+				$searchTag = $matches[1];
+				$searchTerm = $matches[2];
+			}
+			
+			if( !isset( $searchTerms[$searchTag] )) {
+				$searchTerms[$searchTag] = array( );
+			}
+			
+			$searchTerms[$searchTag][] = $searchTerm;
+			
+		}
+		
+		return $searchTerms;
 		
 	}
 	 
