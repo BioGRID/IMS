@@ -104,7 +104,9 @@ class InteractionTables {
 				}
 			}
 			
-			if($hit['_source']['interaction_state'] == "error" ) {
+			if($hit['_source']['history_status'] == 'DISABLED') {
+				$row['DT_RowClass'] = "disabled";
+			} else if($hit['_source']['interaction_state'] == "error" ) {
 				$row['DT_RowClass'] = "warning";
 			}
 			
@@ -484,7 +486,7 @@ class InteractionTables {
 			)
 		);
 		
-		$params["body"]["query"] = $this->fetchGlobalQueryParams( $datasetID, $typeID, $status, $searchTerm );
+		$params["body"]["query"] = $this->fetchGlobalQueryParams( $datasetID, $typeID, $status, $searchTerm, $columns );
 		$params["body"]["sort"] = $this->fetchSortParams( $order, $columns );
 		
 		return $params;
@@ -496,19 +498,29 @@ class InteractionTables {
 	 * and the input parameters specificing what kind of searching is to be applied.
 	 */
 	 
-	private function fetchGlobalQueryParams( $datasetID, $typeID, $status, $searchTerm = "" ) {
+	private function fetchGlobalQueryParams( $datasetID, $typeID, $status, $searchTerm = "", $columns ) {
 		
 		// All queries are restricted to a specific 
 		// dataset (publication) a specific type (like Binary/Complex/etc.)
 		// and a specific status (activated/deactivated)
 		
-		$queryparams = array( "bool" => array( "must" => array( ) ) );
-		$queryParams["bool"]["must"][] = array( "match" => array( "dataset_id" => $datasetID ));
-		$queryParams["bool"]["must"][] = array( "match" => array( "interaction_type_id" => $typeID ));
-		$queryParams["bool"]["must"][] = array( "match" => array( "history_status" => $status ));
+		$queryparams = array( "filtered" => array( "filter" => array( "bool" => array( "must" => array( ) ) ) ) );
+		$querySet = array( );
+		$querySet[] = array( "term" => array( "dataset_id" => $datasetID ));
+		$querySet[] = array( "term" => array( "interaction_type_id" => $typeID ));
+		$querySet[] = array( "term" => array( "history_status" => $status ));
 		
 		if( strlen( $searchTerm ) > 0 ) {
-			$queryParams["bool"]["must"][] = array( "match" => array( "_all" => $searchTerm ) );
+			$searchTerms = $this->tokenizeSearchTerm( $searchTerm );
+			if( sizeof( $searchTerms ) > 0 ) {
+				$searchQueries = $this->generateSearchQueries( $searchTerms, $columns );
+				if( sizeof( $searchQueries ) > 0 ) {
+					foreach( $searchQueries as $query ) {
+						$querySet[] = $query;
+					}
+				}
+			}
+			//$queryParams["bool"]["must"][] = array( "match" => array( "_all" => $searchTerm ) );
 			// $queryParams["bool"]["must"][] = array( 
 				// "nested" => array( 
 					// "path" => "participants",
@@ -516,7 +528,7 @@ class InteractionTables {
 						// "bool" => array( 
 							// "must" => array( 
 								// array( "match" => array( "participants.participant_role_id" => "2" )),
-								// array( "match" => array( "participants.primary_name" => $searchTerm ))
+								// array( "match" => array( "participants.primary_name" => "FRK1" ))
 							// )
 						// )
 					// )
@@ -537,6 +549,8 @@ class InteractionTables {
 			// );
 		}
 		
+		$queryParams["filtered"]["filter"]["bool"]["must"] = $querySet;
+		print_r( $queryParams );
 		return $queryParams;
 		
 	}
@@ -569,6 +583,130 @@ class InteractionTables {
 		}
 		
 		return $searchTerms;
+		
+	}
+	
+	/**
+	 * Convert a set of tokenized search terms into the
+	 * queries to be sent in our request to elastic search
+	 */
+	 
+	private function generateSearchQueries( $searchTerms, $columns ) {
+		
+		$searchQueries = array( );
+		foreach( $searchTerms as $searchTag => $termSet ) {
+			$searchQuery = $this->generateSearchQuery( $searchTag, $termSet, $columns );
+			if( sizeof( $searchQuery ) > 0 ) {
+				$searchQueries[] = $searchQuery;
+			}
+		}
+		
+		return $searchQueries;
+		
+	}
+	
+	/**
+	 * Create a search query for elastic search based on the
+	 * information passed in
+	 */
+	 
+	private function generateSearchQuery( $tag, $terms, $columns ) {
+		
+		$tag = trim(strtoupper($tag));
+		$tagType = $tag[0];
+		
+		$searchQuery = array( );
+		switch( $tagType ) {
+			
+			case "@" :
+			case "#" :
+				$searchQuery = $this->processHashSearchTag( $tag, $terms, $columns );
+				break;
+			
+			default :
+				$searchQuery = array( "match" => array( "_all" => implode( " ", $terms ) ) );
+				break;
+				
+		}
+		
+		return $searchQuery;
+		
+	}
+	
+	/**
+	 * Process search tags that begin with a # which comprises both 
+	 * participants and direct search terms.
+	 */
+	 
+	private function processHashSearchTag( $tag, $terms, $columns ) {
+		
+		if( sizeof( $terms ) <= 0 ) {
+			return array( );
+		}
+		
+		$column = array( );
+		foreach( $columns as $columnIndex => $columnInfo ) {
+			if( strtoupper($columnInfo['search']) == $tag ) {
+				$column = $columnInfo;
+				break;
+			}
+		}
+		
+		$searchQuery = array( );
+		if( $column['type'] == "direct" ) {
+			
+			// Direct query is just a single term mapping entry
+			$searchQuery = array( "term" => array( $column['value'] => strtolower(implode( ' ', $terms )) ) );
+			
+		} else if( $column['type'] == "participant" ) {
+			
+			// A participant query requires MUST matching entries for
+			// limiting which nested entries we look at, and then SHOULD
+			// matching entries for the actual keywords to search.
+			$searchQuery = array( 
+				"nested" => array( 
+					"path" => "participants",
+					"query" => array( 
+						"bool" => array( 
+							"must" => array( )
+						)
+					)
+				)
+			);
+			
+			$querySet = array( );
+			
+			// Must matching entries are based on the criteria set in the columns index
+			foreach( $column['query'] as $queryIndex => $queryVal ) {
+				$querySet[] = array( "term" => array( "participants." . $queryIndex => $queryVal ));
+			}
+
+			// Should matching entries are based on the keyword terms that were passed in
+			if( sizeof( $terms ) > 0 ) {
+				
+				$queryList = array( );
+				foreach( $terms as $term ) {
+					$queryList[] = array( "term" => array( "participants." . $column['value'] => strtolower($term) ));
+				}
+				
+			
+				if( sizeof( $queryList ) > 1 ) {
+					$querySet[] = array( "bool" => array( "should" => $queryList ) );
+				} else {
+					$querySet[] = $queryList;
+				}
+			
+			}
+			
+			if( sizeof( $querySet ) > 0 ) {
+				$searchQuery["nested"]["query"]["bool"]["must"] = $querySet;
+			} else {
+				$searchQuery = array( );
+			}
+		}
+		
+		
+		return $searchQuery;
 		
 	}
 	 
