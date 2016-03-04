@@ -13,6 +13,10 @@
 	$(function( ) {
 		initializeDatasetUI( );
 	});
+	
+	/**
+	 * Initialize global dataset specific UI components
+	 */
 		
 	function initializeDatasetUI( ) {
 		setupHeaderCollapseToggle( );
@@ -20,8 +24,28 @@
 		setupSidebarLinks( );
 		setupAttributeIcons( );
 		setupParticipantPopover( );
-		//setupDataTables( );
+		setupAttributeSearchTagLinks( );
 	}
+	
+	/**
+	 * Setup search tag links that appear in popups on attributes
+	 */
+	 
+	function setupAttributeSearchTagLinks( ) {
+		
+		$("body").on( "click", ".dataTable-attribute-searchTag", function( ) {
+			var tagVal = $(this).html( );
+			var type = $(this).data("type");
+			var value = $(this).parent( ).parent( ).find( ".dataTable-attribute-value" ).html( );
+			$("#dataTable-" + type + "-filterTerm").val( $("#dataTable-" + type + "-filterTerm").val( ) + " \"" + tagVal + ":" + value + "\"" );
+		});
+		
+	}
+	
+	/**
+	 * Setup the link under a datasets details that allow for collapsing and expanding
+	 * of the data to preserve space.
+	 */
 	
 	function setupHeaderCollapseToggle( ) {
 		$("#datasetDetailsToggle").on( "click", function( ) {
@@ -36,6 +60,11 @@
 			}
 		});
 	}
+	
+	/**
+	 * Setup the links in the sidebar, so they can both highlight and 
+	 * show/hide the correct subsections.
+	 */
 	
 	function setupSidebarLinks( ) {
 		
@@ -58,6 +87,12 @@
 		});
 		
 	}
+	
+	/**
+	 * Setup the basic Datatables functionality by first fetching the correct
+	 * formatting of the table, and then getting interaction data out of Elastic Search
+	 * based on the search criteria.
+	 */
 	
 	function setupDataTables( section ) {
 		
@@ -109,6 +144,7 @@
 						subhead.html( pre );
 					},
 					dom : "<'row'<'col-sm-12'rt>><'row'<'col-sm-5'i><'col-sm-7'p>>"
+						
 				});
 				
 				initializeDatatableTools( datatable, sectionType );
@@ -119,7 +155,22 @@
 		
 	}
 	
+	/**
+	 * Setup the functionality of several tools that only
+	 * apply when a datatable has been instantiated.
+	 */
+	
 	function initializeDatatableTools( datatable, sectionType ) {
+
+		// SETUP Search Tags
+		// Need to do this here separate from above, in order to allow for  the
+		// Stop Propagation event, preventing header links from triggering table sort
+		// functionality.
+		$("#dataTable-" + sectionType + " " + ".dataTable-searchTag").click( function( event ) {
+			event.stopPropagation( );
+			var tagVal = $(this).html( );
+			$("#dataTable-" + sectionType + "-filterTerm").val( $("#dataTable-" + sectionType + "-filterTerm").val( ) + " " + tagVal + ":" );
+		});
 		
 		// SETUP Global Filter
 		// By Button Click
@@ -151,24 +202,46 @@
 			}
 			
 		});
+		
+		// SETUP Clear All Filters Button
+		$("#dataTable-" + sectionType + "-clearFilters").click( function( ) {
+			datatable.search( '' ).columns( ).search( '' ).draw( );
+		});
 	
 	}
 	
+	/**
+	 * Set the check all button status to the values passed in
+	 */
+	 
 	function setCheckAllButtonStatus( sectionType, statusText, propVal ) {
 		$("#dataTable-" + sectionType + " :checkbox").prop( "checked", propVal );
 		$("#dataTable-" + sectionType + "-checkAll").attr( "data-status", statusText );
 	}
+	
+	/**
+	 * Search the table via the global filter
+	 */
 	
 	function datatableFilterGlobal( datatable, filterVal, isRegex, isSmartSearch, sectionType ) {
 		datatable.search( filterVal, isRegex, isSmartSearch, true ).draw( );
 		setCheckAllButtonStatus( sectionType, "check", false );
 	}
 	
+	/**
+	 * Search the table via a single column
+	 */
+	
 	function datatableFilterColumn( datatable, filterVal, columnIndex, isRegex, isSmartSearch, sectionType ) {
 		datatable.filter( filterVal, columnIndex, isRegex, isSmartSearch ).draw( );
 		setCheckAllButtonStatus( sectionType, "check", false );
 	}
-		
+	
+	/**
+	 * Setup the availability switch in the far right of the tools
+	 * bar to allow switching between activated and disabled interactions
+	 */
+	 
 	function setupAvailabilitySwitch( ) {
 		
 		$('.datasetSidebar').on( "click", "#availabilitySwitch", function( event ) {
@@ -227,6 +300,11 @@
 			
 	}
 	
+	/**
+	 * Setup the popup tooltip that appears when clicking on a participant
+	 * to display things like aliases, types, roles, etc.
+	 */
+	
 	function setupParticipantPopover( ) {
 		
 		$(".datasetContent").on( 'click', '.participantPopover', function( event ) {
@@ -267,6 +345,11 @@
 		});
 		
 	}
+	
+	/**
+	 * Setup popup tooltips on attribute icons for large attributes
+	 * that only show their content when moused over.
+	 */
 	
 	function setupAttributeIcons( ) {
 		

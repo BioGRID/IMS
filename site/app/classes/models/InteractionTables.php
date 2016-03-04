@@ -62,12 +62,12 @@ class InteractionTables {
 	 * with correct column configuration based on type.
 	 */
 	
-	public function formatResults( $response, $columns ) {
+	public function formatResults( $response, $columns, $typeID ) {
 		
 		$data = array( );
 		if( $response['hits']['total'] > 0 ) {
 			foreach( $response['hits']['hits'] as $hit ) {
-				$data[] = $this->formatRow( $hit, $columns );
+				$data[] = $this->formatRow( $hit, $columns, $typeID );
 			}
 		}
 		
@@ -80,7 +80,7 @@ class InteractionTables {
 	 * document fetched from ElasticSearch
 	 */
 	 
-	private function formatRow( $hit, $columns ) {
+	private function formatRow( $hit, $columns, $typeID ) {
 		
 		$row = array( );
 		foreach( $columns as $columnIndex => $columnInfo ) {
@@ -88,19 +88,25 @@ class InteractionTables {
 			$colVal = "";
 			if( $columnInfo['type'] == "direct" ) {
 				$colVal = $hit['_source'][$columnInfo['value']];
-				$colVal = $this->formatCol( $colVal, $columnInfo );
+				$colVal = $this->formatCol( $colVal, $columnInfo, array( ), $typeID );
 			} else if( $columnInfo['type'] == "participant" ) {
-				$colVal = $this->fetchParticipants( $hit['_source']['participants'], $columnInfo );
+				$colVal = $this->fetchParticipants( $hit['_source']['participants'], $columnInfo, $typeID );
 				$colVal = implode( ", ", $colVal );
 			} else if( $columnInfo['type'] == "attribute" ) {
-				$colVal = $this->fetchAttributes( $hit['_source']['attributes'], $columnInfo );
+				$colVal = $this->fetchAttributes( $hit['_source']['attributes'], $columnInfo, $typeID );
 				$colVal = implode( ", ", $colVal );
 			} else if( $columnInfo['type'] == "attribute_icons" ) {
-				$colVal = $this->fetchAttributeIcons( $hit['_source']['attributes'], $columnInfo );
-				$colVal = implode( " ", $colVal );
+				$colVal = $this->fetchAttributeIcons( $hit['_source']['attributes'], $columnInfo, $typeID );
+				if( sizeof( $colVal ) > 0 ) {
+					$colVal = implode( " ", $colVal );
+				} else {
+					$colVal = "-";
+				}
 			}
 			
-			if($hit['_source']['interaction_state'] == "error" ) {
+			if($hit['_source']['history_status'] == 'DISABLED') {
+				$row['DT_RowClass'] = "disabled";
+			} else if($hit['_source']['interaction_state'] == "error" ) {
 				$row['DT_RowClass'] = "warning";
 			}
 			
@@ -117,13 +123,13 @@ class InteractionTables {
 	 * display for a particular column.
 	 */
 	 
-	private function fetchParticipants( $participants, $columnInfo ) {
+	private function fetchParticipants( $participants, $columnInfo, $typeID ) {
 		
 		$participantList = array( );
 		foreach( $participants as $participant ) {
 			
 			if( $this->matchesQueries( $participant, $columnInfo['query'] )) {
-				$participantList[] = $this->formatCol( $participant[$columnInfo['value']], $columnInfo, $participant );
+				$participantList[] = $this->formatCol( $participant[$columnInfo['value']], $columnInfo, $participant, $typeID );
 			}
 			
 		}
@@ -141,13 +147,13 @@ class InteractionTables {
 	 * for this particular column.
 	 */
 	 
-	private function fetchAttributes( $attributes, $columnInfo ) {
+	private function fetchAttributes( $attributes, $columnInfo, $typeID ) {
 	
 		$attributeList = array( );
 		foreach( $attributes as $attribute ) {
 			
 			if( $this->matchesQueries( $attribute, $columnInfo['query'] )) {
-				$attributeList[] = $this->formatCol( $attribute[$columnInfo['value']], $columnInfo, $attribute );
+				$attributeList[] = $this->formatCol( $attribute[$columnInfo['value']], $columnInfo, $attribute, $typeID );
 			}
 			
 		}
@@ -161,14 +167,15 @@ class InteractionTables {
 	 * display for each type.
 	 */
 	 
-	private function fetchAttributeIcons( $attributes, $columnInfo ) {
+	private function fetchAttributeIcons( $attributes, $columnInfo, $typeID ) {
 		
 		$attributeList = array( );
 		$attributeChildren = array( );
+		
 		foreach( $attributes as $attribute ) {
 			
 			if( !$this->matchesIgnores( $attribute, $columnInfo['ignore'] ) ) {
-				if( !isset( $attributeList[$attribute['attribute_type_category_id']] )) {
+				if( !isset( $attributeList[$attribute['attribute_type_category_id']]) && $attribute['attribute_parent_id'] == 0 ) {
 					$attributeList[$attribute['attribute_type_category_id']] = array( );
 				}
 				
@@ -197,7 +204,7 @@ class InteractionTables {
 					$children = $attributeChildren[$attribute['interaction_attribute_id']];
 				}
 
-				$content[] = $this->fetchAttributeContent( $attribute, $children );
+				$content[] = $this->fetchAttributeContent( $attribute, $children, $typeID );
 				
 			}
 			
@@ -216,11 +223,11 @@ class InteractionTables {
 	 * to a single icon.
 	 */
 	 
-	private function fetchCombinedAttributeIcon( $attributes ) {
+	private function fetchCombinedAttributeIcon( $attributes, $typeID ) {
 		
 		$attributeList = array( );
 		foreach( $attributes as $attribute ) {
-			$attributeList[] = $this->fetchAttributeContent( $attribute, array( ) );
+			$attributeList[] = $this->fetchAttributeContent( $attribute, array( ), $typeID );
 		}
 		
 		$content = "<span class='attributeContent'><ul><li>" . implode( "</li><li>", $attributeList ) . "</li></ul></span>";
@@ -235,14 +242,15 @@ class InteractionTables {
 	 * for the attribute that was passed in
 	 */
 	 
-	private function fetchAttributeContent( $attribute, $children ) {
+	private function fetchAttributeContent( $attribute, $children, $typeID ) {
 		
-		$term = "<strong>" . $attribute['attribute_type_name'] . "</strong>: ";
-		$term .= $attribute['attribute_value'];
+		$term = "<strong>" . $attribute['attribute_type_name'] . " [<a data-type='" . $typeID . "' class='dataTable-attribute-searchTag'>@" . $attribute['attribute_type_shortcode'] . "</a>]</strong>: ";
 		
 		// Ontology Term
 		if( $attribute['attribute_type_category_id'] == "1" ) { 
-			$term .= " (" . $attribute['ontology_term_official_id'] . ")";
+			$term .= $attribute['attribute_value'] . " (<span class='dataTable-attribute-value'>" . $attribute['ontology_term_official_id'] . "</span>)";
+		} else {
+			$term .= "<span class='dataTable-attribute-value'>" . $attribute['attribute_value'] . "</span>";
 		}
 		
 		$childrenSet = array( );
@@ -309,7 +317,7 @@ class InteractionTables {
 				break;
 				
 			case "0" : // Combined Icon
-				$icon = "arrow-circle-up";
+				$icon = "info-circle";
 				$title = "Attributes";
 				$size = "sm";
 				break;
@@ -363,7 +371,7 @@ class InteractionTables {
 	 * as to how it should be generated.
 	 */
 	 
-	private function formatCol( $value, $columnInfo, $data = array( ) ) {
+	private function formatCol( $value, $columnInfo, $data = array( ), $typeID ) {
 		
 		// If the func option is set, we are running the value through a 
 		// specified function or set of functions
@@ -381,7 +389,7 @@ class InteractionTables {
 		if( isset( $columnInfo['html'] )) {
 			$value = str_replace( "{{VALUE}}", $value, $columnInfo['html'] );
 		} else if( isset( $data['attributes'] ) && sizeof( $data['attributes'] ) > 0 && !isset( $columnInfo['noattribs'] ) ) {
-			$value = $value . $this->fetchCombinedAttributeIcon( $data['attributes'] );
+			$value = $value . $this->fetchCombinedAttributeIcon( $data['attributes'], $typeID );
 		}
 		
 		return $value;
@@ -429,7 +437,7 @@ class InteractionTables {
 	 * interaction type
 	 */
 	 
-	public function fetchColumnHeaderDefinitions( $columns ) {
+	public function fetchColumnHeaderDefinitions( $columns, $type ) {
 		
 		$columnSet = array( );
 		foreach( $columns as $columnIndex => $columnInfo ) {
@@ -437,6 +445,10 @@ class InteractionTables {
 			$column = array( );
 			$column["title"] = $columnInfo["title"];
 			$column["data"] = $columnIndex;
+			
+			if(isset( $columnInfo['search'] ) && strlen($columnInfo['search']) > 0) {
+				$column["title"] .= " [<a data-type='" . $type . "' class='dataTable-searchTag'>" . $columnInfo["search"] . "</a>]";
+			}
 			
 			if(isset( $column['orderable'] )) {
 				$column["orderable"] = $columnInfo["orderable"];
@@ -474,7 +486,7 @@ class InteractionTables {
 			)
 		);
 		
-		$params["body"]["query"] = $this->fetchGlobalQueryParams( $datasetID, $typeID, $status, $searchTerm );
+		$params["body"]["query"] = $this->fetchGlobalQueryParams( $datasetID, $typeID, $status, $searchTerm, $columns );
 		$params["body"]["sort"] = $this->fetchSortParams( $order, $columns );
 		
 		return $params;
@@ -486,35 +498,293 @@ class InteractionTables {
 	 * and the input parameters specificing what kind of searching is to be applied.
 	 */
 	 
-	private function fetchGlobalQueryParams( $datasetID, $typeID, $status, $searchTerm = "" ) {
+	private function fetchGlobalQueryParams( $datasetID, $typeID, $status, $searchTerm = "", $columns ) {
 		
 		// All queries are restricted to a specific 
 		// dataset (publication) a specific type (like Binary/Complex/etc.)
 		// and a specific status (activated/deactivated)
 		
-		$queryparams = array( "bool" => array( "must" => array( ) ) );
-		$queryParams["bool"]["must"][] = array( "match" => array( "dataset_id" => $datasetID ));
-		$queryParams["bool"]["must"][] = array( "match" => array( "interaction_type_id" => $typeID ));
-		$queryParams["bool"]["must"][] = array( "match" => array( "history_status" => $status ));
+		$queryparams = array( "filtered" => array( "filter" => array( "bool" => array( "must" => array( ) ) ) ) );
+		$querySet = array( );
+		$querySet[] = array( "term" => array( "dataset_id" => $datasetID ));
+		$querySet[] = array( "term" => array( "interaction_type_id" => $typeID ));
+		$querySet[] = array( "term" => array( "history_status" => $status ));
 		
 		if( strlen( $searchTerm ) > 0 ) {
-			$queryParams["bool"]["must"][] = array( "match" => array( "_all" => $searchTerm ) );
-			// $queryParams["bool"]["must"][] = array( 
-				// "nested" => array( 
-					// "path" => "participants",
-					// "query" => array( 
-						// "bool" => array( 
-							// "must" => array( 
-								// array( "match" => array( "participants.participant_role_id" => "2" )),
-								// array( "match" => array( "participants.primary_name" => $searchTerm ))
-							// )
-						// )
-					// )
-				// )
-			// );
+			$searchTerms = $this->tokenizeSearchTerm( $searchTerm );
+			if( sizeof( $searchTerms ) > 0 ) {
+				$searchQueries = $this->generateSearchQueries( $searchTerms, $columns );
+				if( sizeof( $searchQueries ) > 0 ) {
+					foreach( $searchQueries as $query ) {
+						$querySet[] = $query;
+					}
+				}
+			}
 		}
 		
+		$queryParams["filtered"]["filter"]["bool"]["must"] = $querySet;
 		return $queryParams;
+		
+	}
+	
+	/**
+	 * Tokenize the search term passed in and return for use in creating search params
+	 */
+	 
+	public function tokenizeSearchTerm( $searchTerm ) {
+		
+		$searchTerms = array( );
+		$searchTerm = trim( $searchTerm );
+		$tokenizedTerms = str_getcsv( $searchTerm, " ", '"' );
+		
+		foreach( $tokenizedTerms as $term ) {
+			
+			$searchTag = "_all";
+			$searchTerm = $term;
+			if( preg_match( '/^([#@][A-Z-]+):(.*)$/iUs', $term, $matches )) {
+				$searchTag = $matches[1];
+				$searchTerm = $matches[2];
+			}
+			
+			if( !isset( $searchTerms[$searchTag] )) {
+				$searchTerms[$searchTag] = array( );
+			}
+			
+			$searchTerms[$searchTag][] = $searchTerm;
+			
+		}
+		
+		return $searchTerms;
+		
+	}
+	
+	/**
+	 * Convert a set of tokenized search terms into the
+	 * queries to be sent in our request to elastic search
+	 */
+	 
+	private function generateSearchQueries( $searchTerms, $columns ) {
+		
+		$searchQueries = array( );
+		foreach( $searchTerms as $searchTag => $termSet ) {
+			$searchQuery = $this->generateSearchQuery( $searchTag, $termSet, $columns );
+			if( sizeof( $searchQuery ) > 0 ) {
+				$searchQueries[] = $searchQuery;
+			}
+		}
+		
+		return $searchQueries;
+		
+	}
+	
+	/**
+	 * Create a search query for elastic search based on the
+	 * information passed in
+	 */
+	 
+	private function generateSearchQuery( $tag, $terms, $columns ) {
+		
+		$tag = trim(strtoupper($tag));
+		$tagType = $tag[0];
+		
+		$searchQuery = array( );
+		switch( $tagType ) {
+			
+			case "@" :
+				$searchQuery = $this->processAttributeSearchTag( $tag, $terms, $columns );
+				break;
+			
+			case "#" :
+				$searchQuery = $this->processHashSearchTag( $tag, $terms, $columns );
+				break;
+			
+			default :
+				$searchQuery = array( "match" => array( "_all" => implode( " ", $terms ) ) );
+				break;
+				
+		}
+		
+		return $searchQuery;
+		
+	}
+	
+	/**
+	 * Process search tags that begin with a # which comprises both 
+	 * participants and direct search terms.
+	 */
+	 
+	private function processHashSearchTag( $tag, $terms, $columns ) {
+		
+		if( sizeof( $terms ) <= 0 ) {
+			return array( );
+		}
+		
+		$column = array( );
+		foreach( $columns as $columnIndex => $columnInfo ) {
+			if( strtoupper($columnInfo['search']) == $tag ) {
+				$column = $columnInfo;
+				break;
+			}
+		}
+		
+		$searchQuery = array( );
+		if( isset( $column['type'] ) ) {
+			
+			if( $column['type'] == "direct" ) {
+				
+				// Direct query is just a single mapping entry
+				if( $tag == "#U" || $tag == "#D" ) {
+					$searchQuery = array( "match" => array( $column['value'] => strtolower(implode( ' ', $terms )) ) );
+				} else {
+					$searchQuery = array( "term" => array( $column['value'] => strtolower(implode( ' ', $terms )) ) );
+				}
+				
+			} else if( $column['type'] == "participant" ) {
+				
+				// A participant query requires MUST matching entries for
+				// limiting which nested entries we look at, and then SHOULD
+				// matching entries for the actual keywords to search.
+				$searchQuery = array( 
+					"nested" => array( 
+						"path" => "participants",
+						"query" => array( 
+							"bool" => array( 
+								"must" => array( )
+							)
+						)
+					)
+				);
+				
+				$querySet = array( );
+				
+				// Must matching entries are based on the criteria set in the columns index
+				foreach( $column['query'] as $queryIndex => $queryVal ) {
+					$querySet[] = array( "term" => array( "participants." . $queryIndex => strtolower($queryVal) ));
+				}
+
+				// Should matching entries are based on the keyword terms that were passed in
+				if( sizeof( $terms ) > 0 ) {
+					
+					$queryList = array( );
+					foreach( $terms as $term ) {
+						$queryList[] = array( "term" => array( "participants." . $column['value'] => strtolower($term) ));
+					}
+					
+				
+					if( sizeof( $queryList ) > 1 ) {
+						$querySet[] = array( "bool" => array( "should" => $queryList ) );
+					} else {
+						$querySet[] = $queryList;
+					}
+				
+				}
+				
+				if( sizeof( $querySet ) > 0 ) {
+					$searchQuery["nested"]["query"]["bool"]["must"] = $querySet;
+				} else {
+					$searchQuery = array( );
+				}
+			} 
+			
+		}
+		
+		return $searchQuery;
+		
+	}
+	
+	/**
+	 * Process search tags that begin with an @ which comprises 
+	 * attributes.
+	 */
+	 
+	private function processAttributeSearchTag( $tag, $terms, $columns ) {
+		
+		if( sizeof( $terms ) <= 0 ) {
+			return array( );
+		}
+		
+		$column = array( );
+		foreach( $columns as $columnIndex => $columnInfo ) {
+			if( strtoupper($columnInfo['search']) == $tag ) {
+				$column = $columnInfo;
+				break;
+			}
+		}
+		
+		$searchQuery = array( );
+		
+		// An attribute query requires MUST matching entries for
+		// limiting which nested entries we look at, and then SHOULD
+		// matching entries for the actual keywords to search.
+		$searchQuery = array( 
+			"nested" => array( 
+				"path" => "attributes",
+				"query" => array( 
+					"bool" => array( 
+						"must" => array( )
+					)
+				)
+			)
+		);
+		
+		$querySet = array( );
+		if( $tag == "@ATB" || $tag == "@ATBX" ) {
+			// Do nothing, no additional terms required, cause this will search all attributes
+		} else if( isset( $column['type'] ) ) {
+			
+			// Must matching entries are based on the criteria set in the columns index
+			foreach( $column['query'] as $queryIndex => $queryVal ) {
+				$querySet[] = array( "term" => array( "attributes." . $queryIndex => strtolower($queryVal) ));
+			}
+			
+		} else {
+			$cleanTag = ltrim( $tag, "@" );
+			
+			// Treat NOTEX as a NOTE cause there is no NOTEX 
+			// Type in the document.
+			if( strtoupper($cleanTag) == "NOTEX" ) {
+				$cleanTag = "NOTE";
+			}
+			
+			$querySet[] = array( "term" => array( "attributes.attribute_type_shortcode" => strtolower($cleanTag) ));
+		}
+
+		// Should matching entries are based on the keyword terms that were passed in
+		if( sizeof( $terms ) > 0 ) {
+			
+			$queryList = array( );
+			foreach( $terms as $term ) {
+				if( $tag == "@ATB" ) {
+					$queryList[] = array( "match" => array( "attributes.attribute_value.full" => strtolower($term) ));
+					$queryList[] = array( "term" => array( "attributes.attribute_value" => strtolower($term) ));
+					$queryList[] = array( "term" => array( "attributes.ontology_term_official_id" => strtolower($term) ));
+				} else if( $tag == "@ATBX" ) {
+					$queryList[] = array( "term" => array( "attributes.attribute_value" => strtolower($term) ));
+					$queryList[] = array( "term" => array( "attributes.ontology_term_official_id" => strtolower($term) ));
+				} else if( $tag == "@NOTE" ) {
+					$queryList[] = array( "match" => array( "attributes.attribute_value.full" => strtolower($term) ));
+				} else {
+					$queryList[] = array( "term" => array( "attributes.attribute_value" => strtolower($term) ));
+					$queryList[] = array( "term" => array( "attributes.ontology_term_official_id" => strtolower($term) ));
+				}
+			}
+			
+		
+			if( sizeof( $queryList ) > 1 ) {
+				$querySet[] = array( "bool" => array( "should" => $queryList ) );
+			} else {
+				$querySet[] = $queryList;
+			}
+		
+		}
+		
+		if( sizeof( $querySet ) > 0 ) {
+			$searchQuery["nested"]["query"]["bool"]["must"] = $querySet;
+		} else {
+			$searchQuery = array( );
+		}
+		
+		return $searchQuery;
 		
 	}
 	 
@@ -527,14 +797,6 @@ class InteractionTables {
 		
 		// Default sorting is to sort the interactions from newest
 		// to oldest based on the history_date document entry
-		
-		// "participants.primary_name" => array( 
-					// "order" => "desc",
-					// "nested_path" => "participants",
-					// "nested_filter" => array( 
-						// "term" => array( "participants.participant_role_id" => 3 )
-					// )
-				// )
 		
 		$sortParams = array( );
 		

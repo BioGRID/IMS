@@ -35,7 +35,8 @@ class ColumnDefinitions {
 			"className" => "text-center",
 			"type" => "direct",
 			"value" => "interaction_id",
-			"html" => "<div class='checkbox'><label><input type='checkbox' value='{{VALUE}}'></label></div>"
+			"html" => "<div class='checkbox'><label><input type='checkbox' value='{{VALUE}}'></label></div>",
+			"search" => ""
 		);
 
 		$columns[1] = array( 
@@ -43,7 +44,8 @@ class ColumnDefinitions {
 			"type" => "participant",
 			"value" => "primary_name",
 			"query" => array( "participant_role_id" => "2" ),
-			"func" => array( "participant-norole" )
+			"func" => array( "participant-norole" ),
+			"search" => "#B"
 		);
 
 		$columns[2] = array( 
@@ -51,7 +53,8 @@ class ColumnDefinitions {
 			"type" => "participant",
 			"value" => "primary_name",
 			"query" => array( "participant_role_id" => "3" ),
-			"func" => array( "participant-norole" )
+			"func" => array( "participant-norole" ),
+			"search" => "#P"
 		);
 
 		$columns[3] = array( 
@@ -59,7 +62,8 @@ class ColumnDefinitions {
 			"type" => "participant",
 			"value" => "organism_abbreviation",
 			"query" => array( "participant_role_id" => "2" ),
-			"noattribs" => true
+			"noattribs" => true,
+			"search" => "#BO"
 		);
 
 		$columns[4] = array( 
@@ -67,27 +71,31 @@ class ColumnDefinitions {
 			"type" => "participant",
 			"value" => "organism_abbreviation",
 			"query" => array( "participant_role_id" => "3" ),
-			"noattribs" => true
+			"noattribs" => true,
+			"search" => "#PO"
 		);
 
 		$columns[5] = array( 
 			"title" => "System",
 			"type" => "attribute",
 			"value" => "attribute_value",
-			"query" => array( "attribute_type_id" => "11" )
+			"query" => array( "attribute_type_id" => "11" ),
+			"search" => "@ES"
 		);
 
 		$columns[6] = array( 
 			"title" => "User",
 			"type" => "direct",
-			"value" => "history_user_name"
+			"value" => "history_user_name",
+			"search" => "#U"
 		);
 
 		$columns[7] = array( 
 			"title" => "Date",
 			"type" => "direct",
 			"value" => "history_date",
-			"func" => array( "date" )
+			"func" => array( "date" ),
+			"search" => ""
 		);
 
 		$columns[8] = array( 
@@ -95,13 +103,15 @@ class ColumnDefinitions {
 			"type" => "attribute_icons",
 			"value" => "interaction_id",
 			"ignore" => array( array( "attribute_type_id" => "11" ) ),
-			"className" => "text-center"
+			"className" => "text-center",
+			"search" => "@ATB"
 		);
 
 		$columns[9] = array( 
 			"title" => "State",
 			"type" => "direct",
-			"value" => "interaction_state"
+			"value" => "interaction_state",
+			"search" => "#S"
 		);
 		
 		return $columns;
@@ -122,7 +132,8 @@ class ColumnDefinitions {
 			"className" => "text-center",
 			"type" => "direct",
 			"value" => "interaction_id",
-			"html" => "<div class='checkbox'><label><input type='checkbox' value='{{VALUE}}'></label></div>"
+			"html" => "<div class='checkbox'><label><input type='checkbox' value='{{VALUE}}'></label></div>",
+			"search" => ""
 		);
 
 		$columns[1] = array( 
@@ -130,7 +141,8 @@ class ColumnDefinitions {
 			"type" => "participant",
 			"value" => "primary_name",
 			"query" => array( "participant_role_id" => "12" ),
-			"func" => array( "participant-norole" )
+			"func" => array( "participant-norole" ),
+			"search" => "#SUB"
 		);
 
 		$columns[2] = array( 
@@ -138,7 +150,8 @@ class ColumnDefinitions {
 			"type" => "participant",
 			"value" => "primary_name",
 			"query" => array( "participant_role_id" => "11" ),
-			"func" => array( "participant-norole" )
+			"func" => array( "participant-norole" ),
+			"search" => "#ENZ"
 		);
 
 		$columns[3] = array( 
@@ -146,34 +159,39 @@ class ColumnDefinitions {
 			"type" => "participant",
 			"value" => "organism_abbreviation",
 			"query" => array( "participant_role_id" => "12" ),
-			"noattribs" => true
+			"noattribs" => true,
+			"search" => "#O"
 		);
 		
 		$columns[4] = array( 
 			"title" => "PTM Site",
 			"type" => "attribute",
 			"value" => "attribute_value",
-			"query" => array( "attribute_type_id" => "24" )
+			"query" => array( "attribute_type_id" => "24" ),
+			"search" => "@RES-LOC"
 		);
 
 		$columns[5] = array( 
 			"title" => "PTM Type",
 			"type" => "attribute",
 			"value" => "attribute_value",
-			"query" => array( "attribute_type_id" => "12" )
+			"query" => array( "attribute_type_id" => "12" ),
+			"search" => "@PTM"
 		);
 
 		$columns[6] = array( 
 			"title" => "User",
 			"type" => "direct",
-			"value" => "history_user_name"
+			"value" => "history_user_name",
+			"search" => "#U"
 		);
 
 		$columns[7] = array( 
 			"title" => "Date",
 			"type" => "direct",
 			"value" => "history_date",
-			"func" => array( "date" )
+			"func" => array( "date" ),
+			"search" => ""
 		);
 
 		$columns[8] = array( 
@@ -181,13 +199,15 @@ class ColumnDefinitions {
 			"type" => "attribute_icons",
 			"value" => "interaction_id",
 			"ignore" => array( array( "attribute_type_id" => "12" ), array( "attribute_type_id" => "24" ) ),
-			"className" => "text-center"
+			"className" => "text-center",
+			"search" => "#ATB"
 		);
 
 		$columns[9] = array( 
 			"title" => "State",
 			"type" => "direct",
-			"value" => "interaction_state"
+			"value" => "interaction_state",
+			"search" => "#S"
 		);
 		
 		return $columns;
@@ -208,7 +228,8 @@ class ColumnDefinitions {
 			"className" => "text-center",
 			"type" => "direct",
 			"value" => "interaction_id",
-			"html" => "<div class='checkbox'><label><input type='checkbox' value='{{VALUE}}'></label></div>"
+			"html" => "<div class='checkbox'><label><input type='checkbox' value='{{VALUE}}'></label></div>",
+			"search" => ""
 		);
 
 		$columns[1] = array( 
@@ -216,7 +237,8 @@ class ColumnDefinitions {
 			"type" => "participant",
 			"value" => "primary_name",
 			"query" => array( ),
-			"func" => array( "participant-norole" )
+			"func" => array( "participant-norole" ),
+			"search" => "#PS"
 		);
 
 		$columns[2] = array( 
@@ -225,27 +247,31 @@ class ColumnDefinitions {
 			"value" => "organism_abbreviation",
 			"query" => array( ),
 			"list" => "unique",
-			"noattribs" => true
+			"noattribs" => true,
+			"search" => "#O"
 		);
 
 		$columns[3] = array( 
 			"title" => "System",
 			"type" => "attribute",
 			"value" => "attribute_value",
-			"query" => array( "attribute_type_id" => "11" )
+			"query" => array( "attribute_type_id" => "11" ),
+			"search" => "@ES"
 		);
 
 		$columns[4] = array( 
 			"title" => "User",
 			"type" => "direct",
-			"value" => "history_user_name"
+			"value" => "history_user_name",
+			"search" => "#U"
 		);
 
 		$columns[5] = array( 
 			"title" => "Date",
 			"type" => "direct",
 			"value" => "history_date",
-			"func" => array( "date" )
+			"func" => array( "date" ),
+			"search" => ""
 		);
 
 		$columns[6] = array( 
@@ -253,13 +279,15 @@ class ColumnDefinitions {
 			"type" => "attribute_icons",
 			"value" => "interaction_id",
 			"ignore" => array( array( "attribute_type_id" => "11" ) ),
-			"className" => "text-center"
+			"className" => "text-center",
+			"search" => "@ATB"
 		);
 
 		$columns[7] = array( 
 			"title" => "State",
 			"type" => "direct",
-			"value" => "interaction_state"
+			"value" => "interaction_state",
+			"search" => "#S"
 		);
 		
 		return $columns;
@@ -280,7 +308,8 @@ class ColumnDefinitions {
 			"className" => "text-center",
 			"type" => "direct",
 			"value" => "interaction_id",
-			"html" => "<div class='checkbox'><label><input type='checkbox' value='{{VALUE}}'></label></div>"
+			"html" => "<div class='checkbox'><label><input type='checkbox' value='{{VALUE}}'></label></div>",
+			"search" => ""
 		);
 
 		$columns[1] = array( 
@@ -288,7 +317,8 @@ class ColumnDefinitions {
 			"type" => "participant",
 			"value" => "primary_name",
 			"query" => array( "participant_role_id" => "10" ),
-			"func" => array( "participant-norole" )
+			"func" => array( "participant-norole" ),
+			"search" => "#CT"
 		);
 
 		$columns[2] = array( 
@@ -296,7 +326,8 @@ class ColumnDefinitions {
 			"type" => "participant",
 			"value" => "primary_name",
 			"query" => array( "participant_type_id" => "4" ),
-			"func" => array( "participant-norole" )
+			"func" => array( "participant-norole" ),
+			"search" => "#CH"
 		);
 
 		$columns[3] = array( 
@@ -304,27 +335,31 @@ class ColumnDefinitions {
 			"type" => "participant",
 			"value" => "organism_abbreviation",
 			"query" => array( "participant_role_id" => "10" ),
-			"noattribs" => true
+			"noattribs" => true,
+			"search" => "#O"
 		);
 		
 		$columns[4] = array( 
 			"title" => "Chemical Action",
 			"type" => "attribute",
 			"value" => "attribute_value",
-			"query" => array( "attribute_type_id" => "32" )
+			"query" => array( "attribute_type_id" => "32" ),
+			"search" => "@ACTN"
 		);
 
 		$columns[5] = array( 
 			"title" => "User",
 			"type" => "direct",
-			"value" => "history_user_name"
+			"value" => "history_user_name",
+			"search" => "#U"
 		);
 
 		$columns[6] = array( 
 			"title" => "Date",
 			"type" => "direct",
 			"value" => "history_date",
-			"func" => array( "date" )
+			"func" => array( "date" ),
+			"search" => ""
 		);
 
 		$columns[7] = array( 
@@ -332,13 +367,15 @@ class ColumnDefinitions {
 			"type" => "attribute_icons",
 			"value" => "interaction_id",
 			"ignore" => array( array( "attribute_type_id" => "32" ) ),
-			"className" => "text-center"
+			"className" => "text-center",
+			"search" => "#ATB"
 		);
 
 		$columns[8] = array( 
 			"title" => "State",
 			"type" => "direct",
-			"value" => "interaction_state"
+			"value" => "interaction_state",
+			"search" => "#S"
 		);
 		
 		return $columns;

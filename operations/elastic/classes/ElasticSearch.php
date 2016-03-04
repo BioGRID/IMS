@@ -227,7 +227,7 @@ class ElasticSearch {
 	 
 	private function fetchInteractionHistoryDetails( $interactionID ) {
 		
-		$stmt = $this->db->prepare( "SELECT modification_type, user_id, history_addeddate FROM " . DB_IMS . ".history WHERE interaction_id=? AND modification_type IN ('ACTIVATED','DISABLED') ORDER BY history_addeddate DESC LIMIT 1" );
+		$stmt = $this->db->prepare( "SELECT modification_type, user_id, history_addeddate FROM " . DB_IMS . ".history WHERE interaction_id=? AND modification_type IN ('ACTIVATED','DISABLED') ORDER BY history_addeddate DESC, history_id DESC LIMIT 1" );
 		$stmt->execute( array( $interactionID ) );
 		
 		$historyDetails = array( ); 

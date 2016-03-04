@@ -76,9 +76,21 @@
 				</div>
 			
 				<h3>{{ SECTION.text }}</h3>
-				<div class='subhead dataTable-info marginBotSm'></div>
+				<div class='subhead dataTable-info marginBotSm'>Loading Data...</div>
 				<div class='dataTable-tools'>
-					<button type='button' id='dataTable-{{ SECTION.type }}-checkAll' data-status='check' class='btn btn-primary btn-sm'><i class='fa fa-check'></i> </button>
+					<button type='button' id='dataTable-{{ SECTION.type }}-checkAll' data-status='check' class='btn btn-primary btn-sm'><i class='fa fa-check'></i></button>
+					<div class='btn-group'>
+						<button type='button' class='btn btn-success btn-sm dropdown-toggle' data-toggle='dropdown' aria-haspopup='true' aria-has-expanded='false'><i class='fa fa-cog'></i> Tools <span class='caret'></span></button>
+						<ul class='dropdown-menu'>
+							<li><a id='dataTable-{{ SECTION.type }}-clearFilters'>Clear All Filters</a></li>
+						</ul>
+					</div>
+					<div class='btn-group'>
+						<button type='button' class='btn btn-warning btn-sm dropdown-toggle' data-toggle='dropdown' aria-haspopup='true' aria-has-expanded='false'><i class='fa fa-question-circle'></i> Help <span class='caret'></span></button>
+						<ul class='dropdown-menu'>
+							<li><a href='{{ WIKI_URL }}/Filter-Syntax' target='_blank'>Filter Syntax</a></li>
+						</ul>
+					</div>
 					<div class='pull-right col-lg-2' style='padding-right: 0'>
 						<select class='form-control input-sm statusSelect' id='dataTable-{{ SECTION.type }}-statusSelect'>
 							<option value='activated' selected>View Activated ({{ SECTION.activated }})</option>

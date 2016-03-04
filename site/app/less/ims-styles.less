@@ -197,6 +197,10 @@ h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 { margin-top: 0px; margin-b
 			display: table-cell;
 			padding: 10px;
 			
+			.dataTable {
+				tr.disabled { background-color: #d3d6ff; }
+			}
+			
 			.datasetSubsection {
 				display: none;
 				td, th {
@@ -204,10 +208,18 @@ h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 { margin-top: 0px; margin-b
 					&.sorting_1, &.sorting_2 {
 						background-color: @state-info-bg;
 					}
+					
+					a:hover { text-decoration: none; }
 				}
 				
 				.dataTable-info { font-size: 16px; }
-				.dataTable-tools { background-color: #EEE; padding: 5px; }
+				.dataTable-tools { 
+					background-color: #EEE; 
+					padding: 5px; 
+					a { cursor: pointer; }
+					a:hover { text-decoration: none; }
+				}
+				
 				.attribute {
 					.attributeIcon { cursor: pointer; }
 					.attributeContent { display: none; }
@@ -252,6 +264,13 @@ h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 { margin-top: 0px; margin-b
 			span.attributeUser { 
 				font-size: 12px;
 				color: @brand-danger;
+			}
+		}
+		
+		a { 
+			cursor: pointer;
+			&:hover {
+				text-decoration: none;
 			}
 		}
 	}
