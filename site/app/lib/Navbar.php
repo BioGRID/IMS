@@ -27,6 +27,7 @@ class Navbar {
 		
 		// LEFT SIDE OF NAVBAR
 		self::$leftNav['Home'] = array( "URL" => WEB_URL, "TITLE" => 'Return to Homepage', "STATUS" => 'public' );
+		self::$leftNav['Wiki'] = array( "URL" => WIKI_URL, "TITLE" => 'IMS Help Wiki', "STATUS" => 'observer' );
 		self::$leftNav['Admin'] = array( "URL" => "#", "TITLE" => 'Administration Utilities', "STATUS" => 'poweruser', "DROPDOWN" => array( ) );
 		self::$leftNav['Admin']['DROPDOWN']['Users'] = array( "URL" => WEB_URL, "TITLE" => 'Manage Users and Permissions', "STATUS" => 'poweruser' );
 		

@@ -95,7 +95,7 @@ class ColumnDefinitions {
 			"type" => "direct",
 			"value" => "history_date",
 			"func" => array( "date" ),
-			"search" => "#D"
+			"search" => ""
 		);
 
 		$columns[8] = array( 
@@ -191,7 +191,7 @@ class ColumnDefinitions {
 			"type" => "direct",
 			"value" => "history_date",
 			"func" => array( "date" ),
-			"search" => "#D"
+			"search" => ""
 		);
 
 		$columns[8] = array( 
@@ -271,7 +271,7 @@ class ColumnDefinitions {
 			"type" => "direct",
 			"value" => "history_date",
 			"func" => array( "date" ),
-			"search" => "#D"
+			"search" => ""
 		);
 
 		$columns[6] = array( 
@@ -359,7 +359,7 @@ class ColumnDefinitions {
 			"type" => "direct",
 			"value" => "history_date",
 			"func" => array( "date" ),
-			"search" => "#D"
+			"search" => ""
 		);
 
 		$columns[7] = array( 

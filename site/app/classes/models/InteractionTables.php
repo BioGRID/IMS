@@ -520,37 +520,9 @@ class InteractionTables {
 					}
 				}
 			}
-			//$queryParams["bool"]["must"][] = array( "match" => array( "_all" => $searchTerm ) );
-			// $queryParams["bool"]["must"][] = array( 
-				// "nested" => array( 
-					// "path" => "participants",
-					// "query" => array( 
-						// "bool" => array( 
-							// "must" => array( 
-								// array( "match" => array( "participants.participant_role_id" => "2" )),
-								// array( "match" => array( "participants.primary_name" => "FRK1" ))
-							// )
-						// )
-					// )
-				// )
-			// );
-			
-			// $queryParams["bool"]["must"][] = array( 
-				// "nested" => array( 
-					// "path" => "attributes",
-					// "query" => array( 
-						// "bool" => array( 
-							// "must" => array( 
-								// array( "match" => array( "attributes.attribute_value" => $searchTerm ))
-							// )
-						// )
-					// )
-				// )
-			// );
 		}
 		
 		$queryParams["filtered"]["filter"]["bool"]["must"] = $querySet;
-		print_r( $queryParams );
 		return $queryParams;
 		
 	}
@@ -619,6 +591,9 @@ class InteractionTables {
 		switch( $tagType ) {
 			
 			case "@" :
+				$searchQuery = $this->processAttributeSearchTag( $tag, $terms, $columns );
+				break;
+			
 			case "#" :
 				$searchQuery = $this->processHashSearchTag( $tag, $terms, $columns );
 				break;
@@ -653,58 +628,161 @@ class InteractionTables {
 		}
 		
 		$searchQuery = array( );
-		if( $column['type'] == "direct" ) {
+		if( isset( $column['type'] ) ) {
 			
-			// Direct query is just a single term mapping entry
-			$searchQuery = array( "term" => array( $column['value'] => strtolower(implode( ' ', $terms )) ) );
-			
-		} else if( $column['type'] == "participant" ) {
-			
-			// A participant query requires MUST matching entries for
-			// limiting which nested entries we look at, and then SHOULD
-			// matching entries for the actual keywords to search.
-			$searchQuery = array( 
-				"nested" => array( 
-					"path" => "participants",
-					"query" => array( 
-						"bool" => array( 
-							"must" => array( )
+			if( $column['type'] == "direct" ) {
+				
+				// Direct query is just a single mapping entry
+				if( $tag == "#U" || $tag == "#D" ) {
+					$searchQuery = array( "match" => array( $column['value'] => strtolower(implode( ' ', $terms )) ) );
+				} else {
+					$searchQuery = array( "term" => array( $column['value'] => strtolower(implode( ' ', $terms )) ) );
+				}
+				
+			} else if( $column['type'] == "participant" ) {
+				
+				// A participant query requires MUST matching entries for
+				// limiting which nested entries we look at, and then SHOULD
+				// matching entries for the actual keywords to search.
+				$searchQuery = array( 
+					"nested" => array( 
+						"path" => "participants",
+						"query" => array( 
+							"bool" => array( 
+								"must" => array( )
+							)
 						)
 					)
-				)
-			);
-			
-			$querySet = array( );
-			
-			// Must matching entries are based on the criteria set in the columns index
-			foreach( $column['query'] as $queryIndex => $queryVal ) {
-				$querySet[] = array( "term" => array( "participants." . $queryIndex => $queryVal ));
-			}
+				);
+				
+				$querySet = array( );
+				
+				// Must matching entries are based on the criteria set in the columns index
+				foreach( $column['query'] as $queryIndex => $queryVal ) {
+					$querySet[] = array( "term" => array( "participants." . $queryIndex => strtolower($queryVal) ));
+				}
 
-			// Should matching entries are based on the keyword terms that were passed in
-			if( sizeof( $terms ) > 0 ) {
+				// Should matching entries are based on the keyword terms that were passed in
+				if( sizeof( $terms ) > 0 ) {
+					
+					$queryList = array( );
+					foreach( $terms as $term ) {
+						$queryList[] = array( "term" => array( "participants." . $column['value'] => strtolower($term) ));
+					}
+					
 				
-				$queryList = array( );
-				foreach( $terms as $term ) {
-					$queryList[] = array( "term" => array( "participants." . $column['value'] => strtolower($term) ));
+					if( sizeof( $queryList ) > 1 ) {
+						$querySet[] = array( "bool" => array( "should" => $queryList ) );
+					} else {
+						$querySet[] = $queryList;
+					}
+				
 				}
 				
-			
-				if( sizeof( $queryList ) > 1 ) {
-					$querySet[] = array( "bool" => array( "should" => $queryList ) );
+				if( sizeof( $querySet ) > 0 ) {
+					$searchQuery["nested"]["query"]["bool"]["must"] = $querySet;
 				} else {
-					$querySet[] = $queryList;
+					$searchQuery = array( );
 				}
+			} 
 			
-			}
-			
-			if( sizeof( $querySet ) > 0 ) {
-				$searchQuery["nested"]["query"]["bool"]["must"] = $querySet;
-			} else {
-				$searchQuery = array( );
+		}
+		
+		return $searchQuery;
+		
+	}
+	
+	/**
+	 * Process search tags that begin with an @ which comprises 
+	 * attributes.
+	 */
+	 
+	private function processAttributeSearchTag( $tag, $terms, $columns ) {
+		
+		if( sizeof( $terms ) <= 0 ) {
+			return array( );
+		}
+		
+		$column = array( );
+		foreach( $columns as $columnIndex => $columnInfo ) {
+			if( strtoupper($columnInfo['search']) == $tag ) {
+				$column = $columnInfo;
+				break;
 			}
 		}
 		
+		$searchQuery = array( );
+		
+		// An attribute query requires MUST matching entries for
+		// limiting which nested entries we look at, and then SHOULD
+		// matching entries for the actual keywords to search.
+		$searchQuery = array( 
+			"nested" => array( 
+				"path" => "attributes",
+				"query" => array( 
+					"bool" => array( 
+						"must" => array( )
+					)
+				)
+			)
+		);
+		
+		$querySet = array( );
+		if( $tag == "@ATB" || $tag == "@ATBX" ) {
+			// Do nothing, no additional terms required, cause this will search all attributes
+		} else if( isset( $column['type'] ) ) {
+			
+			// Must matching entries are based on the criteria set in the columns index
+			foreach( $column['query'] as $queryIndex => $queryVal ) {
+				$querySet[] = array( "term" => array( "attributes." . $queryIndex => strtolower($queryVal) ));
+			}
+			
+		} else {
+			$cleanTag = ltrim( $tag, "@" );
+			
+			// Treat NOTEX as a NOTE cause there is no NOTEX 
+			// Type in the document.
+			if( strtoupper($cleanTag) == "NOTEX" ) {
+				$cleanTag = "NOTE";
+			}
+			
+			$querySet[] = array( "term" => array( "attributes.attribute_type_shortcode" => strtolower($cleanTag) ));
+		}
+
+		// Should matching entries are based on the keyword terms that were passed in
+		if( sizeof( $terms ) > 0 ) {
+			
+			$queryList = array( );
+			foreach( $terms as $term ) {
+				if( $tag == "@ATB" ) {
+					$queryList[] = array( "match" => array( "attributes.attribute_value.full" => strtolower($term) ));
+					$queryList[] = array( "term" => array( "attributes.attribute_value" => strtolower($term) ));
+					$queryList[] = array( "term" => array( "attributes.ontology_term_official_id" => strtolower($term) ));
+				} else if( $tag == "@ATBX" ) {
+					$queryList[] = array( "term" => array( "attributes.attribute_value" => strtolower($term) ));
+					$queryList[] = array( "term" => array( "attributes.ontology_term_official_id" => strtolower($term) ));
+				} else if( $tag == "@NOTE" ) {
+					$queryList[] = array( "match" => array( "attributes.attribute_value.full" => strtolower($term) ));
+				} else {
+					$queryList[] = array( "term" => array( "attributes.attribute_value" => strtolower($term) ));
+					$queryList[] = array( "term" => array( "attributes.ontology_term_official_id" => strtolower($term) ));
+				}
+			}
+			
+		
+			if( sizeof( $queryList ) > 1 ) {
+				$querySet[] = array( "bool" => array( "should" => $queryList ) );
+			} else {
+				$querySet[] = $queryList;
+			}
+		
+		}
+		
+		if( sizeof( $querySet ) > 0 ) {
+			$searchQuery["nested"]["query"]["bool"]["must"] = $querySet;
+		} else {
+			$searchQuery = array( );
+		}
 		
 		return $searchQuery;
 		
@@ -719,14 +797,6 @@ class InteractionTables {
 		
 		// Default sorting is to sort the interactions from newest
 		// to oldest based on the history_date document entry
-		
-		// "participants.primary_name" => array( 
-					// "order" => "desc",
-					// "nested_path" => "participants",
-					// "nested_filter" => array( 
-						// "term" => array( "participants.participant_role_id" => 3 )
-					// )
-				// )
 		
 		$sortParams = array( );
 		

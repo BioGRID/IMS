@@ -87,6 +87,7 @@ class DatasetController extends lib\Controller {
 					"AVAILABILITY" => strtoupper($dataset['AVAILABILITY']),
 					"AVAILABILITY_LABEL" => $dataset['AVAILABILITY_LABEL'],
 					"WEB_URL" => WEB_URL,
+					"WIKI_URL" => WIKI_URL,
 					"DATASET_SOURCE_ID" => $dataset['ANNOTATION']['ID'],
 					"TYPE_NAME" => $dataset['TYPE_NAME'],
 					"STATUS_LABEL" => $dataset['HISTORY_LABEL'],

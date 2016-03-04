@@ -202,6 +202,11 @@
 			}
 			
 		});
+		
+		// SETUP Clear All Filters Button
+		$("#dataTable-" + sectionType + "-clearFilters").click( function( ) {
+			datatable.search( '' ).columns( ).search( '' ).draw( );
+		});
 	
 	}
 	
