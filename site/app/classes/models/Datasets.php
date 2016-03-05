@@ -10,6 +10,7 @@ namespace IMS\app\classes\models;
 
 use \PDO;
 use IMS\app\classes\utilities\PubmedParser;
+use IMS\app\classes\models\ElasticSearch;
  
 class Datasets {
 
@@ -232,6 +233,8 @@ class Datasets {
 			$this->addHistory( $datasetID, "ACTIVATED", "New Dataset" );
 			
 			$this->db->commit( );
+			
+			$this->addNewDatasetDocument( $datasetID );
 		
 			return $datasetID;
 		
@@ -526,6 +529,80 @@ class Datasets {
 		$this->addHistory( $datasetID, 'UPDATED', "Changed Availability Setting to " . $availability );
 	
 	}
+	
+	/**
+	 * Fetch the total number of interactions, regardless of status for a total dataset size
+	 */
+	 
+	private function fetchDatasetInteractionSize( $datasetID ) {
+		
+		$stmt = $this->db->prepare( "SELECT COUNT(*) as intCount FROM " . DB_IMS . ".interactions WHERE dataset_id=? GROUP BY dataset_id LIMIT 1" );
+		$stmt->execute( array( $datasetID ) );
+		
+		if( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			return $row->intCount;
+		} 
+		
+		return 0;
+		
+	}
+	
+	/**
+	 * Fetch total number of interactions for each type for a dataset
+	 */
+	 
+	private function fetchDatasetInteractionStats( $datasetID ) {
+
+		$stmt = $this->db->prepare( "SELECT interaction_type_id, COUNT(*) as intCount FROM " . DB_IMS . ".interactions WHERE dataset_id=? GROUP BY interaction_type_id ORDER BY interaction_type_id ASC" );
+		$stmt->execute( array( $datasetID ) );
+		
+		$interactionStats = array( );
+		while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			
+			$stats = array( );
+			$stats['interaction_type_id'] = $row->interaction_type_id;
+			$stats['combined_count'] = $row->intCount;
+			
+			$interactionStats[] = $stats;
+			
+		}
+		
+		return $interactionStats;
+	
+	}
+	
+	/**
+	 * Add a new dataset document to elastic search that has no statistics
+	 * because it is brand new
+	 */
+	 
+	private function addNewDatasetDocument( $datasetID ) {
+		
+		$es = new ElasticSearch( );
+		
+		$intCount = 0;
+		$datasetStats = array( );
+		$document = $es->buildDatasetDocument( $datasetID, $intCount, $datasetStats );
+		
+		$es->index( $document );
+		
+	}
+	
+    /**
+	 * Update an existing dataset document in elastic search
+	 */
+	 
+	private function updateDatasetDocument( $datasetID ) {
+		
+		$es = new ElasticSearch( );
+		
+		$intCount = $this->fetchDatasetInteractionSize( $datasetID );
+		$datasetStats = $this->fetchDatasetInteractionStats( $datasetID );
+		$document = $es->buildDatasetDocument( $datasetID, $intCount, $datasetStats );
+		
+		$es->update( $document );
+		
+	} 
 	
 }
 

@@ -23,6 +23,13 @@
 			<h4 class='paddingBotXs'>{{ HISTORY_DATE }}</h4>
 		</div>
 		
+		{% for SECTION in CORESECTIONS %}
+			<div class='sidebarLink' data-type='{{ SECTION.type }}'>
+				<i class='fa fa-lg fa-angle-right pull-right'></i>
+				{{ SECTION.text }} 
+			</div>
+		{% endfor %}
+		
 		{% for SECTION in SUBSECTIONS %}
 			<div class='sidebarLink' data-type='{{ SECTION.type }}'>
 				<i class='fa fa-lg fa-angle-right pull-right'></i>
@@ -58,6 +65,20 @@
 			
 			<div class='text-center'><a id='datasetDetailsToggle'><i class='fa fa-lg fa-angle-double-up'></i> <span class='datasetDetailsToggleText'>Collapse Dataset Details</span> <i class='fa fa-lg fa-angle-double-up'></i></a></div>
 			
+		</div>
+		
+		<div id='section-curation' class='datasetSubsection' data-type='curation'>
+		
+			<hr />
+			<h3>Curation Tools</h3>
+		
+		</div>
+		
+		<div id='section-history' class='datasetSubsection' data-type='history'>
+		
+			<hr />
+			<h3>Dataset History</h3>
+		
 		</div>
 		
 		{% for SECTION in SUBSECTIONS %}
