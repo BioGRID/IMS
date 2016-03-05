@@ -65,17 +65,24 @@ class DatasetController extends lib\Controller {
 					}
 				}
 				
+				// Sections available on all dataset pages
+				$coreSections = array( );
+				$coreSections[] = array( "text" => "Curation Tools", "type" => "curation" );
+				$coreSections[] = array( "text" => "Dataset History", "type" => "history" );
+				
 				$es = new models\ElasticSearch( );
 				$response = $es->get( array( "index" => "datasets", "type" => "dataset", "id" => $dataset['ID'] ));
 				
-				$subsections = array( );
-				foreach( $response['_source']['interactions'] as $subsection ) {
-					$subsections[] = array( 
-						"text" => $datasets->getInteractionTypeName( $subsection['interaction_type_id'] ), 
-						"type" => $subsection['interaction_type_id'], 
-						"activated" => $subsection['activated_count'], 
-						"disabled" => $subsection['disabled_count'], 
-						"combined" => $subsection['combined_count'] 
+				// Sections only available when specific datatypes are 
+				// presently curated
+				$subSections = array( );
+				foreach( $response['_source']['interactions'] as $subSection ) {
+					$subSections[] = array( 
+						"text" => $datasets->getInteractionTypeName( $subSection['interaction_type_id'] ), 
+						"type" => $subSection['interaction_type_id'], 
+						"activated" => $subSection['activated_count'], 
+						"disabled" => $subSection['disabled_count'], 
+						"combined" => $subSection['combined_count'] 
 					);
  				}
 				
@@ -94,7 +101,8 @@ class DatasetController extends lib\Controller {
 					"STATUS" => $dataset['HISTORY_CURRENT']['MODIFICATION'],
 					"HISTORY_NAME" => $dataset['HISTORY_CURRENT']['USER_NAME'],
 					"HISTORY_DATE" => $dataset['HISTORY_CURRENT']['ADDED_DATE'],
-					"SUBSECTIONS" => $subsections,
+					"CORESECTIONS" => $coreSections,
+					"SUBSECTIONS" => $subSections,
 					"SHOW_ACCESSED" => "hidden",
 					"SHOW_INPROGRESS" => "hidden"
 				);
