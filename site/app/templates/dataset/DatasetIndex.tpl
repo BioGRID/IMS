@@ -24,14 +24,14 @@
 		</div>
 		
 		{% for SECTION in CORESECTIONS %}
-			<div class='sidebarLink' data-type='{{ SECTION.type }}'>
+			<div class='sidebarLink {% if SECTION.active == true %}active{% endif %}' data-type='{{ SECTION.type }}'>
 				<i class='fa fa-lg fa-angle-right pull-right'></i>
 				{{ SECTION.text }} 
 			</div>
 		{% endfor %}
 		
 		{% for SECTION in SUBSECTIONS %}
-			<div class='sidebarLink' data-type='{{ SECTION.type }}'>
+			<div class='sidebarLink {% if SECTION.active == true %}active{% endif %}' data-type='{{ SECTION.type }}'>
 				<i class='fa fa-lg fa-angle-right pull-right'></i>
 				{{ SECTION.text }} 
 			</div>
@@ -67,10 +67,25 @@
 			
 		</div>
 		
-		<div id='section-curation' class='datasetSubsection' data-type='curation'>
+		<div id='section-curation' class='datasetSubsection' data-type='curation' style='display: block;'>
 		
 			<hr />
+		
+			<div class='pull-right col-lg-3 col-md-4 col-sm-5 col-xs-6 form-horizontal' style='padding-right: 0'>
+				<select class='form-control marginTopSm' id='curationType'>
+					<option value='none' selected>Choose a Curation Type...</option>
+					{% for TYPEID, TYPENAME in INTERACTIONTYPES %}
+						<option value='{{ TYPEID }}'>{{ TYPENAME }}</option>
+					{% endfor %}
+				</select>
+			</div>
+		
 			<h3>Curation Tools</h3>
+			<div class='subhead dataTable-info marginBotSm'>Use the following curation workflow...</div>
+			
+			<div class='curationInterface'>
+				Select a curation type to begin... <i class='fa fa-spinner fa-pulse fa-lg'></i>
+			</div>
 		
 		</div>
 		
@@ -123,6 +138,7 @@
 					<table id='dataTable-{{ SECTION.type }}' class='table table-striped table-bordered table-responsive table-condensed' width="100%"></table>
 				</div>
 			</div>
+			
 		{% endfor %}
 		
 	</div>

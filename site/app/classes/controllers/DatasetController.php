@@ -67,7 +67,7 @@ class DatasetController extends lib\Controller {
 				
 				// Sections available on all dataset pages
 				$coreSections = array( );
-				$coreSections[] = array( "text" => "Curation Tools", "type" => "curation" );
+				$coreSections[] = array( "text" => "Curation Tools", "type" => "curation", "active" => true );
 				$coreSections[] = array( "text" => "Dataset History", "type" => "history" );
 				
 				$es = new models\ElasticSearch( );
@@ -86,6 +86,8 @@ class DatasetController extends lib\Controller {
 					);
  				}
 				
+				$interactionTypeHASH = $datasets->getInteractionTypeHash( );
+				
 				$params = array(
 					"TITLE" => $dataset['ANNOTATION']['TITLE'],
 					"DATASET_ID" => $dataset['ID'],
@@ -103,6 +105,7 @@ class DatasetController extends lib\Controller {
 					"HISTORY_DATE" => $dataset['HISTORY_CURRENT']['ADDED_DATE'],
 					"CORESECTIONS" => $coreSections,
 					"SUBSECTIONS" => $subSections,
+					"INTERACTIONTYPES" => $interactionTypeHASH,
 					"SHOW_ACCESSED" => "hidden",
 					"SHOW_INPROGRESS" => "hidden"
 				);
