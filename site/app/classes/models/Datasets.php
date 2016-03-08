@@ -65,6 +65,14 @@ class Datasets {
 	
 	}
 	
+	/**
+	 * Get interaction type Hash
+	 */
+	 
+	public function getInteractionTypeHash( ) {
+		return $this->interactionTypes;
+	}
+	
 	/** 
 	 * Get interaction type name from interaction type id
 	 */
