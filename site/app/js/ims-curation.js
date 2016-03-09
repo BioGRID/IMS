@@ -42,5 +42,20 @@
 			
 		});
 	}
+	
+	/**
+	 * Curation Panel is a common object used to wrap a curation interface item
+	 * that has several common components shared between all of them such as an
+	 * error panel and the ability to expand to add additional fields
+	 */
+	 
+	function curationPanel( options ) {
+		
+		this.type = options.type;
+		this.display = function( ) {
+			alert( this.type );
+		};
+		
+	}
 
 }));
