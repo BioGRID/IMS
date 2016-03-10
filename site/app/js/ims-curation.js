@@ -12,6 +12,7 @@
 
 	$(function( ) {
 		initializeUI( );
+		initCurationPanel( );
 	});
 	
 	/**
@@ -20,6 +21,8 @@
 		
 	function initializeUI( ) {
 		initializeCurationTypeDropdown( );
+		
+		
 	}
 	
 	/**
@@ -37,23 +40,60 @@
 				dataType: "html",
 				data: { type: curationType }
 			}).done( function(data) {
-				$(".curationInterface").html(data);
+				$("#curationWorkflow").html(data);
+				initializeCurationWorkflow( );
 			});
 			
 		});
 	}
 	
+	function initializeCurationWorkflow( ) {
+		
+		$(".curationPanel").each( function( i, val ) {
+			var cp = $(this).curationPanel({});
+			cp.data('curationPanel').clickMe( );
+		});
+		
+	}
+	
 	/**
-	 * Curation Panel is a common object used to wrap a curation interface item
+	 * Curation Panel is a plugin used to grant a curation interface item
 	 * that has several common components shared between all of them such as an
 	 * error panel and the ability to expand to add additional fields
 	 */
 	 
-	function curationPanel( options ) {
+	function initCurationPanel( ) {
 		
-		this.type = options.type;
-		this.display = function( ) {
-			alert( this.type );
+		$.curationPanel = function( el, options ) {
+			
+			var base = this;
+			base.$el = $(el);
+			base.el = el;
+			
+			base.$el.data( "curationPanel", base );
+			
+			base.init = function( ) {
+				base.options = $.extend( {}, $.curationPanel.defaultOptions, options );
+			};
+			
+			base.$el.click( function( ) {
+				
+			});
+			
+			base.clickMe = function( ) {
+				//alert( "CLICK ME" );
+			};
+			
+			base.init( );
+			
+		};
+		
+		$.curationPanel.defaultOptions = { };
+		
+		$.fn.curationPanel = function( options ) {
+			return this.each( function( ) {
+				(new $.curationPanel( this, options ));
+			});
 		};
 		
 	}
