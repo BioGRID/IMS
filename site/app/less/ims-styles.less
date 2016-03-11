@@ -245,13 +245,24 @@ h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 { margin-top: 0px; margin-b
 			}
 			
 			#curationInterface {
+			
+				height: 99%;
+				display: table;
+				width: 100%;
 				
-				.curationMenu {
-					position: relative;
+				#curationWorkflow {
+					display: table-cell;
+				}
+				
+				#curationRightSidebar {
+					padding-left:5px;
+					width: 400px;
+					display: table-cell;
+					
 					.list-group {
 						&.affix {
+							width: 395px;
 							right: 10px;
-							width: 21%;
 						}
 					}
 				}

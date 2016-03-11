@@ -40,7 +40,7 @@
 				dataType: "html",
 				data: { type: curationType }
 			}).done( function(data) {
-				$("#curationWorkflow").html(data);
+				$("#curationInterface").html(data);
 				initializeCurationWorkflow( );
 			});
 			
@@ -48,6 +48,8 @@
 	}
 	
 	function initializeCurationWorkflow( ) {
+		
+		$("#curationMenu > .list-group").affix( );
 		
 		$(".curationPanel").each( function( i, val ) {
 			var cp = $(this).curationPanel({});
