@@ -2,7 +2,7 @@
 
 	{% for BLOCK in CURATION_BLOCKS %}
 		<div class='curationPanel panel panel-primary id='{{ BLOCK.id }}'>
-			<div class='panel-heading'>{{ BLOCK.title }}</div>
+			<div class='panel-heading'>{{ BLOCK.title }} <i class='fa fa-angle-down fa-lg pull-right'></i></div>
 			<div class='panel-body'>
 				{{ BLOCK.content|raw }}
 				<div class='curationErrors'>{{ BLOCK.errors }}</div>
