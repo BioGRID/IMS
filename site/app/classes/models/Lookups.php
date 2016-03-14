@@ -21,6 +21,78 @@ class Lookups {
 	}
 	
 	/**
+	 * Build a hash of searchable id types
+	 */
+	 
+	public function buildIDTypeHash( ) {
+		
+		$mappingHash = array( );
+		$mappingHash["ALL"] = "All Identifiers";
+		$mappingHash["NAMES"] = "All Aliases";
+		$mappingHash["OFFICIAL"] = "Official Symbols";
+		$mappingHash["SYNONYM"] = "Synonyms";
+		$mappingHash["ANIMALQTLDB"] = "AnimalQTLDB";
+		$mappingHash["APHIDBASE"] = "AphidBASE";
+		$mappingHash["BEEBASE"] = "BeeBASE";
+		$mappingHash["BIOGRID"] = "BioGRID ID";
+		$mappingHash["BGD"] = "BGD";
+		$mappingHash["CGD"] = "CGD";
+		$mappingHash["CGNC"] = "CGNC";
+		$mappingHash["DICTYBASE"] = "DictyBASE";
+		$mappingHash["ECOGENE"] = "EcoGENE";
+		$mappingHash["ENSEMBL"] = "Ensembl";
+		$mappingHash["ENTREZ_GENE"] = "Entrez Gene";
+		$mappingHash["FLYBASE"] = "FlyBASE";
+		$mappingHash["HGNC"] = "HGNC";
+		$mappingHash["HPRD"] = "HPRD";
+		$mappingHash["IMGT/GENE-DB"] = "IMGT/GeneDB";
+		$mappingHash["MAIZEDB"] = "MaizeDB";
+		$mappingHash["MGI"] = "MGI";
+		$mappingHash["MIM"] = "MIM";
+		$mappingHash["MIRBASE"] = "MirBASE";
+		$mappingHash["PBR"] = "PBR";
+		$mappingHash["REFSEQ"] = "REFSEQ";
+		$mappingHash["RGD"] = "RGD";
+		$mappingHash["SGD"] = "SGD";
+		$mappingHash["UNIPROTKB"] = "UniprotKB";
+		$mappingHash["TAIR"] = "TAIR";
+		$mappingHash["TUBERCULIST"] = "Tuberculist";
+		$mappingHash["VECTORBASE"] = "VectorBASE";
+		$mappingHash["VEGA"] = "VEGA";
+		$mappingHash["WORMBASE"] = "WormBASE";
+		$mappingHash["XENBASE"] = "XenBASE";
+		$mappingHash["ZFIN"] = "ZFIN";
+		return $mappingHash;
+		
+		
+	}
+	
+	/**
+	 * Build a hash that maps organism ids to a organism name combo
+	 * so we can quickly get organisms in a list
+	 */
+	 
+	public function buildOrganismNameHash( ) {
+		
+		$mappingHash = array( );
+		$stmt = $this->db->prepare( "SELECT organism_id, organism_official_name, organism_strain FROM " . DB_QUICK . ".quick_organisms ORDER BY organism_official_name ASC" );
+		$stmt->execute( );
+		
+		while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			$name = $row->organism_official_name;
+			
+			if( $row->organism_strain != "-" ) {
+				$name = $name . " (" . $row->organism_strain . ")";
+			}
+			
+			$mappingHash[$row->organism_id] = $name;
+		}
+
+		return $mappingHash;
+		
+	}
+	
+	/**
 	 * Build a hash that maps user ids to a firstname/lastname combo
 	 * so we can quickly get readable user names without extra DB lookups
 	 */

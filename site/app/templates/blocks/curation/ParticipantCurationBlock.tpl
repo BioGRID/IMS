@@ -17,12 +17,10 @@
 		<div class='form-group'>
 			<label class='col-sm-3 control-label marginTopSm'>Taxa:</label>
 			<div class='col-sm-9 marginBotSm'>
-				<select class="form-control" name='{{BASE_NAME}}-organism'>
-				  <option>1</option>
-				  <option>2</option>
-				  <option>3</option>
-				  <option>4</option>
-				  <option>5</option>
+				<select class='form-control partOrgSelect' name='{{BASE_NAME}}-organism'>
+					{% for ORGID, ORGNAME in ORGANISMS %}
+						<option value='{{ ORGID }}' {% if ORGID == SELECTED_ORG %}selected{% endif %}>{{ ORGNAME }}</option>
+					{% endfor %}
 				</select>
 			</div>
 		</div>
@@ -30,11 +28,9 @@
 			<label class='col-sm-3 control-label marginTopSm'>IDs:</label>
 			<div class='col-sm-9 marginBotSm'>
 				<select class="form-control" name='{{BASE_NAME}}-id_type'>
-				  <option>1</option>
-				  <option>2</option>
-				  <option>3</option>
-				  <option>4</option>
-				  <option>5</option>
+					{% for TYPEID, TYPENAME in ID_TYPES %}
+						<option value='{{ TYPEID }}' {% if TYPEID == SELECTED_TYPE %}selected{% endif %}>{{ TYPENAME }}</option>
+					{% endfor %}
 				</select>
 			</div>
 		</div>

@@ -17,6 +17,8 @@ class CurationBlocks extends lib\Blocks {
 	private $lookups;
 	private $partTypes;
 	private $partRoles;
+	private $orgNames;
+	private $idTypes;
 	 
 	public function __construct( ) {
 		parent::__construct( );
@@ -24,6 +26,8 @@ class CurationBlocks extends lib\Blocks {
 		$this->lookups = new models\Lookups( );
 		$this->partTypes = $this->lookups->buildParticipantTypesHash( );
 		$this->partRoles = $this->lookups->buildParticipantRoleHash( );
+		$this->orgNames = $this->lookups->buildOrganismNameHash( );
+		$this->idTypes = $this->lookups->buildIDTypeHash( );
 	}
 	
 	/**
@@ -76,8 +80,8 @@ class CurationBlocks extends lib\Blocks {
 			"BASE_NAME" => $baseName,
 			"ROLES" => $this->partRoles,
 			"SELECTED_ROLE" => $roleID,
-			"ORGANISMS" => array( ),
-			"ID_TYPES" => array( ),
+			"ORGANISMS" => $this->orgNames,
+			"ID_TYPES" => $this->idTypes,
 			"PARTICIPANT_TYPES" => $this->partTypes,
 			"SELECTED_PTYPE" => $participantType,
 			"PLACEHOLDER_MSG" => "Enter identifiers, one per line",
