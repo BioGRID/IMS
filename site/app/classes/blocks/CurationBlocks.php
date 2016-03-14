@@ -80,6 +80,7 @@ class CurationBlocks extends lib\Blocks {
 			"ID_TYPES" => array( ),
 			"PARTICIPANT_TYPES" => $this->partTypes,
 			"SELECTED_PTYPE" => $participantType,
+			"PLACEHOLDER_MSG" => "Enter identifiers, one per line",
 			"ALLOW_ATTRIBS" => $allowAttribs
 		);
 		
