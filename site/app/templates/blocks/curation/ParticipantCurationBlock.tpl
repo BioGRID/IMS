@@ -46,7 +46,7 @@
 		</div>
 		</div>
 		<div class='marginTopSm text-center'>
-			Add Attribute <i class='fa fa-plus-square-o fa-lg'></i>
+			<a class='participantAddAttribute addAttribute'>Add Attribute <i class='fa fa-plus-square-o fa-lg'></a></i>
 		</div>
 	</div>
 </div>
