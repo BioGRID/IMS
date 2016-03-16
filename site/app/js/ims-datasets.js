@@ -243,59 +243,55 @@
 	 */
 	 
 	function setupAvailabilitySwitch( ) {
-		
-		$('.datasetSidebar').on( "click", "#availabilitySwitch", function( event ) {
 			
-			var availabilityPopup = $(this).qtip({
-				overwrite: false,
-				content: {
-					text: function( event, api ) {
-						var availabilityForm = "<select class='form-control availability_select'><option value='public'>Public</option><option value='private'>Private</option><option value='website-only'>Website-Only</option></select><button type='button' class='availability_submit btn btn-success btn-block marginTopSm'>Submit</button>";
-						return availabilityForm;
-					},
-					title: {
-						text: "<strong>Change Availability</strong>",
-						button: true
-					}
+		var availabilityPopup = $("#availabilitySwitch").qtip({
+			overwrite: false,
+			content: {
+				text: function( event, api ) {
+					var availabilityForm = "<select class='form-control availability_select'><option value='public'>Public</option><option value='private'>Private</option><option value='website-only'>Website-Only</option></select><button type='button' class='availability_submit btn btn-success btn-block marginTopSm'>Submit</button>";
+					return availabilityForm;
 				},
-				style: {
-					classes: 'qtip-bootstrap',
-					width: '250px'
-				},
-				position: {
-					my: 'left center',
-					at: 'right center'
-				},
-				show: {
-					event: event.type,
-					ready: true,
-					solo: true
-				},
-				hide: {
-					delay: 3000,
-					fixed: true,
-					leave: false
+				title: {
+					text: "<strong>Change Availability</strong>",
+					button: true
 				}
-			}, event);
-			
-			$("body").on( "click", ".availability_submit", function( ) {
-			
-				var selectVal = $(this).parent( ).find( ".availability_select" ).val( );
-				var datasetID = $("#datasetID").val( );
-				var baseURL = $("head base").attr( "href" );
+			},
+			style: {
+				classes: 'qtip-bootstrap',
+				width: '250px'
+			},
+			position: {
+				my: 'left center',
+				at: 'right center'
+			},
+			show: {
+				event: 'click',
+				solo: true
+			},
+			hide: {
+				delay: 3000,
+				fixed: true,
+				leave: false
+			}
+		}, event);
 				
-				$.ajax({
-					url: baseURL + "/scripts/ExecuteProcess.php",
-					method: "POST",
-					dataType: "html",
-					data: { script: "switchAvailability", id: datasetID, value: selectVal }
-				}).done( function(data) {
-					$("#availabilitySwitch").html(data);
-					availabilityPopup.qtip( 'hide' );
-				});
-				
+		
+		$("body").on( "click", ".availability_submit", function( ) {
+		
+			var selectVal = $(this).parent( ).find( ".availability_select" ).val( );
+			var datasetID = $("#datasetID").val( );
+			var baseURL = $("head base").attr( "href" );
+			
+			$.ajax({
+				url: baseURL + "/scripts/ExecuteProcess.php",
+				method: "POST",
+				dataType: "html",
+				data: { script: "switchAvailability", id: datasetID, value: selectVal }
+			}).done( function(data) {
+				$("#availabilitySwitch").html(data);
+				availabilityPopup.qtip( 'hide' );
 			});
-				
+			
 		});
 			
 	}

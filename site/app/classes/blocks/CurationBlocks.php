@@ -93,4 +93,24 @@ class CurationBlocks extends lib\Blocks {
 		
 	}
 	
+	/**
+	 * Generate a participant block addon
+	 */
+	 
+	public function fetchParticipantCurationBlockAddon( $baseName, $attributeType, $count ) {
+		
+		$placeholder = "Enter " . strtolower( $attributeType) . " values, one per line";
+		
+		$params = array( 
+			"BASE_NAME" => $baseName,
+			"PLACEHOLDER_MSG" => $placeholder,
+			"ATTRIBUTE_TYPE" => strtolower( $attributeType ),
+			"COUNT" => $count
+		);
+		
+		$view = $this->processView( 'blocks' . DS . 'curation' . DS . 'AddonParticipantAttribute.tpl', $params, false );
+		return $view;
+		
+	}
+	
 }

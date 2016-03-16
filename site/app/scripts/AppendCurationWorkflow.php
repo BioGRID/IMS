@@ -12,6 +12,7 @@ require_once __DIR__ . '/../../app/lib/Bootstrap.php';
 
 use IMS\app\classes\blocks;
 
-echo "<div class='col-lg-3 col-md-3 col-sm-4 col-xs-4'><textarea class='form-control' placeholder='ADDON' name='{{BASE_NAME}}-participants' id='{{BASE_NAME}}-participants' rows='10'></textarea></div>";
+$curationBlocks = new blocks\CurationBlocks( );
+echo $curationBlocks->fetchParticipantCurationBlockAddon( $_POST['parent'], $_POST['selected'], $_POST['field'] );
 
 ?>
