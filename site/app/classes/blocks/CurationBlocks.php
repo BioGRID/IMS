@@ -59,11 +59,11 @@ class CurationBlocks extends lib\Blocks {
 			
 			case "1" : 
 			
-				$links[] = array( "block" => "participant", "options" => array( "role" => "2", "type" => "1", "organism" => "1" ));
-				$links[] = array( "block" => "participant", "options" => array( "role" => "3", "type" => "1", "organism" => "1" ));
-				$links[] = array( "block" => "attribute", "attribute_type_id" => "11", "options" => array( ));
-				$links[] = array( "block" => "attribute", "attribute_type_id" => "13", "options" => array( ));
-				$links[] = array( "block" => "attribute", "attribute_type_id" => "22", "options" => array( ));
+				$links[] = array( "block" => "participant", "data" => array( "role" => "2", "type" => "1", "organism" => "1" ));
+				$links[] = array( "block" => "participant", "data" => array( "role" => "3", "type" => "1", "organism" => "1" ));
+				$links[] = array( "block" => "attribute", "data" => array( "type" => "11" ));
+				$links[] = array( "block" => "attribute", "data" => array( "type" => "13" ));
+				$links[] = array( "block" => "attribute", "data" => array( "type" => "22" ));
 			
 				// $sections = array( );
 				// $sections[] = array( "id" => "participants-1", "title" => "Participants #1"
@@ -76,10 +76,10 @@ class CurationBlocks extends lib\Blocks {
 				$blocks[] = array( "id" => "participants-1", "title" => "Participant List #1", "content" => $this->fetchParticipantCurationBlock( "participants-1", "2", "1", "1", "1", true ), "errors" => "" );
 				$blocks[] = array( "id" => "participants-1", "title" => "Participant List #1", "content" => $this->fetchParticipantCurationBlock( "participants-1", "2", "1", "1", "1", true ), "errors" => "" );
 				
-				$links[] = array( "url" => "#participants-1", "class" => "active", "title" => "Participant List #1", "icon" => "" );
-				$links[] = array( "url" => "#participants-2", "class" => "active", "title" => "Participant List #2", "icon" => "" );
-				$links[] = array( "url" => "#attributes-experimental_system", "class" => "active", "title" => "Experimental System", "icon" => "" );
-				$links[] = array( "url" => "#attributes-throughput_tag", "class" => "active", "title" => "Throughput Tag", "icon" => "" );
+				// $links[] = array( "url" => "#participants-1", "class" => "active", "title" => "Participant List #1", "icon" => "" );
+				// $links[] = array( "url" => "#participants-2", "class" => "active", "title" => "Participant List #2", "icon" => "" );
+				// $links[] = array( "url" => "#attributes-experimental_system", "class" => "active", "title" => "Experimental System", "icon" => "" );
+				// $links[] = array( "url" => "#attributes-throughput_tag", "class" => "active", "title" => "Throughput Tag", "icon" => "" );
 				break;
 				
 			

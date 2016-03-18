@@ -19,9 +19,20 @@
 		<h5>Curation Checklist</h5>
 		<ul>
 		
+		$links[] = array( "block" => "participant", "options" => array( "role" => "2", "type" => "1", "organism" => "1" ));
+				$links[] = array( "block" => "participant", "options" => array( "role" => "3", "type" => "1", "organism" => "1" ));
+				$links[] = array( "block" => "attribute", "attribute_type_id" => "11", "options" => array( ));
+				$links[] = array( "block" => "attribute", "attribute_type_id" => "13", "options" => array( ));
+				$links[] = array( "block" => "attribute", "attribute_type_id" => "22", "options" => array( ));
+		
 			{% for LINK in SIDEBAR_LINKS %}
 				<li>
-					<div><i class='fa fa-angle-right listIcon'></i> <i class='fa fa-square-o pull-right fa-lg activityIcon'></i><a class='{{ LINK.class }} workflowLink' data-type='{{ LINK.type }}' >{{ LINK.title }}</a></div>
+					<div><i class='fa fa-angle-right listIcon'></i> 
+					<i class='fa fa-square-o pull-right fa-lg activityIcon'></i><a class='{{ LINK.class }} workflowLink' data-block='{{ LINK.block }}'
+						{% for NAME, VALUE in LINK.data %}
+							data-{{ NAME }}='{{ VALUE }}' 
+						{% endfor %}
+					>{{ LINK.title }}</a></div>
 				</li>
 			{% endfor %}
 		
