@@ -58,7 +58,24 @@
 			cp.data('curationPanel').clickMe( );
 		});
 		
+		setupCurationChecklist( );
 		setupParticipantAttributeLinks( );
+		
+	}
+	
+	/**
+	 * Setup the curation checklist functionality
+	 * so it can be correctly interacted with
+	 */
+	 
+	function setupCurationChecklist( ) {
+		
+		$(".curationSubmenu:first").show( );
+		
+		$(".workflowLink").on( "click", function( ) {
+			$(".workflowLink").not(this).parent( ).find( ".curationSubmenu" ).slideUp( 'fast' );
+			$(this).parent( ).find( ".curationSubmenu" ).slideDown( 'fast' );
+		})
 		
 	}
 	

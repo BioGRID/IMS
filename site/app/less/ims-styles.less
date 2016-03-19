@@ -283,15 +283,33 @@ h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 { margin-top: 0px; margin-b
 					
 					ul {
 						padding: 5px;
+						font-size: 16px;
 						list-style-position: inside;
 						list-style-type: none;
+						
+						li {
+							ul {
+								padding: 0px;
+								font-size: 14px;
+								list-style-position: inside;
+								list-style-type: none;
+								li {
+									margin-left: 10px;
+									
+								}
+								
+								&.curationSubmenu {
+									display: none;
+								}
+							}
+						}
+							
 						
 						.activityIcon {
 							margin-top: 3px;
 						}
 						
 						a { 
-							font-size: 14px;
 							cursor: pointer;
 							&:hover {
 								text-decoration: none;

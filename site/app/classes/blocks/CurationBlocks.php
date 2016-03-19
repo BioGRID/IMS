@@ -19,6 +19,7 @@ class CurationBlocks extends lib\Blocks {
 	private $partRoles;
 	private $orgNames;
 	private $idTypes;
+	private $attributeTypes;
 	 
 	public function __construct( ) {
 		parent::__construct( );
@@ -28,6 +29,7 @@ class CurationBlocks extends lib\Blocks {
 		$this->partRoles = $this->lookups->buildParticipantRoleHash( );
 		$this->orgNames = $this->lookups->buildOrganismNameHash( );
 		$this->idTypes = $this->lookups->buildIDTypeHash( );
+		$this->attributeTypes = $this->lookups->buildAttributeTypeHASH( );
 	}
 	
 	/**
@@ -59,27 +61,15 @@ class CurationBlocks extends lib\Blocks {
 			
 			case "1" : 
 			
-				$links[] = array( "block" => "participant", "data" => array( "role" => "2", "type" => "1", "organism" => "1" ));
-				$links[] = array( "block" => "participant", "data" => array( "role" => "3", "type" => "1", "organism" => "1" ));
+				$links[] = array( "block" => "participant", "data" => array( "role" => "2", "type" => "1", "organism" => "559292" ));
+				$links[] = array( "block" => "participant", "data" => array( "role" => "3", "type" => "1", "organism" => "559292" ));
 				$links[] = array( "block" => "attribute", "data" => array( "type" => "11" ));
 				$links[] = array( "block" => "attribute", "data" => array( "type" => "13" ));
 				$links[] = array( "block" => "attribute", "data" => array( "type" => "22" ));
-			
-				// $sections = array( );
-				// $sections[] = array( "id" => "participants-1", "title" => "Participants #1"
-			
-				$blocks[] = array( "id" => "participants-1", "title" => "Participants #1", "content" => $this->fetchParticipantCurationBlock( "participants-1", "2", "1", "1", "1", true ), "errors" => "" );
-				$blocks[] = array( "id" => "participants-1", "title" => "Participants #1", "content" => $this->fetchParticipantCurationBlock( "participants-1", "2", "1", "1", "1", true ), "errors" => "" );
-				$blocks[] = array( "id" => "participants-1", "title" => "Participant List #1", "content" => $this->fetchParticipantCurationBlock( "participants-1", "2", "1", "1", "1", true ), "errors" => "" );
-				$blocks[] = array( "id" => "participants-1", "title" => "Participant List #1", "content" => $this->fetchParticipantCurationBlock( "participants-1", "2", "1", "1", "1", true ), "errors" => "" );
-				$blocks[] = array( "id" => "participants-1", "title" => "Participant List #1", "content" => $this->fetchParticipantCurationBlock( "participants-1", "2", "1", "1", "1", true ), "errors" => "" );
-				$blocks[] = array( "id" => "participants-1", "title" => "Participant List #1", "content" => $this->fetchParticipantCurationBlock( "participants-1", "2", "1", "1", "1", true ), "errors" => "" );
-				$blocks[] = array( "id" => "participants-1", "title" => "Participant List #1", "content" => $this->fetchParticipantCurationBlock( "participants-1", "2", "1", "1", "1", true ), "errors" => "" );
 				
-				// $links[] = array( "url" => "#participants-1", "class" => "active", "title" => "Participant List #1", "icon" => "" );
-				// $links[] = array( "url" => "#participants-2", "class" => "active", "title" => "Participant List #2", "icon" => "" );
-				// $links[] = array( "url" => "#attributes-experimental_system", "class" => "active", "title" => "Experimental System", "icon" => "" );
-				// $links[] = array( "url" => "#attributes-throughput_tag", "class" => "active", "title" => "Throughput Tag", "icon" => "" );
+				$links = $this->processCurationLinks( $links );
+				$blocks[] = $this->fetchParticipantCurationBlock( $links[0]['id'], $links[0]['data'], $links[0]['title'], array( ) );
+			
 				break;
 				
 			
@@ -90,25 +80,90 @@ class CurationBlocks extends lib\Blocks {
 	}
 	
 	/**
+	 * Process through the set of links and create code specific additions 
+	 * for dealing with each type
+	 */
+	 
+	private function processCurationLinks( $links ) {
+		
+		$updatedLinks = array( );
+		
+		$linkCount = 1;
+		$participantCount = 1;
+		
+		foreach( $links as $link ) {
+			
+			$link['id'] = "block-" . $linkCount;
+			
+			if( $link['block'] == "participant" ) {
+				$link['title'] = "Participant #" . $participantCount;
+				
+				$participantStatus = $this->processView( 'blocks' . DS . 'curation' . DS . 'ParticipantStatusMenuItem.tpl', array( ), false );
+				
+				$link['submenu'] = array( array( 'class' => 'participantStatus', 'value' => $participantStatus ) );
+				
+				$participantCount++;
+			} else if( $link['block'] == "attribute" ) {
+				$attributeInfo = $this->attributeTypes[$link['data']['type']];
+				$link['title'] = $attributeInfo->attribute_type_name;
+			}
+			
+			
+			$linkCount++;
+			$updatedLinks[] = $link;
+		}
+		
+		return $updatedLinks;
+		
+	}
+	
+	/**
 	 * Generate a participant block with a set of passed in parameters
 	 */
 	 
-	public function fetchParticipantCurationBlock( $baseName, $roleID, $organismID, $idType, $participantType, $allowAttribs = true ) {
+	public function fetchParticipantCurationBlock( $id, $options, $title, $errors = array( ) ) {
+		
+		$roleID = "";
+		if( isset( $options['role'] ) ) {
+			$roleID = $options['role'];
+		}
+		
+		$participantType = "";
+		if( isset( $options['type'] ) ) {
+			$participantType = $options['type'];
+		}
+		
+		$organism = "";
+		if( isset( $options['organism'] ) ) {
+			$organism = $options['organism'];
+		}
+		
+		$idType = "";
+		if( isset( $options['idtype'] ) ) {
+			$idType = $options['idtype'];
+		}
 		
 		$params = array( 
-			"BASE_NAME" => $baseName,
+			"BASE_NAME" => $id,
 			"ROLES" => $this->partRoles,
 			"SELECTED_ROLE" => $roleID,
 			"ORGANISMS" => $this->orgNames,
 			"ID_TYPES" => $this->idTypes,
 			"PARTICIPANT_TYPES" => $this->partTypes,
 			"SELECTED_PTYPE" => $participantType,
-			"PLACEHOLDER_MSG" => "Enter identifiers, one per line",
-			"ALLOW_ATTRIBS" => $allowAttribs
+			"SELECTED_TYPE" => $idType,
+			"SELECTED_ORG" => $organism,
+			"PLACEHOLDER_MSG" => "Enter identifiers, one per line"
 		);
 		
 		$view = $this->processView( 'blocks' . DS . 'curation' . DS . 'ParticipantCurationBlock.tpl', $params, false );
-		return $view;
+		
+		return array( 
+			"id" => $id, 
+			"title" => $title, 
+			"content" => $view, 
+			"errors" => implode( "\n", $errors ) 
+		);
 		
 	}
 	
