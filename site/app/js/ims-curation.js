@@ -14,7 +14,7 @@
 
 	$(function( ) {
 		initializeUI( );
-		initCurationPanel( );
+		initCurationBlock( );
 	});
 	
 	/**
@@ -32,12 +32,13 @@
 	 */
 	 
 	function initializeCurationTypeDropdown( ) {
+		
 		$("#curationType").change( function( ) {
 			var baseURL = $("head base").attr( "href" );
 			var curationType = $(this).val( );
 			
 			$.ajax({
-				url: baseURL + "/scripts/LoadCurationWorkflow.php",
+				url: baseURL + "/scripts/LoadCurationChecklist.php",
 				method: "POST",
 				dataType: "html",
 				data: { type: curationType }
@@ -49,13 +50,18 @@
 		});
 	}
 	
+	/**
+	 * Initialize the basic structure of a curation workflow and populate
+	 * the checklist for workflow navigation
+	 */
+	
 	function initializeCurationWorkflow( ) {
 		
 		$("#curationMenu > .list-group").affix( );
 		
-		$(".curationPanel").each( function( i, val ) {
-			var cp = $(this).curationPanel({});
-			cp.data('curationPanel').clickMe( );
+		$(".curationBlock").each( function( i, val ) {
+			var cp = $(this).curationBlock({});
+			cp.data('curationBlock').clickMe( );
 		});
 		
 		setupCurationChecklist( );
@@ -70,33 +76,82 @@
 	 
 	function setupCurationChecklist( ) {
 		
-		$(".curationSubmenu:first").show( );
+		var firstChecklistItem = $(".workflowLink:first");
+		clickWorkflowLink( firstChecklistItem );
 		
 		$(".workflowLink").on( "click", function( ) {
-			$(".workflowLink").not(this).parent( ).find( ".curationSubmenu" ).slideUp( 'fast' );
-			$(this).parent( ).find( ".curationSubmenu" ).slideDown( 'fast' );
-		})
+			clickWorkflowLink( $(this) );
+		});
 		
 	}
 	
 	/**
-	 * Curation Panel is a plugin used to grant a curation interface item
+	 * Process functionality of clicking on a workflow link
+	*/
+	
+	function clickWorkflowLink( link ) {
+		$(".workflowLink").not(link).parent( ).find( ".curationSubmenu" ).slideUp( 'fast' );
+		link.parent( ).find( ".curationSubmenu" ).slideDown( 'fast' );
+		loadCurationBlock( link );
+	}
+	
+	/**
+	 * Load a curation block into the curation workflow
+	 */
+	 
+	function loadCurationBlock( link ) {
+		
+		var dataAttribs = link.data( );
+		var baseURL = $("head base").attr( "href" );
+		var curationType = $("#curationType").val( );
+		dataAttribs['curationType'] = curationType;
+		
+		// Hide all currently showing curation panels
+		$(".curationBlock").hide( );
+			
+		if( $("#" + dataAttribs['blockid']).length ) {
+			
+			// Show the one we clicked instead of reloading
+			// the code
+			
+			$("#" + dataAttribs['blockid']).show( );
+			
+		} else {
+			
+			// Haven't loaded this one yet, load it via
+			// ajax into the form
+			
+			$.ajax({
+				url: baseURL + "/scripts/LoadCurationBlock.php",
+				method: "POST",
+				dataType: "html",
+				data: dataAttribs
+			}).done( function(data) {
+				$("#curationWorkflow").append(data);
+			});
+			
+		}
+		
+	}
+	
+	/**
+	 * Curation Block is a plugin used to grant a curation interface item
 	 * that has several common components shared between all of them such as an
 	 * error panel and the ability to expand to add additional fields
 	 */
 	 
-	function initCurationPanel( ) {
+	function initCurationBlock( ) {
 		
-		$.curationPanel = function( el, options ) {
+		$.curationBlock = function( el, options ) {
 			
 			var base = this;
 			base.$el = $(el);
 			base.el = el;
 			
-			base.$el.data( "curationPanel", base );
+			base.$el.data( "curationBlock", base );
 			
 			base.init = function( ) {
-				base.options = $.extend( {}, $.curationPanel.defaultOptions, options );
+				base.options = $.extend( {}, $.curationBlock.defaultOptions, options );
 			};
 			
 			base.$el.click( function( ) {
@@ -111,11 +166,11 @@
 			
 		};
 		
-		$.curationPanel.defaultOptions = { };
+		$.curationBlock.defaultOptions = { };
 		
-		$.fn.curationPanel = function( options ) {
+		$.fn.curationBlock = function( options ) {
 			return this.each( function( ) {
-				(new $.curationPanel( this, options ));
+				(new $.curationBlock( this, options ));
 			});
 		};
 		
@@ -128,7 +183,7 @@
 	 
 	function setupParticipantAttributeLinks( ) {
 			
-		var parentPanel = $(".participantAddAttribute").closest( ".curationPanel" ).attr( "id" );
+		var parentPanel = $(".participantAddAttribute").closest( ".curationBlock" ).attr( "id" );
 				
 		var attributePopup = $(".participantAddAttribute").qtip({
 			overwrite: false,

@@ -39,7 +39,6 @@ class CurationBlocks extends lib\Blocks {
 	public function generateView( $blocks, $links ) {
 		
 		$params = array( 
-			"CURATION_BLOCKS" => $blocks,
 			"SIDEBAR_LINKS" => $links
 		);
 		
@@ -48,11 +47,11 @@ class CurationBlocks extends lib\Blocks {
 	}
 	
 	/**
-	 * Generate blocks based on the type of interaction
+	 * Generate checklist based on the type of interaction
 	 * data that is about to be curated
 	 */
 	 
-	public function fetchCurationBlocks( $type ) {
+	public function fetchCurationChecklist( $type ) {
 		
 		$blocks = array( );
 		$links = array( );
@@ -68,7 +67,7 @@ class CurationBlocks extends lib\Blocks {
 				$links[] = array( "block" => "attribute", "data" => array( "type" => "22" ));
 				
 				$links = $this->processCurationLinks( $links );
-				$blocks[] = $this->fetchParticipantCurationBlock( $links[0]['id'], $links[0]['data'], $links[0]['title'], array( ) );
+				// $blocks[] = $this->fetchParticipantCurationBlock( $links[0]['id'], $links[0]['data'], $links[0]['title'], array( ) );
 			
 				break;
 				

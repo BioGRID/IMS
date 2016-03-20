@@ -1,27 +1,4 @@
-<div id='curationWorkflow' class=''>
-
-	{% for BLOCK in CURATION_BLOCKS %}
-		<div class='curationPanel panel panel-primary' id='{{ BLOCK.id }}'>
-			<div class='panel-heading'>{{ BLOCK.title }} <i class='fa fa-angle-down fa-lg pull-right'></i></div>
-			<div class='panel-body'>
-			
-				<div class='row'>
-					<div class='col-lg-12'>
-						{{ BLOCK.content|raw }}
-					</div>
-				</div>
-				
-				<div class='row'>
-					<div class='curationErrors marginTopSm col-lg-12'>
-						<textarea class="form-control" id='{{BLOCK.id}}-errors' rows="5">{{ BLOCK.errors|raw }}</textarea>
-					</div>
-				</div>
-				
-			</div>
-		</div>
-	{% endfor %}
-	
-</div>
+<div id='curationWorkflow' class=''></div>
 
 <div id='curationRightSidebar' class='clearfix'>
 	<div id='curationMenu'>
