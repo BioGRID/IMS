@@ -83,23 +83,8 @@
 			<h3>Curation Tools</h3>
 			<div class='subhead dataTable-info marginBotSm'>Use the following curation workflow...</div>
 			
-			<div class='curationInterface'>
-				
-				<div class='row'>
-					<div class='col-lg-9'>Select a curation type to begin... <i class='fa fa-spinner fa-pulse fa-lg'></i></div>
-					<div class='col-lg-3'>
-						<h4 class='marginTopNone marginBotSm'>Curation Progress</h4>
-						<div class="list-group">
-						  <a href="#" class="list-group-item active">
-							Cras justo odio
-						  </a>
-						  <a href="#" class="list-group-item panel-success">Dapibus ac facilisis in
-						  </a>
-						  <a href="#" class="list-group-item">Morbi leo risus
-						  </a>
-						</div>
-					</div>
-				</div>
+			<div id='curationInterface'>
+				Select a curation type to begin... <i class='fa fa-spinner fa-pulse fa-lg'></i>
 			</div>
 		
 		</div>

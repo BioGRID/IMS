@@ -19,6 +19,8 @@ h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 { margin-top: 0px; margin-b
 .paddingBotXs { padding-bottom: @line-height-computed / 3; }
 .paddingTopNone { padding-top: 0px; }
 .paddingBotNone { padding-top: 0px; }
+.paddingLeftNone { padding-left: 0px; }
+.paddingRightNone { padding-right: 0px; }
 .hidden { display: none; }
 .heading-line { border-bottom: 1px solid @gray-light; padding-bottom: 5px; }
 
@@ -244,7 +246,85 @@ h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 { margin-top: 0px; margin-b
 				}
 			}
 			
-			.curationInterface {
+			#curationInterface {
+			
+				height: 99%;
+				display: table;
+				width: 100%;
+				
+				#curationWorkflow {
+					display: table-cell;
+					
+					.panel-heading {
+						i {
+							margin-top: 3px;
+						}
+					}
+					
+					.partOrgSelect {
+						font-size: 12px;
+					}
+					
+					.addAttribute {
+						cursor: pointer;
+						&:hover {
+							text-decoration: none;
+						}
+					}
+					
+					.curationBlock {
+						.curationErrors {
+							display: none;
+						}
+					}
+					
+					label {
+						margin-bottom: 0px;
+						margin-top: 3px;
+					}
+				}
+				
+				#curationRightSidebar {
+					padding-left:10px;
+					width: 260px;
+					display: table-cell;
+					
+					ul {
+						padding: 5px;
+						font-size: 16px;
+						list-style-position: inside;
+						list-style-type: none;
+						
+						li {
+							ul {
+								padding: 0px;
+								font-size: 14px;
+								list-style-position: inside;
+								list-style-type: none;
+								li {
+									margin-left: 10px;
+									
+								}
+								
+								&.curationSubmenu {
+									display: none;
+								}
+							}
+						}
+							
+						
+						.activityIcon {
+							margin-top: 3px;
+						}
+						
+						a { 
+							cursor: pointer;
+							&:hover {
+								text-decoration: none;
+							}
+						}
+					}
+				}
 				
 			}
 			

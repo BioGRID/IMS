@@ -9,9 +9,12 @@
 	yourcode( window.jQuery, window, document );
 
 } (function( $, window, document ) {
+	
+	var fieldID = 1;
 
 	$(function( ) {
 		initializeUI( );
+		initCurationBlock( );
 	});
 	
 	/**
@@ -20,6 +23,8 @@
 		
 	function initializeUI( ) {
 		initializeCurationTypeDropdown( );
+		
+		
 	}
 	
 	/**
@@ -27,20 +32,211 @@
 	 */
 	 
 	function initializeCurationTypeDropdown( ) {
+		
 		$("#curationType").change( function( ) {
 			var baseURL = $("head base").attr( "href" );
 			var curationType = $(this).val( );
 			
 			$.ajax({
-				url: baseURL + "/scripts/LoadCurationWorkflow.php",
+				url: baseURL + "/scripts/LoadCurationChecklist.php",
 				method: "POST",
 				dataType: "html",
 				data: { type: curationType }
 			}).done( function(data) {
-				$(".curationInterface").html(data);
+				$("#curationInterface").html(data);
+				initializeCurationWorkflow( );
 			});
 			
 		});
+	}
+	
+	/**
+	 * Initialize the basic structure of a curation workflow and populate
+	 * the checklist for workflow navigation
+	 */
+	
+	function initializeCurationWorkflow( ) {
+		
+		$("#curationMenu > .list-group").affix( );
+		
+		$(".curationBlock").each( function( i, val ) {
+			var cp = $(this).curationBlock({});
+			cp.data('curationBlock').clickMe( );
+		});
+		
+		setupCurationChecklist( );
+		setupParticipantAttributeLinks( );
+		
+	}
+	
+	/**
+	 * Setup the curation checklist functionality
+	 * so it can be correctly interacted with
+	 */
+	 
+	function setupCurationChecklist( ) {
+		
+		var firstChecklistItem = $(".workflowLink:first");
+		clickWorkflowLink( firstChecklistItem );
+		
+		$(".workflowLink").on( "click", function( ) {
+			clickWorkflowLink( $(this) );
+		});
+		
+	}
+	
+	/**
+	 * Process functionality of clicking on a workflow link
+	*/
+	
+	function clickWorkflowLink( link ) {
+		$(".workflowLink").not(link).parent( ).find( ".curationSubmenu" ).slideUp( 'fast' );
+		link.parent( ).find( ".curationSubmenu" ).slideDown( 'fast' );
+		loadCurationBlock( link );
+	}
+	
+	/**
+	 * Load a curation block into the curation workflow
+	 */
+	 
+	function loadCurationBlock( link ) {
+		
+		var dataAttribs = link.data( );
+		var baseURL = $("head base").attr( "href" );
+		var curationType = $("#curationType").val( );
+		dataAttribs['curationType'] = curationType;
+		dataAttribs['blockName'] = link.html( );
+		
+		// Hide all currently showing curation panels
+		$(".curationBlock").hide( );
+			
+		if( $("#" + dataAttribs['blockid']).length ) {
+			
+			// Show the one we clicked instead of reloading
+			// the code
+			
+			$("#" + dataAttribs['blockid']).show( );
+			
+		} else {
+			
+			// Haven't loaded this one yet, load it via
+			// ajax into the form
+			
+			$.ajax({
+				url: baseURL + "/scripts/LoadCurationBlock.php",
+				method: "POST",
+				dataType: "html",
+				data: dataAttribs
+			}).done( function(data) {
+				$("#curationWorkflow").append(data);
+			});
+			
+		}
+		
+	}
+	
+	/**
+	 * Curation Block is a plugin used to grant a curation interface item
+	 * that has several common components shared between all of them such as an
+	 * error panel and the ability to expand to add additional fields
+	 */
+	 
+	function initCurationBlock( ) {
+		
+		$.curationBlock = function( el, options ) {
+			
+			var base = this;
+			base.$el = $(el);
+			base.el = el;
+			
+			base.$el.data( "curationBlock", base );
+			
+			base.init = function( ) {
+				base.options = $.extend( {}, $.curationBlock.defaultOptions, options );
+			};
+			
+			base.$el.click( function( ) {
+				
+			});
+			
+			base.clickMe = function( ) {
+				//alert( "CLICK ME" );
+			};
+			
+			base.init( );
+			
+		};
+		
+		$.curationBlock.defaultOptions = { };
+		
+		$.fn.curationBlock = function( options ) {
+			return this.each( function( ) {
+				(new $.curationBlock( this, options ));
+			});
+		};
+		
+	}
+	
+	/**
+	 * Setup an attribute addition popup
+	 * that lets you select a new attribute type to add
+	 */
+	 
+	function setupParticipantAttributeLinks( ) {
+			
+		var parentPanel = $(".participantAddAttribute").closest( ".curationBlock" ).attr( "id" );
+				
+		var attributePopup = $(".participantAddAttribute").qtip({
+			overwrite: false,
+			content: {
+				text: function( event, api ) {
+					var attributeForm = "<select class='form-control participantAttributeSelect'><option value='alleles'>Alleles</option><option value='notes'>Notes</option></select><button type='button' data-parent='" + parentPanel + "' class='participantAttributeSubmit btn btn-success btn-block marginTopSm'>ADD <i class='fa fa-lg fa-plus-square-o'></i></button>";
+					return attributeForm;
+				},
+				title: {
+					text: "<strong>Add Attribute</strong>",
+					button: true
+				}
+			},
+			style: {
+				classes: 'qtip-bootstrap',
+				width: '250px'
+			},
+			position: {
+				my: 'bottom center',
+				at: 'top center'
+			},
+			show: {
+				event: "click",
+				solo: true
+			},
+			hide: {
+				delay: 1000,
+				fixed: true,
+				leave: false
+			}
+		}, event);
+		
+		$("body").on( "click", ".participantAttributeSubmit", function( ) {
+				
+			var selectVal = $(this).parent( ).find( ".participantAttributeSelect" ).val( );
+			var datasetID = $("#datasetID").val( );
+			var baseURL = $("head base").attr( "href" );
+			var parentPanel = $(this).data( "parent" );
+			
+			$.ajax({
+				url: baseURL + "/scripts/AppendCurationWorkflow.php",
+				method: "POST",
+				dataType: "html",
+				data: { parent: parentPanel, selected: selectVal, field: fieldID  }
+			}).done( function(data) {
+				$('#' + parentPanel + ' > .panel-body').append( data );
+			});
+			
+			fieldID++;
+			
+		});
+	
 	}
 
 }));
