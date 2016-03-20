@@ -105,6 +105,7 @@
 		var baseURL = $("head base").attr( "href" );
 		var curationType = $("#curationType").val( );
 		dataAttribs['curationType'] = curationType;
+		dataAttribs['blockName'] = link.html( );
 		
 		// Hide all currently showing curation panels
 		$(".curationBlock").hide( );

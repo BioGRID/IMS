@@ -56,18 +56,25 @@ class CurationBlocks extends lib\Blocks {
 		$blocks = array( );
 		$links = array( );
 		
+		// Get organism ID from the session for their currently selected group
+		// Use it as the default when showing a participant block
+		
+		$orgID = "559292";
+		if( isset( $_SESSION[SESSION_NAME]['GROUP'] ) ) {
+			$orgID = $_SESSION[SESSION_NAME]['GROUPS'][$_SESSION[SESSION_NAME]['GROUP']]['ORGANISM_ID'];
+		}
+		
 		switch( strtolower($type) ) {
 			
-			case "1" : 
+			case "1" : // Protein-Protein Binary Interaction
 			
-				$links[] = array( "block" => "participant", "data" => array( "role" => "2", "type" => "1", "organism" => "559292" ));
-				$links[] = array( "block" => "participant", "data" => array( "role" => "3", "type" => "1", "organism" => "559292" ));
+				$links[] = array( "block" => "participant", "data" => array( "role" => "2", "type" => "1", "organism" => $orgID ));
+				$links[] = array( "block" => "participant", "data" => array( "role" => "3", "type" => "1", "organism" => $orgID ));
 				$links[] = array( "block" => "attribute", "data" => array( "type" => "11" ));
 				$links[] = array( "block" => "attribute", "data" => array( "type" => "13" ));
 				$links[] = array( "block" => "attribute", "data" => array( "type" => "22" ));
 				
 				$links = $this->processCurationLinks( $links );
-				// $blocks[] = $this->fetchParticipantCurationBlock( $links[0]['id'], $links[0]['data'], $links[0]['title'], array( ) );
 			
 				break;
 				
@@ -76,6 +83,46 @@ class CurationBlocks extends lib\Blocks {
 		
 		return $this->generateView( $blocks, $links );
 		
+	}
+	
+	/**
+	 * Generate Curation Block based on passed in options
+	 */
+	 
+	public function fetchCurationBlock( $options ) {
+	
+		$view = "";
+	
+		switch( strtolower($options['block']) ) {
+			
+			case "participant" :
+				$view = $this->fetchParticipantCurationBlock( $options['blockid'], $options );
+				break;
+				
+			case "attribute" :
+				$view = $this->fetchAttributeCurationBlock( $options['blockid'], $options );
+				break;
+				
+			default:
+				$block = "<div style='width:100%; background-color: #FFFFEF;' id='" . $options['blockid'] . "' class='curationBlock'>";
+				$block .= "<strong>" . $options['blockid'] . "</strong>";
+				$block .= print_r( $options, true );
+				$block .= "</div>";
+				$view = $block;
+				break;
+				
+		}
+		
+		$params = array( 
+			"ID" => $options['blockid'], 
+			"TITLE" => $options['blockName'], 
+			"CONTENT" => $view, 
+			"ERRORS" => array( )
+		);
+		
+		$curationBlock = $this->processView( 'blocks' . DS . 'curation' . DS . 'CurationBlock.tpl', $params, false );
+		return $curationBlock;
+	
 	}
 	
 	/**
@@ -117,10 +164,39 @@ class CurationBlocks extends lib\Blocks {
 	}
 	
 	/**
+	 * Process an ontology attribute block
+	 */
+	 
+	private function fetchAttributeCurationBlock( $id, $options ) {
+		
+		$attributeID = $options['type'];
+		$attributeInfo = $this->attributeTypes[$attributeID];
+		$view = "";
+		
+		if( $attributeInfo->attribute_type_category_id == "1" ) { // Ontology Attributes
+			// Get Ontology View
+		} else if( $attributeInfo->attribute_type_category_id == "3" ) { // Note Attributes
+			// Get Note View
+			$params = array( 
+				"BASE_NAME" => $id,
+				"PLACEHOLDER_MSG" => "Enter Notes Here, Each distinct note on a New Line"
+			);
+			
+			$view = $this->processView( 'blocks' . DS . 'curation' . DS . 'CurationBlock_Note.tpl', $params, false );
+			
+		} else if( $attributeInfo->attribute_type_category_id == "2" ) { // Quantitiative Score
+			// Get Quantitiative Score View
+		}
+		
+		return $view;
+		
+	}
+	
+	/**
 	 * Generate a participant block with a set of passed in parameters
 	 */
 	 
-	public function fetchParticipantCurationBlock( $id, $options, $title, $errors = array( ) ) {
+	private function fetchParticipantCurationBlock( $id, $options ) {
 		
 		$roleID = "";
 		if( isset( $options['role'] ) ) {
@@ -155,14 +231,8 @@ class CurationBlocks extends lib\Blocks {
 			"PLACEHOLDER_MSG" => "Enter identifiers, one per line"
 		);
 		
-		$view = $this->processView( 'blocks' . DS . 'curation' . DS . 'ParticipantCurationBlock.tpl', $params, false );
-		
-		return array( 
-			"id" => $id, 
-			"title" => $title, 
-			"content" => $view, 
-			"errors" => implode( "\n", $errors ) 
-		);
+		$view = $this->processView( 'blocks' . DS . 'curation' . DS . 'CurationBlock_Participant.tpl', $params, false );
+		return $view;
 		
 	}
 	
