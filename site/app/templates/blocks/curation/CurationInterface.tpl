@@ -26,6 +26,7 @@
 			{% endfor %}
 		
 		</ul>
-		<button class='btn btn-success' disabled>Submit <i class='fa fa-check fa-lg'></i></button>
+		<button class='btn btn-sm btn-success' disabled>Submit <i class='fa fa-check fa-lg'></i></button>
+		<button class='btn btn-sm btn-primary'>Add Item <i class='fa fa-plus-square-o fa-lg'></i></button>
 	</div>
 </div>
