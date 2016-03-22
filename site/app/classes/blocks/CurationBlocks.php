@@ -20,8 +20,12 @@ class CurationBlocks extends lib\Blocks {
 	private $orgNames;
 	private $idTypes;
 	private $attributeTypes;
+	private $fullAttributes;
+	
+	private $blockCount = 1;
+	private $participantCount = 1;
 	 
-	public function __construct( ) {
+	public function __construct( $blockCount = 1, $participantCount = 1 ) {
 		parent::__construct( );
 		
 		$this->lookups = new models\Lookups( );
@@ -30,6 +34,11 @@ class CurationBlocks extends lib\Blocks {
 		$this->orgNames = $this->lookups->buildOrganismNameHash( );
 		$this->idTypes = $this->lookups->buildIDTypeHash( );
 		$this->attributeTypes = $this->lookups->buildAttributeTypeHASH( );
+		$this->buildAttributeTypeSelectLists( );
+		
+		$this->blockCount = $blockCount;
+		$this->participantCount = $participantCount;
+		
 	}
 	
 	/**
@@ -39,7 +48,10 @@ class CurationBlocks extends lib\Blocks {
 	public function generateView( $blocks, $links ) {
 		
 		$params = array( 
-			"SIDEBAR_LINKS" => $links
+			"SIDEBAR_LINKS" => $links,
+			"ATTRIBUTES" => $this->fullAttributes,
+			"CHECKLIST_BLOCK_COUNT" => $this->blockCount,
+			"CHECKLIST_PART_COUNT" => $this->participantCount
 		);
 		
 		$view = $this->processView( 'blocks' . DS . 'curation' . DS . 'CurationInterface.tpl', $params, false );
@@ -68,13 +80,13 @@ class CurationBlocks extends lib\Blocks {
 			
 			case "1" : // Protein-Protein Binary Interaction
 			
-				$links[] = array( "block" => "participant", "data" => array( "role" => "2", "type" => "1", "organism" => $orgID ));
-				$links[] = array( "block" => "participant", "data" => array( "role" => "3", "type" => "1", "organism" => $orgID ));
-				$links[] = array( "block" => "attribute", "data" => array( "type" => "11" ));
-				$links[] = array( "block" => "attribute", "data" => array( "type" => "13" ));
-				$links[] = array( "block" => "attribute", "data" => array( "type" => "22" ));
+				$links[] = array( "BLOCK" => "participant", "DATA" => array( "role" => "2", "type" => "1", "organism" => $orgID ));
+				$links[] = array( "BLOCK" => "participant", "DATA" => array( "role" => "3", "type" => "1", "organism" => $orgID ));
+				$links[] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "11" ));
+				$links[] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "13" ));
+				$links[] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "22" ));
 				
-				$links = $this->processCurationLinks( $links );
+				$links = $this->processCurationLinks( $links, 1 );
 			
 				break;
 				
@@ -82,6 +94,48 @@ class CurationBlocks extends lib\Blocks {
 		}
 		
 		return $this->generateView( $blocks, $links );
+		
+	}
+	
+	/**
+	 * Fetch curation checklist item to append to the current
+	 * checklist following existing items
+	 */
+	 
+	public function fetchCurationChecklistItem( $itemID ) {
+		
+		$link = array( );
+		
+		$orgID = "559292";
+		if( isset( $_SESSION[SESSION_NAME]['GROUP'] ) ) {
+			$orgID = $_SESSION[SESSION_NAME]['GROUPS'][$_SESSION[SESSION_NAME]['GROUP']]['ORGANISM_ID'];
+		}
+		
+		switch( $itemID ) {
+			
+			case "participant" :
+				$link['BLOCK'] = "participant";
+				$link['DATA'] = array( "role" => "1", "type" => "1", "organism" => $orgID );
+				break;
+				
+			case "score" :
+				$link['BLOCK'] = "score";
+				$link['DATA'] = array( "type" => "16" );
+				break;
+				
+			default :
+				$link['BLOCK'] = "attribute";
+				$link['DATA'] = array( "type" => $itemID );
+				break;
+		}
+		
+		if( sizeof( $link ) > 0 ) {
+			$links = array( $link );
+			$links = $this->processCurationLinks( $links );
+			return $links[0];
+		} 
+		
+		return "";
 		
 	}
 	
@@ -134,29 +188,26 @@ class CurationBlocks extends lib\Blocks {
 		
 		$updatedLinks = array( );
 		
-		$linkCount = 1;
-		$participantCount = 1;
-		
 		foreach( $links as $link ) {
 			
-			$link['id'] = "block-" . $linkCount;
+			$link['ID'] = "block-" . $this->blockCount;
 			
-			if( $link['block'] == "participant" ) {
-				$link['title'] = "Participant #" . $participantCount;
+			if( $link['BLOCK'] == "participant" ) {
+				$link['TITLE'] = "Participant #" . $this->participantCount;
 				
 				$participantStatus = $this->processView( 'blocks' . DS . 'curation' . DS . 'ParticipantStatusMenuItem.tpl', array( ), false );
 				
-				$link['submenu'] = array( array( 'class' => 'participantStatus', 'value' => $participantStatus ) );
+				$link['SUBMENU'] = array( array( 'class' => 'participantStatus', 'value' => $participantStatus ) );
 				
-				$participantCount++;
-			} else if( $link['block'] == "attribute" ) {
-				$attributeInfo = $this->attributeTypes[$link['data']['type']];
-				$link['title'] = $attributeInfo->attribute_type_name;
+				$this->participantCount++;
+			} else if( $link['BLOCK'] == "attribute" ) {
+				$attributeInfo = $this->attributeTypes[$link['DATA']['type']];
+				$link['TITLE'] = $attributeInfo->attribute_type_name;
 			}
 			
 			
-			$linkCount++;
-			$updatedLinks[] = $link;
+			$this->blockCount++;
+			$updatedLinks[] = $this->processView( 'blocks' . DS . 'curation' . DS . 'ChecklistItem.tpl', $link, false );
 		}
 		
 		return $updatedLinks;
@@ -254,6 +305,49 @@ class CurationBlocks extends lib\Blocks {
 		$view = $this->processView( 'blocks' . DS . 'curation' . DS . 'AddonParticipantAttribute.tpl', $params, false );
 		return $view;
 		
+	}
+	
+	/**
+	 * Build Attribute Select Lists
+	 */
+	 
+	private function buildAttributeTypeSelectLists( ) {
+		
+		$this->fullAttributes = array( );
+		
+		foreach( $this->attributeTypes as $attributeID => $attributeInfo ) {
+			$catID = $attributeInfo->attribute_type_category_id;
+			if( $catID == "1" ) {
+				if( $attributeInfo->attribute_type_id != "31" && $attributeInfo->attribute_type_id != "35" ) {
+					$this->fullAttributes[$attributeInfo->attribute_type_id] = $attributeInfo->attribute_type_name;
+				} else {
+					$this->subAttributes[$attributeInfo->attribute_type_id] = $attributeInfo->attribute_type_name;
+				}
+			}
+		}
+		
+		$this->fullAttributes['22'] = "Note";
+		$this->fullAttributes['score'] = "Quantitative Score";
+		$this->fullAttributes['participant'] = "Participant";
+		
+		asort( $this->fullAttributes );
+		
+	}
+	
+	/** 
+	 * Get Block Count
+	 */
+	 
+	public function getBlockCount( ) {
+		return $this->blockCount;
+	}
+	
+	/** 
+	 * Get Participant Count
+	 */
+	 
+	public function getParticipantCount( ) {
+		return $this->participantCount;
 	}
 	
 }

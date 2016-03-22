@@ -23,8 +23,7 @@
 		
 	function initializeUI( ) {
 		initializeCurationTypeDropdown( );
-		
-		
+		initializeWorkflowLinks( );
 	}
 	
 	/**
@@ -51,6 +50,16 @@
 	}
 	
 	/**
+	 * Setup workflow link clickability
+	 */
+	
+	function initializeWorkflowLinks( ) {
+		$("#section-curation").on( "click", ".workflowLink", function( ) {
+			clickWorkflowLink( $(this) );
+		});
+	}
+	
+	/**
 	 * Initialize the basic structure of a curation workflow and populate
 	 * the checklist for workflow navigation
 	 */
@@ -66,6 +75,7 @@
 		
 		setupCurationChecklist( );
 		setupParticipantAttributeLinks( );
+		setupAddChecklistItemButton( );
 		
 	}
 	
@@ -75,14 +85,8 @@
 	 */
 	 
 	function setupCurationChecklist( ) {
-		
 		var firstChecklistItem = $(".workflowLink:first");
 		clickWorkflowLink( firstChecklistItem );
-		
-		$(".workflowLink").on( "click", function( ) {
-			clickWorkflowLink( $(this) );
-		});
-		
 	}
 	
 	/**
@@ -234,6 +238,69 @@
 			});
 			
 			fieldID++;
+			
+		});
+	
+	}
+	
+	/**
+	 * Setup a checklist item popup
+	 * that lets you select a new item to add
+	 */
+	 
+	function setupAddChecklistItemButton( ) {
+				
+		var addItemPopup = $("#addNewChecklistItem").qtip({
+			overwrite: false,
+			content: {
+				text: function( event, api ) {
+					return $("#fullAttributeHTML").html( );
+				},
+				title: {
+					text: "<strong>Choose New Item</strong>",
+					button: true
+				}
+			},
+			style: {
+				classes: 'qtip-bootstrap',
+				width: '250px'
+			},
+			position: {
+				my: 'right center',
+				at: 'left center'
+			},
+			show: {
+				event: "click",
+				solo: true
+			},
+			hide: {
+				delay: 1000,
+				fixed: true,
+				leave: false
+			}
+		}, event);
+		
+		$("body").on( "click", "#fullAttributeSubmit", function( ) {
+				
+			var selectVal = $(this).parent( ).find( ".attributeAddSelect" ).val( );
+			var datasetID = $("#datasetID").val( );
+			var baseURL = $("head base").attr( "href" );
+			var blockCount = $("#checklistBlockCount").val( );
+			var partCount = $("#checklistPartCount").val( );
+			
+			$.ajax({
+				url: baseURL + "/scripts/AppendChecklistItem.php",
+				method: "POST",
+				dataType: "json",
+				data: { selected: selectVal, field: fieldID, blockCount: blockCount, partCount: partCount }
+			}).done( function(data) {
+				$('#curationChecklist').append( data['view'] );
+				$("#checklistBlockCount").val( data['blockCount'] );
+				$("#checklistPartCount").val( data['partCount'] );
+				addItemPopup.qtip( 'hide' );
+				
+				clickWorkflowLink( $("#workflowLink-block-" + data['show']) );
+			});
 			
 		});
 	
