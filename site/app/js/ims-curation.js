@@ -10,7 +10,7 @@
 
 } (function( $, window, document ) {
 	
-	var fieldID = 1;
+	var checklistItems = [];
 
 	$(function( ) {
 		initializeUI( );
@@ -37,13 +37,17 @@
 			var curationType = $(this).val( );
 			
 			$.ajax({
+				
 				url: baseURL + "/scripts/LoadCurationChecklist.php",
 				method: "POST",
 				dataType: "html",
 				data: { type: curationType }
+				
 			}).done( function(data) {
+				
 				$("#curationInterface").html(data);
 				initializeCurationWorkflow( );
+				
 			});
 			
 		});
@@ -127,12 +131,16 @@
 			// ajax into the form
 			
 			$.ajax({
+				
 				url: baseURL + "/scripts/LoadCurationBlock.php",
 				method: "POST",
 				dataType: "html",
 				data: dataAttribs
+				
 			}).done( function(data) {
+				
 				$("#curationWorkflow").append(data);
+				
 			});
 			
 		}
@@ -229,15 +237,17 @@
 			var parentPanel = $(this).data( "parent" );
 			
 			$.ajax({
+				
 				url: baseURL + "/scripts/AppendCurationWorkflow.php",
 				method: "POST",
 				dataType: "html",
-				data: { parent: parentPanel, selected: selectVal, field: fieldID  }
+				data: { parent: parentPanel, selected: selectVal }
+				
 			}).done( function(data) {
+				
 				$('#' + parentPanel + ' > .panel-body').append( data );
+				
 			});
-			
-			fieldID++;
 			
 		});
 	
@@ -288,19 +298,61 @@
 			var blockCount = $("#checklistBlockCount").val( );
 			var partCount = $("#checklistPartCount").val( );
 			
-			$.ajax({
-				url: baseURL + "/scripts/AppendChecklistItem.php",
-				method: "POST",
-				dataType: "json",
-				data: { selected: selectVal, field: fieldID, blockCount: blockCount, partCount: partCount }
-			}).done( function(data) {
-				$('#curationChecklist').append( data['view'] );
-				$("#checklistBlockCount").val( data['blockCount'] );
-				$("#checklistPartCount").val( data['partCount'] );
-				addItemPopup.qtip( 'hide' );
-				
-				clickWorkflowLink( $("#workflowLink-block-" + data['show']) );
+			// Check to see if this attribute is already in the
+			// checklist, no need to add the same attribute twice
+			
+			var itemExists = false;
+			var linkToShow = "";
+			$(".workflowLink").each( function( i, val ) {
+				var linkData = $(this).data( );
+				if( linkData['block'] == 'attribute' && linkData['type'] == selectVal ) {
+					itemExists = true;
+					linkToShow = $(this);
+					return false;
+				}
 			});
+			
+			if( !itemExists ) {
+				
+				// If the item doesn't exist, create it
+				// and append it to the right spot
+			
+				$.ajax({
+					
+					url: baseURL + "/scripts/AppendChecklistItem.php",
+					method: "POST",
+					dataType: "json",
+					data: { selected: selectVal, blockCount: blockCount, partCount: partCount }
+					
+				}).done( function(data) {
+					
+					// If it's a new Participant, append it after participants
+					// rather than to the end
+					
+					if( selectVal == "participant" ) {
+						alert( "HERE" );
+						var lastPart = $("#lastParticipant").val( );
+						$("#" + lastPart).parent( ).after( data['view'] );
+						$("#lastParticipant").val( "workflowLink-block-" + data['show'] );
+					} else {
+						$('#curationChecklist').append( data['view'] );
+					}
+					
+					$("#checklistBlockCount").val( data['blockCount'] );
+					$("#checklistPartCount").val( data['partCount'] );
+					addItemPopup.qtip( 'hide' );
+					clickWorkflowLink( $("#workflowLink-block-" + data['show']) );
+					
+				});
+				
+			} else {
+				
+				// Otherwise, simply show the one that 
+				// already exists
+				
+				addItemPopup.qtip( 'hide' );
+				clickWorkflowLink( linkToShow );
+			}
 			
 		});
 	

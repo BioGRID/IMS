@@ -14,14 +14,27 @@
 		<button class='btn btn-sm btn-primary' id='addNewChecklistItem'>Add Item <i class='fa fa-plus-square-o fa-lg'></i></button>
 		<input type='hidden' id='checklistBlockCount' name='checklistBlockCount' value='{{ CHECKLIST_BLOCK_COUNT }}' />
 		<input type='hidden' id='checklistPartCount' name='checklistPartCount' value='{{ CHECKLIST_PART_COUNT }}' />
+		<input type='hidden' id='lastParticipant' name='lastParticipant' value='workflowLink-{{ LAST_PARTICIPANT }}' />
 	</div>
 	
 	<div id='curationHidden'>
 		<div id='fullAttributeHTML'>
 			<select class='form-control attributeAddSelect' id='fullAttributeSelect'>
-			{% for ATTRIBUTE_ID, ATTRIBUTE_NAME in ATTRIBUTES %}
-				<option value='{{ATTRIBUTE_ID}}'>{{ATTRIBUTE_NAME}}</option>
-			{% endfor %}
+				<optgroup label='Participants'>
+					{% for ATTRIBUTE_ID, ATTRIBUTE_NAME in CHECKLIST_PARTICIPANTS %}
+						<option value='{{ATTRIBUTE_ID}}'>{{ATTRIBUTE_NAME}}</option>
+					{% endfor %}
+				</optgroup>
+				<optgroup label='Attributes'>
+					{% for ATTRIBUTE_ID, ATTRIBUTE_NAME in CHECKLIST_ATTRIBUTES %}
+						<option value='{{ATTRIBUTE_ID}}'>{{ATTRIBUTE_NAME}}</option>
+					{% endfor %}
+				</optgroup>
+				<optgroup label='Quantitative Scores'>
+					{% for ATTRIBUTE_ID, ATTRIBUTE_NAME in CHECKLIST_SCORES %}
+						<option value='{{ATTRIBUTE_ID}}'>{{ATTRIBUTE_NAME}}</option>
+					{% endfor %}
+				</optgroup>
 			</select>
 			<button type='button' id='fullAttributeSubmit' class='btn btn-success btn-block marginTopSm'>ADD <i class='fa fa-lg fa-plus-square-o'></i></button>
 		</div>

@@ -20,10 +20,13 @@ class CurationBlocks extends lib\Blocks {
 	private $orgNames;
 	private $idTypes;
 	private $attributeTypes;
-	private $fullAttributes;
+	private $checklistAttributes;
+	private $checklistScores;
+	private $checklistParticipants;
 	
 	private $blockCount = 1;
 	private $participantCount = 1;
+	private $lastParticipant = "";
 	 
 	public function __construct( $blockCount = 1, $participantCount = 1 ) {
 		parent::__construct( );
@@ -49,9 +52,12 @@ class CurationBlocks extends lib\Blocks {
 		
 		$params = array( 
 			"SIDEBAR_LINKS" => $links,
-			"ATTRIBUTES" => $this->fullAttributes,
+			"CHECKLIST_ATTRIBUTES" => $this->checklistAttributes,
+			"CHECKLIST_SCORES" => $this->checklistScores,
+			"CHECKLIST_PARTICIPANTS" => $this->checklistParticipants,
 			"CHECKLIST_BLOCK_COUNT" => $this->blockCount,
-			"CHECKLIST_PART_COUNT" => $this->participantCount
+			"CHECKLIST_PART_COUNT" => $this->participantCount,
+			"LAST_PARTICIPANT" => $this->lastParticipant
 		);
 		
 		$view = $this->processView( 'blocks' . DS . 'curation' . DS . 'CurationInterface.tpl', $params, false );
@@ -193,13 +199,16 @@ class CurationBlocks extends lib\Blocks {
 			$link['ID'] = "block-" . $this->blockCount;
 			
 			if( $link['BLOCK'] == "participant" ) {
+				
 				$link['TITLE'] = "Participant #" . $this->participantCount;
 				
 				$participantStatus = $this->processView( 'blocks' . DS . 'curation' . DS . 'ParticipantStatusMenuItem.tpl', array( ), false );
 				
 				$link['SUBMENU'] = array( array( 'class' => 'participantStatus', 'value' => $participantStatus ) );
 				
+				$this->lastParticipant = $link['ID'];
 				$this->participantCount++;
+				
 			} else if( $link['BLOCK'] == "attribute" ) {
 				$attributeInfo = $this->attributeTypes[$link['DATA']['type']];
 				$link['TITLE'] = $attributeInfo->attribute_type_name;
@@ -313,24 +322,26 @@ class CurationBlocks extends lib\Blocks {
 	 
 	private function buildAttributeTypeSelectLists( ) {
 		
-		$this->fullAttributes = array( );
+		$this->checklistAttributes = array( );
+		$this->checklistParticipants = array( );
+		$this->checklistScores = array( );
 		
 		foreach( $this->attributeTypes as $attributeID => $attributeInfo ) {
 			$catID = $attributeInfo->attribute_type_category_id;
 			if( $catID == "1" ) {
 				if( $attributeInfo->attribute_type_id != "31" && $attributeInfo->attribute_type_id != "35" ) {
-					$this->fullAttributes[$attributeInfo->attribute_type_id] = $attributeInfo->attribute_type_name;
-				} else {
-					$this->subAttributes[$attributeInfo->attribute_type_id] = $attributeInfo->attribute_type_name;
-				}
+					$this->checklistAttributes[$attributeInfo->attribute_type_id] = $attributeInfo->attribute_type_name;
+				} 
+			} else if( $catID == "2" ) {
+				$this->checklistScores[$attributeInfo->attribute_type_id] = $attributeInfo->attribute_type_name;
 			}
 		}
 		
-		$this->fullAttributes['22'] = "Note";
-		$this->fullAttributes['score'] = "Quantitative Score";
-		$this->fullAttributes['participant'] = "Participant";
+		$this->checklistAttributes['22'] = "Note";
+		$this->checklistParticipants['participant'] = "Participant";
 		
-		asort( $this->fullAttributes );
+		asort( $this->checklistAttributes );
+		asort( $this->checklistScores );
 		
 	}
 	
