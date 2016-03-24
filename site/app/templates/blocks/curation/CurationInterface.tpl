@@ -18,6 +18,7 @@
 	</div>
 	
 	<div id='curationHidden'>
+	
 		<div id='fullAttributeHTML'>
 			<select class='form-control attributeAddSelect' id='fullAttributeSelect'>
 				<optgroup label='Participants'>
@@ -38,5 +39,15 @@
 			</select>
 			<button type='button' id='fullAttributeSubmit' class='btn btn-success btn-block marginTopSm'>ADD <i class='fa fa-lg fa-plus-square-o'></i></button>
 		</div>
+
+		<div id='subAttributeHTML'>
+			<select class='form-control attributeAddSelect' id='subAttributeSelect'>
+				{% for ATTRIBUTE_ID, ATTRIBUTE_NAME in CHECKLIST_SUBATTRIBUTES %}
+					<option value='{{ATTRIBUTE_ID}}'>{{ATTRIBUTE_NAME}}</option>
+				{% endfor %}
+			</select>
+			<button type='button' id='subAttributeSubmit' class='btn btn-success btn-block marginTopSm'>ADD <i class='fa fa-lg fa-plus-square-o'></i></button>
+		</div>
+		
 	</div>
 </div>

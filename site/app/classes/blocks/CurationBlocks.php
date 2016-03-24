@@ -23,6 +23,7 @@ class CurationBlocks extends lib\Blocks {
 	private $checklistAttributes;
 	private $checklistScores;
 	private $checklistParticipants;
+	private $checklistSubAttributes;
 	
 	private $blockCount = 1;
 	private $participantCount = 1;
@@ -57,7 +58,8 @@ class CurationBlocks extends lib\Blocks {
 			"CHECKLIST_PARTICIPANTS" => $this->checklistParticipants,
 			"CHECKLIST_BLOCK_COUNT" => $this->blockCount,
 			"CHECKLIST_PART_COUNT" => $this->participantCount,
-			"LAST_PARTICIPANT" => $this->lastParticipant
+			"LAST_PARTICIPANT" => $this->lastParticipant,
+			"CHECKLIST_SUBATTRIBUTES" => $this->checklistSubAttributes
 		);
 		
 		$view = $this->processView( 'blocks' . DS . 'curation' . DS . 'CurationInterface.tpl', $params, false );
@@ -177,7 +179,7 @@ class CurationBlocks extends lib\Blocks {
 			"ID" => $options['blockid'], 
 			"TITLE" => $options['blockName'], 
 			"CONTENT" => $view, 
-			"ERRORS" => array( )
+			"ERRORS" => ""
 		);
 		
 		$curationBlock = $this->processView( 'blocks' . DS . 'curation' . DS . 'CurationBlock.tpl', $params, false );
@@ -200,11 +202,12 @@ class CurationBlocks extends lib\Blocks {
 			
 			if( $link['BLOCK'] == "participant" ) {
 				
-				$link['TITLE'] = "Participant #" . $this->participantCount;
+				$link['TITLE'] = "Participants #" . $this->participantCount;
 				
 				$participantStatus = $this->processView( 'blocks' . DS . 'curation' . DS . 'ParticipantStatusMenuItem.tpl', array( ), false );
 				
 				$link['SUBMENU'] = array( array( 'class' => 'participantStatus', 'value' => $participantStatus ) );
+				$link['IS_PARTICIPANT'] = true;
 				
 				$this->lastParticipant = $link['ID'];
 				$this->participantCount++;
@@ -342,6 +345,9 @@ class CurationBlocks extends lib\Blocks {
 		
 		asort( $this->checklistAttributes );
 		asort( $this->checklistScores );
+		
+		$this->checklistSubAttributes['alleles'] = "Alleles";
+		$this->checklistSubAttributes['22'] = "Note";
 		
 	}
 	

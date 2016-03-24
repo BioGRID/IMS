@@ -80,6 +80,7 @@
 		setupCurationChecklist( );
 		setupParticipantAttributeLinks( );
 		setupAddChecklistItemButton( );
+		setupAddChecklistSubItemButton( );
 		
 	}
 	
@@ -98,8 +99,26 @@
 	*/
 	
 	function clickWorkflowLink( link ) {
-		$(".workflowLink").not(link).parent( ).find( ".curationSubmenu" ).slideUp( 'fast' );
-		link.parent( ).find( ".curationSubmenu" ).slideDown( 'fast' );
+		$(".workflowLink").not(link).parent( ).removeClass( "active" ).find( ".curationSubmenu" ).slideUp( 'fast' );
+		
+		// Only Participants have Submenus
+		
+		var block = link.data( "block" );
+		var listItem = link.parent( );
+		
+		if( block == "participant" ) {
+			
+			listItem
+				.addClass( "active" )
+				.find( ".curationSubmenu" )
+				.slideDown( 'fast' );
+				
+		} else {
+			
+			listItem.addClass( "active" );
+				
+		}
+		
 		loadCurationBlock( link );
 	}
 	
@@ -330,7 +349,6 @@
 					// rather than to the end
 					
 					if( selectVal == "participant" ) {
-						alert( "HERE" );
 						var lastPart = $("#lastParticipant").val( );
 						$("#" + lastPart).parent( ).after( data['view'] );
 						$("#lastParticipant").val( "workflowLink-block-" + data['show'] );
@@ -356,6 +374,45 @@
 			
 		});
 	
+	}
+	
+	/**
+	 * Setup a checklist subitem popup
+	 * that lets you select a new subitem to add
+	 */
+	 
+	function setupAddChecklistSubItemButton( ) {
+				
+		var addItemPopup = $(".addSubAttribute").qtip({
+			overwrite: false,
+			content: {
+				text: function( event, api ) {
+					return $("#subAttributeHTML").html( );
+				},
+				title: {
+					text: "<strong>Choose New Sub Attribute</strong>",
+					button: true
+				}
+			},
+			style: {
+				classes: 'qtip-bootstrap',
+				width: '250px'
+			},
+			position: {
+				my: 'right center',
+				at: 'left center'
+			},
+			show: {
+				event: "click",
+				solo: true
+			},
+			hide: {
+				delay: 1000,
+				fixed: true,
+				leave: false
+			}
+		}, event);
+		
 	}
 
 }));
