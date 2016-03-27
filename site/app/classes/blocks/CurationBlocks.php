@@ -332,7 +332,7 @@ class CurationBlocks extends lib\Blocks {
 		foreach( $this->attributeTypes as $attributeID => $attributeInfo ) {
 			$catID = $attributeInfo->attribute_type_category_id;
 			if( $catID == "1" ) {
-				if( $attributeInfo->attribute_type_id != "31" && $attributeInfo->attribute_type_id != "35" ) {
+				if( $attributeInfo->attribute_type_id != "31" && $attributeInfo->attribute_type_id != "35" && $attributeInfo->attribute_type_id != '36' ) {
 					$this->checklistAttributes[$attributeInfo->attribute_type_id] = $attributeInfo->attribute_type_name;
 				} 
 			} else if( $catID == "2" ) {
@@ -346,7 +346,7 @@ class CurationBlocks extends lib\Blocks {
 		asort( $this->checklistAttributes );
 		asort( $this->checklistScores );
 		
-		$this->checklistSubAttributes['alleles'] = "Alleles";
+		$this->checklistSubAttributes['36'] = "Alleles";
 		$this->checklistSubAttributes['22'] = "Note";
 		
 	}

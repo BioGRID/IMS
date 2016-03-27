@@ -413,6 +413,37 @@
 			}
 		}, event);
 		
+		$("body").on( "click", "#subAttributeSubmit", function( ) {
+				
+			var selectVal = $(this).parent( ).find( ".attributeAddSelect" ).val( );
+			var datasetID = $("#datasetID").val( );
+			var baseURL = $("head base").attr( "href" );
+			var blockCount = $("#checklistBlockCount").val( );
+			var partCount = $("#checklistPartCount").val( );
+		
+			$.ajax({
+				
+				url: baseURL + "/scripts/AppendChecklistSubItem.php",
+				method: "POST",
+				dataType: "json",
+				data: { selected: selectVal, blockCount: blockCount, partCount: partCount }
+				
+			}).done( function(data) {
+				
+				console.log( data );
+				
+				$("#workflowSubLink-block-" + data['show']).parent( ).before( data['view'] );
+				$("#lastParticipant").val( "workflowLink-block-" + data['show'] );
+				
+				$("#checklistBlockCount").val( data['blockCount'] );
+				$("#checklistPartCount").val( data['partCount'] );
+				addItemPopup.qtip( 'hide' );
+				clickWorkflowLink( $("#workflowLink-block-" + data['show']) );
+				
+			});
+			
+		});
+		
 	}
 
 }));
