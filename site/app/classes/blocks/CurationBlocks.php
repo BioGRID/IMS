@@ -126,11 +126,6 @@ class CurationBlocks extends lib\Blocks {
 				$link['DATA'] = array( "role" => "1", "type" => "1", "organism" => $orgID );
 				break;
 				
-			case "score" :
-				$link['BLOCK'] = "score";
-				$link['DATA'] = array( "type" => "16" );
-				break;
-				
 			default :
 				$link['BLOCK'] = "attribute";
 				$link['DATA'] = array( "type" => $itemID );
@@ -144,6 +139,25 @@ class CurationBlocks extends lib\Blocks {
 		} 
 		
 		return "";
+		
+	}
+	
+	/** 
+	 * Fetch curation checklist sub item to append to the submenu
+	 * of the current checklist item
+	 */
+	 
+	public function fetchCurationChecklistSubItem( $itemID, $parentID, $parentName ) {
+		
+		$attributeInfo = $this->attributeTypes[$itemID];
+		
+		$link = array( 
+			"PARENT_NAME" => $parentName,
+			"SUBITEM_NAME" => $attributeInfo->attribute_type_name,
+			"PARENT_ID" => $parentID
+		);
+		
+		return $this->processView( 'blocks' . DS . 'curation' . DS . 'ChecklistSubItem.tpl', $link, false );
 		
 	}
 	
