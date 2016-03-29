@@ -1,1 +1,0 @@
-<div class='col-lg-2 col-md-2 col-sm-3 col-xs-3'><h4 class='marginBotSm marginTopSm'>{{ATTRIBUTE_TYPE|capitalize}}</h4><textarea class='form-control' placeholder='{{ PLACEHOLDER_MSG }}' name='{{BASE_NAME}}-{{ATTRIBUTE_TYPE}}-{{COUNT}}' id='{{BASE_NAME}}-{{ATTRIBUTE_TYPE}}-{{COUNT}}' rows='8'></textarea></div>
