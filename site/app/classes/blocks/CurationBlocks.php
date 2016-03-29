@@ -62,7 +62,7 @@ class CurationBlocks extends lib\Blocks {
 			"CHECKLIST_SUBATTRIBUTES" => $this->checklistSubAttributes
 		);
 		
-		$view = $this->processView( 'blocks' . DS . 'curation' . DS . 'CurationInterface.tpl', $params, false );
+		$view = $this->processView( 'curation' . DS . 'main' . DS . 'Interface.tpl', $params, false );
 		return $view;
 	}
 	
@@ -157,7 +157,7 @@ class CurationBlocks extends lib\Blocks {
 			"PARENT_ID" => $parentID
 		);
 		
-		return $this->processView( 'blocks' . DS . 'curation' . DS . 'ChecklistSubItem.tpl', $link, false );
+		return $this->processView( 'curation' . DS . 'checklist' . DS . 'SubItem.tpl', $link, false );
 		
 	}
 	
@@ -190,13 +190,19 @@ class CurationBlocks extends lib\Blocks {
 		}
 		
 		$params = array( 
-			"ID" => $options['blockid'], 
 			"TITLE" => $options['blockName'], 
+			"CONTENT" => $view, 
+		);
+		
+		$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Panel.tpl', $params, false ); 
+		
+		$params = array( 
+			"ID" => $options['blockid'], 
 			"CONTENT" => $view, 
 			"ERRORS" => ""
 		);
 		
-		$curationBlock = $this->processView( 'blocks' . DS . 'curation' . DS . 'CurationBlock.tpl', $params, false );
+		$curationBlock = $this->processView( 'curation' . DS . 'blocks' . DS . 'Block.tpl', $params, false );
 		return $curationBlock;
 	
 	}
@@ -218,7 +224,7 @@ class CurationBlocks extends lib\Blocks {
 				
 				$link['TITLE'] = "Participants #" . $this->participantCount;
 				
-				$participantStatus = $this->processView( 'blocks' . DS . 'curation' . DS . 'ParticipantStatusMenuItem.tpl', array( ), false );
+				$participantStatus = $this->processView( 'curation' . DS . 'checklist' . DS . 'ParticipantStatus.tpl', array( ), false );
 				
 				$link['SUBMENU'] = array( array( 'class' => 'participantStatus', 'value' => $participantStatus ) );
 				$link['IS_PARTICIPANT'] = true;
@@ -233,7 +239,7 @@ class CurationBlocks extends lib\Blocks {
 			
 			
 			$this->blockCount++;
-			$updatedLinks[] = $this->processView( 'blocks' . DS . 'curation' . DS . 'ChecklistItem.tpl', $link, false );
+			$updatedLinks[] = $this->processView( 'curation' . DS . 'checklist' . DS . 'ListItem.tpl', $link, false );
 		}
 		
 		return $updatedLinks;
@@ -250,8 +256,12 @@ class CurationBlocks extends lib\Blocks {
 		$attributeInfo = $this->attributeTypes[$attributeID];
 		$view = "";
 		
-		if( $attributeInfo->attribute_type_category_id == "1" ) { // Ontology Attributes
+		if( $attributeInfo->attribute_type_category_id == "1" && $attributeID != "36" ) { // Ontology Attributes
 			// Get Ontology View
+			
+		} else if( $attributeID == "36" ) { // Allele List View
+			
+			
 		} else if( $attributeInfo->attribute_type_category_id == "3" ) { // Note Attributes
 			// Get Note View
 			$params = array( 
@@ -259,7 +269,7 @@ class CurationBlocks extends lib\Blocks {
 				"PLACEHOLDER_MSG" => "Enter Notes Here, Each distinct note on a New Line"
 			);
 			
-			$view = $this->processView( 'blocks' . DS . 'curation' . DS . 'CurationBlock_Note.tpl', $params, false );
+			$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_Note.tpl', $params, false );
 			
 		} else if( $attributeInfo->attribute_type_category_id == "2" ) { // Quantitiative Score
 			// Get Quantitiative Score View
@@ -308,27 +318,7 @@ class CurationBlocks extends lib\Blocks {
 			"PLACEHOLDER_MSG" => "Enter identifiers, one per line"
 		);
 		
-		$view = $this->processView( 'blocks' . DS . 'curation' . DS . 'CurationBlock_Participant.tpl', $params, false );
-		return $view;
-		
-	}
-	
-	/**
-	 * Generate a participant block addon
-	 */
-	 
-	public function fetchParticipantCurationBlockAddon( $baseName, $attributeType, $count ) {
-		
-		$placeholder = "Enter " . strtolower( $attributeType) . " values, one per line";
-		
-		$params = array( 
-			"BASE_NAME" => $baseName,
-			"PLACEHOLDER_MSG" => $placeholder,
-			"ATTRIBUTE_TYPE" => strtolower( $attributeType ),
-			"COUNT" => $count
-		);
-		
-		$view = $this->processView( 'blocks' . DS . 'curation' . DS . 'AddonParticipantAttribute.tpl', $params, false );
+		$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_Participant.tpl', $params, false );
 		return $view;
 		
 	}
