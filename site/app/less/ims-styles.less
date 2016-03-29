@@ -296,12 +296,20 @@ h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 { margin-top: 0px; margin-b
 						list-style-type: none;
 						
 						li {
+						
+							padding: 5px;
+						
+							&.active {
+								background-color: #EEE;
+							}
+						
 							ul {
 								padding: 0px;
 								font-size: 14px;
 								list-style-position: inside;
 								list-style-type: none;
 								li {
+									padding: 0px;
 									margin-left: 10px;
 									
 								}
@@ -314,7 +322,7 @@ h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 { margin-top: 0px; margin-b
 							
 						
 						.activityIcon {
-							margin-top: 3px;
+							margin-top: 4px;
 						}
 						
 						a { 
@@ -323,6 +331,10 @@ h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 { margin-top: 0px; margin-b
 								text-decoration: none;
 							}
 						}
+					}
+					
+					#curationHidden {
+						display: none;
 					}
 				}
 				

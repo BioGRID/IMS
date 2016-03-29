@@ -20,8 +20,16 @@ class CurationBlocks extends lib\Blocks {
 	private $orgNames;
 	private $idTypes;
 	private $attributeTypes;
+	private $checklistAttributes;
+	private $checklistScores;
+	private $checklistParticipants;
+	private $checklistSubAttributes;
+	
+	private $blockCount = 1;
+	private $participantCount = 1;
+	private $lastParticipant = "";
 	 
-	public function __construct( ) {
+	public function __construct( $blockCount = 1, $participantCount = 1 ) {
 		parent::__construct( );
 		
 		$this->lookups = new models\Lookups( );
@@ -30,6 +38,11 @@ class CurationBlocks extends lib\Blocks {
 		$this->orgNames = $this->lookups->buildOrganismNameHash( );
 		$this->idTypes = $this->lookups->buildIDTypeHash( );
 		$this->attributeTypes = $this->lookups->buildAttributeTypeHASH( );
+		$this->buildAttributeTypeSelectLists( );
+		
+		$this->blockCount = $blockCount;
+		$this->participantCount = $participantCount;
+		
 	}
 	
 	/**
@@ -39,10 +52,17 @@ class CurationBlocks extends lib\Blocks {
 	public function generateView( $blocks, $links ) {
 		
 		$params = array( 
-			"SIDEBAR_LINKS" => $links
+			"SIDEBAR_LINKS" => $links,
+			"CHECKLIST_ATTRIBUTES" => $this->checklistAttributes,
+			"CHECKLIST_SCORES" => $this->checklistScores,
+			"CHECKLIST_PARTICIPANTS" => $this->checklistParticipants,
+			"CHECKLIST_BLOCK_COUNT" => $this->blockCount,
+			"CHECKLIST_PART_COUNT" => $this->participantCount,
+			"LAST_PARTICIPANT" => $this->lastParticipant,
+			"CHECKLIST_SUBATTRIBUTES" => $this->checklistSubAttributes
 		);
 		
-		$view = $this->processView( 'blocks' . DS . 'curation' . DS . 'CurationInterface.tpl', $params, false );
+		$view = $this->processView( 'curation' . DS . 'main' . DS . 'Interface.tpl', $params, false );
 		return $view;
 	}
 	
@@ -68,13 +88,13 @@ class CurationBlocks extends lib\Blocks {
 			
 			case "1" : // Protein-Protein Binary Interaction
 			
-				$links[] = array( "block" => "participant", "data" => array( "role" => "2", "type" => "1", "organism" => $orgID ));
-				$links[] = array( "block" => "participant", "data" => array( "role" => "3", "type" => "1", "organism" => $orgID ));
-				$links[] = array( "block" => "attribute", "data" => array( "type" => "11" ));
-				$links[] = array( "block" => "attribute", "data" => array( "type" => "13" ));
-				$links[] = array( "block" => "attribute", "data" => array( "type" => "22" ));
+				$links[] = array( "BLOCK" => "participant", "DATA" => array( "role" => "2", "type" => "1", "organism" => $orgID ));
+				$links[] = array( "BLOCK" => "participant", "DATA" => array( "role" => "3", "type" => "1", "organism" => $orgID ));
+				$links[] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "11" ));
+				$links[] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "13" ));
+				$links[] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "22" ));
 				
-				$links = $this->processCurationLinks( $links );
+				$links = $this->processCurationLinks( $links, 1 );
 			
 				break;
 				
@@ -82,6 +102,62 @@ class CurationBlocks extends lib\Blocks {
 		}
 		
 		return $this->generateView( $blocks, $links );
+		
+	}
+	
+	/**
+	 * Fetch curation checklist item to append to the current
+	 * checklist following existing items
+	 */
+	 
+	public function fetchCurationChecklistItem( $itemID ) {
+		
+		$link = array( );
+		
+		$orgID = "559292";
+		if( isset( $_SESSION[SESSION_NAME]['GROUP'] ) ) {
+			$orgID = $_SESSION[SESSION_NAME]['GROUPS'][$_SESSION[SESSION_NAME]['GROUP']]['ORGANISM_ID'];
+		}
+		
+		switch( $itemID ) {
+			
+			case "participant" :
+				$link['BLOCK'] = "participant";
+				$link['DATA'] = array( "role" => "1", "type" => "1", "organism" => $orgID );
+				break;
+				
+			default :
+				$link['BLOCK'] = "attribute";
+				$link['DATA'] = array( "type" => $itemID );
+				break;
+		}
+		
+		if( sizeof( $link ) > 0 ) {
+			$links = array( $link );
+			$links = $this->processCurationLinks( $links );
+			return $links[0];
+		} 
+		
+		return "";
+		
+	}
+	
+	/** 
+	 * Fetch curation checklist sub item to append to the submenu
+	 * of the current checklist item
+	 */
+	 
+	public function fetchCurationChecklistSubItem( $itemID, $parentID, $parentName ) {
+		
+		$attributeInfo = $this->attributeTypes[$itemID];
+		
+		$link = array( 
+			"PARENT_NAME" => $parentName,
+			"SUBITEM_NAME" => $attributeInfo->attribute_type_name,
+			"PARENT_ID" => $parentID
+		);
+		
+		return $this->processView( 'curation' . DS . 'checklist' . DS . 'SubItem.tpl', $link, false );
 		
 	}
 	
@@ -114,13 +190,19 @@ class CurationBlocks extends lib\Blocks {
 		}
 		
 		$params = array( 
-			"ID" => $options['blockid'], 
 			"TITLE" => $options['blockName'], 
 			"CONTENT" => $view, 
-			"ERRORS" => array( )
 		);
 		
-		$curationBlock = $this->processView( 'blocks' . DS . 'curation' . DS . 'CurationBlock.tpl', $params, false );
+		$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Panel.tpl', $params, false ); 
+		
+		$params = array( 
+			"ID" => $options['blockid'], 
+			"CONTENT" => $view, 
+			"ERRORS" => ""
+		);
+		
+		$curationBlock = $this->processView( 'curation' . DS . 'blocks' . DS . 'Block.tpl', $params, false );
 		return $curationBlock;
 	
 	}
@@ -134,29 +216,30 @@ class CurationBlocks extends lib\Blocks {
 		
 		$updatedLinks = array( );
 		
-		$linkCount = 1;
-		$participantCount = 1;
-		
 		foreach( $links as $link ) {
 			
-			$link['id'] = "block-" . $linkCount;
+			$link['ID'] = "block-" . $this->blockCount;
 			
-			if( $link['block'] == "participant" ) {
-				$link['title'] = "Participant #" . $participantCount;
+			if( $link['BLOCK'] == "participant" ) {
 				
-				$participantStatus = $this->processView( 'blocks' . DS . 'curation' . DS . 'ParticipantStatusMenuItem.tpl', array( ), false );
+				$link['TITLE'] = "Participants #" . $this->participantCount;
 				
-				$link['submenu'] = array( array( 'class' => 'participantStatus', 'value' => $participantStatus ) );
+				$participantStatus = $this->processView( 'curation' . DS . 'checklist' . DS . 'ParticipantStatus.tpl', array( ), false );
 				
-				$participantCount++;
-			} else if( $link['block'] == "attribute" ) {
-				$attributeInfo = $this->attributeTypes[$link['data']['type']];
-				$link['title'] = $attributeInfo->attribute_type_name;
+				$link['SUBMENU'] = array( array( 'class' => 'participantStatus', 'value' => $participantStatus ) );
+				$link['IS_PARTICIPANT'] = true;
+				
+				$this->lastParticipant = $link['ID'];
+				$this->participantCount++;
+				
+			} else if( $link['BLOCK'] == "attribute" ) {
+				$attributeInfo = $this->attributeTypes[$link['DATA']['type']];
+				$link['TITLE'] = $attributeInfo->attribute_type_name;
 			}
 			
 			
-			$linkCount++;
-			$updatedLinks[] = $link;
+			$this->blockCount++;
+			$updatedLinks[] = $this->processView( 'curation' . DS . 'checklist' . DS . 'ListItem.tpl', $link, false );
 		}
 		
 		return $updatedLinks;
@@ -173,8 +256,12 @@ class CurationBlocks extends lib\Blocks {
 		$attributeInfo = $this->attributeTypes[$attributeID];
 		$view = "";
 		
-		if( $attributeInfo->attribute_type_category_id == "1" ) { // Ontology Attributes
+		if( $attributeInfo->attribute_type_category_id == "1" && $attributeID != "36" ) { // Ontology Attributes
 			// Get Ontology View
+			
+		} else if( $attributeID == "36" ) { // Allele List View
+			
+			
 		} else if( $attributeInfo->attribute_type_category_id == "3" ) { // Note Attributes
 			// Get Note View
 			$params = array( 
@@ -182,7 +269,7 @@ class CurationBlocks extends lib\Blocks {
 				"PLACEHOLDER_MSG" => "Enter Notes Here, Each distinct note on a New Line"
 			);
 			
-			$view = $this->processView( 'blocks' . DS . 'curation' . DS . 'CurationBlock_Note.tpl', $params, false );
+			$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_Note.tpl', $params, false );
 			
 		} else if( $attributeInfo->attribute_type_category_id == "2" ) { // Quantitiative Score
 			// Get Quantitiative Score View
@@ -231,29 +318,57 @@ class CurationBlocks extends lib\Blocks {
 			"PLACEHOLDER_MSG" => "Enter identifiers, one per line"
 		);
 		
-		$view = $this->processView( 'blocks' . DS . 'curation' . DS . 'CurationBlock_Participant.tpl', $params, false );
+		$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_Participant.tpl', $params, false );
 		return $view;
 		
 	}
 	
 	/**
-	 * Generate a participant block addon
+	 * Build Attribute Select Lists
 	 */
 	 
-	public function fetchParticipantCurationBlockAddon( $baseName, $attributeType, $count ) {
+	private function buildAttributeTypeSelectLists( ) {
 		
-		$placeholder = "Enter " . strtolower( $attributeType) . " values, one per line";
+		$this->checklistAttributes = array( );
+		$this->checklistParticipants = array( );
+		$this->checklistScores = array( );
 		
-		$params = array( 
-			"BASE_NAME" => $baseName,
-			"PLACEHOLDER_MSG" => $placeholder,
-			"ATTRIBUTE_TYPE" => strtolower( $attributeType ),
-			"COUNT" => $count
-		);
+		foreach( $this->attributeTypes as $attributeID => $attributeInfo ) {
+			$catID = $attributeInfo->attribute_type_category_id;
+			if( $catID == "1" ) {
+				if( $attributeInfo->attribute_type_id != "31" && $attributeInfo->attribute_type_id != "35" && $attributeInfo->attribute_type_id != '36' ) {
+					$this->checklistAttributes[$attributeInfo->attribute_type_id] = $attributeInfo->attribute_type_name;
+				} 
+			} else if( $catID == "2" ) {
+				$this->checklistScores[$attributeInfo->attribute_type_id] = $attributeInfo->attribute_type_name;
+			}
+		}
 		
-		$view = $this->processView( 'blocks' . DS . 'curation' . DS . 'AddonParticipantAttribute.tpl', $params, false );
-		return $view;
+		$this->checklistAttributes['22'] = "Note";
+		$this->checklistParticipants['participant'] = "Participant";
 		
+		asort( $this->checklistAttributes );
+		asort( $this->checklistScores );
+		
+		$this->checklistSubAttributes['36'] = "Alleles";
+		$this->checklistSubAttributes['22'] = "Note";
+		
+	}
+	
+	/** 
+	 * Get Block Count
+	 */
+	 
+	public function getBlockCount( ) {
+		return $this->blockCount;
+	}
+	
+	/** 
+	 * Get Participant Count
+	 */
+	 
+	public function getParticipantCount( ) {
+		return $this->participantCount;
 	}
 	
 }

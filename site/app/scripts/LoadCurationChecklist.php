@@ -12,7 +12,7 @@ require_once __DIR__ . '/../../app/lib/Bootstrap.php';
 
 use IMS\app\classes\blocks;
 
-$curationBlocks = new blocks\CurationBlocks( );
+$curationBlocks = new blocks\CurationBlocks( 1, 1 );
 echo $curationBlocks->fetchCurationChecklist( $_POST['type'] );
 
 ?>

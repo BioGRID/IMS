@@ -1,0 +1,1 @@
+<li class='{{ CLASS }} curationSubmenuItem'><i class='fa fa-angle-double-right'></i> {{ PARENT_NAME|raw}} - {{ SUBITEM_NAME|raw }}</li>

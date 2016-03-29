@@ -10,7 +10,7 @@
 
 } (function( $, window, document ) {
 	
-	var fieldID = 1;
+	var checklistItems = [];
 
 	$(function( ) {
 		initializeUI( );
@@ -23,8 +23,7 @@
 		
 	function initializeUI( ) {
 		initializeCurationTypeDropdown( );
-		
-		
+		initializeWorkflowLinks( );
 	}
 	
 	/**
@@ -38,15 +37,29 @@
 			var curationType = $(this).val( );
 			
 			$.ajax({
+				
 				url: baseURL + "/scripts/LoadCurationChecklist.php",
 				method: "POST",
 				dataType: "html",
 				data: { type: curationType }
+				
 			}).done( function(data) {
+				
 				$("#curationInterface").html(data);
 				initializeCurationWorkflow( );
+				
 			});
 			
+		});
+	}
+	
+	/**
+	 * Setup workflow link clickability
+	 */
+	
+	function initializeWorkflowLinks( ) {
+		$("#section-curation").on( "click", ".workflowLink", function( ) {
+			clickWorkflowLink( $(this) );
 		});
 	}
 	
@@ -66,6 +79,8 @@
 		
 		setupCurationChecklist( );
 		setupParticipantAttributeLinks( );
+		setupAddChecklistItemButton( );
+		setupAddChecklistSubItemButton( );
 		
 	}
 	
@@ -75,14 +90,8 @@
 	 */
 	 
 	function setupCurationChecklist( ) {
-		
 		var firstChecklistItem = $(".workflowLink:first");
 		clickWorkflowLink( firstChecklistItem );
-		
-		$(".workflowLink").on( "click", function( ) {
-			clickWorkflowLink( $(this) );
-		});
-		
 	}
 	
 	/**
@@ -90,8 +99,26 @@
 	*/
 	
 	function clickWorkflowLink( link ) {
-		$(".workflowLink").not(link).parent( ).find( ".curationSubmenu" ).slideUp( 'fast' );
-		link.parent( ).find( ".curationSubmenu" ).slideDown( 'fast' );
+		$(".workflowLink").not(link).parent( ).removeClass( "active" ).find( ".curationSubmenu" ).slideUp( 'fast' );
+		
+		// Only Participants have Submenus
+		
+		var block = link.data( "block" );
+		var listItem = link.parent( );
+		
+		if( block == "participant" ) {
+			
+			listItem
+				.addClass( "active" )
+				.find( ".curationSubmenu" )
+				.slideDown( 'fast' );
+				
+		} else {
+			
+			listItem.addClass( "active" );
+				
+		}
+		
 		loadCurationBlock( link );
 	}
 	
@@ -123,12 +150,16 @@
 			// ajax into the form
 			
 			$.ajax({
+				
 				url: baseURL + "/scripts/LoadCurationBlock.php",
 				method: "POST",
 				dataType: "html",
 				data: dataAttribs
+				
 			}).done( function(data) {
+				
 				$("#curationWorkflow").append(data);
+				
 			});
 			
 		}
@@ -225,18 +256,195 @@
 			var parentPanel = $(this).data( "parent" );
 			
 			$.ajax({
+				
 				url: baseURL + "/scripts/AppendCurationWorkflow.php",
 				method: "POST",
 				dataType: "html",
-				data: { parent: parentPanel, selected: selectVal, field: fieldID  }
+				data: { parent: parentPanel, selected: selectVal }
+				
 			}).done( function(data) {
+				
 				$('#' + parentPanel + ' > .panel-body').append( data );
+				
 			});
-			
-			fieldID++;
 			
 		});
 	
+	}
+	
+	/**
+	 * Setup a checklist item popup
+	 * that lets you select a new item to add
+	 */
+	 
+	function setupAddChecklistItemButton( ) {
+				
+		var addItemPopup = $("#addNewChecklistItem").qtip({
+			overwrite: false,
+			content: {
+				text: function( event, api ) {
+					return $("#fullAttributeHTML").html( );
+				},
+				title: {
+					text: "<strong>Choose New Item</strong>",
+					button: true
+				}
+			},
+			style: {
+				classes: 'qtip-bootstrap',
+				width: '250px'
+			},
+			position: {
+				my: 'right center',
+				at: 'left center'
+			},
+			show: {
+				event: "click",
+				solo: true
+			},
+			hide: {
+				delay: 1000,
+				fixed: true,
+				leave: false
+			}
+		}, event);
+		
+		$("body").on( "click", "#fullAttributeSubmit", function( ) {
+				
+			var selectVal = $(this).parent( ).find( ".attributeAddSelect" ).val( );
+			var datasetID = $("#datasetID").val( );
+			var baseURL = $("head base").attr( "href" );
+			var blockCount = $("#checklistBlockCount").val( );
+			var partCount = $("#checklistPartCount").val( );
+			
+			// Check to see if this attribute is already in the
+			// checklist, no need to add the same attribute twice
+			
+			var itemExists = false;
+			var linkToShow = "";
+			$(".workflowLink").each( function( i, val ) {
+				var linkData = $(this).data( );
+				if( linkData['block'] == 'attribute' && linkData['type'] == selectVal ) {
+					itemExists = true;
+					linkToShow = $(this);
+					return false;
+				}
+			});
+			
+			if( !itemExists ) {
+				
+				// If the item doesn't exist, create it
+				// and append it to the right spot
+			
+				$.ajax({
+					
+					url: baseURL + "/scripts/AppendChecklistItem.php",
+					method: "POST",
+					dataType: "json",
+					data: { selected: selectVal, blockCount: blockCount, partCount: partCount }
+					
+				}).done( function(data) {
+					
+					// If it's a new Participant, append it after participants
+					// rather than to the end
+					
+					if( selectVal == "participant" ) {
+						var lastPart = $("#lastParticipant").val( );
+						$("#" + lastPart).parent( ).after( data['view'] );
+						$("#lastParticipant").val( "workflowLink-block-" + data['show'] );
+					} else {
+						$('#curationChecklist').append( data['view'] );
+					}
+					
+					$("#checklistBlockCount").val( data['blockCount'] );
+					$("#checklistPartCount").val( data['partCount'] );
+					addItemPopup.qtip( 'hide' );
+					clickWorkflowLink( $("#workflowLink-block-" + data['show']) );
+					
+				});
+				
+			} else {
+				
+				// Otherwise, simply show the one that 
+				// already exists
+				
+				addItemPopup.qtip( 'hide' );
+				clickWorkflowLink( linkToShow );
+			}
+			
+		});
+	
+	}
+	
+	/**
+	 * Setup a checklist subitem popup
+	 * that lets you select a new subitem to add
+	 */
+	 
+	function setupAddChecklistSubItemButton( ) {
+				
+		var addItemPopup = $(".addSubAttribute").qtip({
+			overwrite: false,
+			content: {
+				text: function( event, api ) {
+					$("#subAttributeParent").val( $(this).data( "parentblockid" ) );
+					$("#subAttributeParentName").val( $(this).data( "parenttitle" ) );
+					return $("#subAttributeHTML").html( );
+				},
+				title: {
+					text: "<strong>Choose New Sub Attribute</strong>",
+					button: true
+				}
+			},
+			style: {
+				classes: 'qtip-bootstrap',
+				width: '250px'
+			},
+			position: {
+				my: 'right center',
+				at: 'left center'
+			},
+			show: {
+				event: "click",
+				solo: true
+			},
+			hide: {
+				delay: 1000,
+				fixed: true,
+				leave: false
+			}
+		}, event);
+		
+		$("body").on( "click", "#subAttributeSubmit", function( ) {
+				
+			var form = $(this).parent( );
+			var selectVal = form.find( ".attributeAddSelect" ).val( );
+			var parentBlockID = form.find( "#subAttributeParent" ).val( );
+			var parentBlockName = form.find( "#subAttributeParentName" ).val( );
+			var datasetID = $("#datasetID").val( );
+			var baseURL = $("head base").attr( "href" );
+			var blockCount = $("#checklistBlockCount").val( );
+		
+			$.ajax({
+				
+				url: baseURL + "/scripts/AppendChecklistSubItem.php",
+				method: "POST",
+				dataType: "json",
+				data: { selected: selectVal, parent: parentBlockID, parentName: parentBlockName, blockCount: blockCount }
+				
+			}).done( function(data) {
+				
+				console.log( data );
+				
+				$("#workflowSubLink-" + parentBlockID).parent( ).before( data['view'] );
+				
+				addItemPopup.qtip( 'hide' );
+				clickWorkflowLink( $("#workflowLink-" + parentBlockID) );
+				
+			});
+			
+		});
+		
 	}
 
 }));
