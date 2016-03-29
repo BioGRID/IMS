@@ -46,8 +46,9 @@
 					<option value='{{ATTRIBUTE_ID}}'>{{ATTRIBUTE_NAME}}</option>
 				{% endfor %}
 			</select>
-			<input type='hidden' name='subAttributeParent' id='subAttributeParent' value='' />
-			<input type='hidden' name='subAttributeParentName' id='subAttributeParentName' value='' />
+			<input type='hidden' class='subAttributeCount' value='1' />
+			<input type='hidden' class='subAttributeParent' value='' />
+			<input type='hidden' class='subAttributeParentName' value='' />
 			<button type='button' id='subAttributeSubmit' class='btn btn-success btn-block marginTopSm'>ADD <i class='fa fa-lg fa-plus-square-o'></i></button>
 		</div>
 		

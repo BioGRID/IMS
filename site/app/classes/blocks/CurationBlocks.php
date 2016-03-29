@@ -147,13 +147,13 @@ class CurationBlocks extends lib\Blocks {
 	 * of the current checklist item
 	 */
 	 
-	public function fetchCurationChecklistSubItem( $itemID, $parentID, $parentName ) {
+	public function fetchCurationChecklistSubItem( $itemID, $parentID, $parentName, $count ) {
 		
 		$attributeInfo = $this->attributeTypes[$itemID];
 		
 		$link = array( 
 			"PARENT_NAME" => $parentName,
-			"SUBITEM_NAME" => $attributeInfo->attribute_type_name,
+			"SUBITEM_NAME" => $attributeInfo->attribute_type_name . " #" . $count,
 			"PARENT_ID" => $parentID
 		);
 		
@@ -172,11 +172,11 @@ class CurationBlocks extends lib\Blocks {
 		switch( strtolower($options['block']) ) {
 			
 			case "participant" :
-				$view = $this->fetchParticipantCurationBlock( $options['blockid'], $options );
+				$view = $this->fetchParticipantCurationForm( $options['blockid'], $options );
 				break;
 				
 			case "attribute" :
-				$view = $this->fetchAttributeCurationBlock( $options['blockid'], $options );
+				$view = $this->fetchAttributeCurationForm( $options['blockid'], $options, false );
 				break;
 				
 			default:
@@ -190,19 +190,44 @@ class CurationBlocks extends lib\Blocks {
 		}
 		
 		$params = array( 
-			"TITLE" => $options['blockName'], 
-			"CONTENT" => $view, 
-		);
-		
-		$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Panel.tpl', $params, false ); 
-		
-		$params = array( 
 			"ID" => $options['blockid'], 
+			"TITLE" => $options['blockName'], 
 			"CONTENT" => $view, 
 			"ERRORS" => ""
 		);
 		
 		$curationBlock = $this->processView( 'curation' . DS . 'blocks' . DS . 'Block.tpl', $params, false );
+		return $curationBlock;
+	
+	}
+	
+	/**
+	 * Generate Curation Panel based on passed in options
+	 */
+	 
+	public function fetchCurationPanel( $options ) {
+	
+		$view = "";
+		$title = "";
+		
+		$options['type'] = $options['selected'];
+	
+		if( $options['selected'] == "36" ) {
+			$title = $options['parentName'] . " - Allele #" . $options['subCount'];
+		} else if( $options['selected'] == "22" ) {
+			$title = $options['parentName'] . " - Note #" . $options['subCount'];
+		}
+		
+		$view = $this->fetchAttributeCurationForm( $options['parent'], $options, true );
+		
+		$params = array( 
+			"ID" => $options['parent'], 
+			"TITLE" => $title, 
+			"CONTENT" => $view, 
+			"ERRORS" => ""
+		);
+		
+		$curationBlock = $this->processView( 'curation' . DS . 'blocks' . DS . 'Panel.tpl', $params, false );
 		return $curationBlock;
 	
 	}
@@ -247,10 +272,10 @@ class CurationBlocks extends lib\Blocks {
 	}
 	
 	/**
-	 * Process an ontology attribute block
+	 * Process an ontology attribute form
 	 */
 	 
-	private function fetchAttributeCurationBlock( $id, $options ) {
+	private function fetchAttributeCurationForm( $id, $options, $isPanel = false ) {
 		
 		$attributeID = $options['type'];
 		$attributeInfo = $this->attributeTypes[$attributeID];
@@ -260,13 +285,28 @@ class CurationBlocks extends lib\Blocks {
 			// Get Ontology View
 			
 		} else if( $attributeID == "36" ) { // Allele List View
+		
+			// Get Allele Form View
+			$params = array( 
+				"BASE_NAME" => $id,
+				"PLACEHOLDER_MSG" => "Enter alleles here, One per Line to match with " . $options['parentName'] . " in list above",
+				"ID" => $options['subCount']
+			);
+			
+			$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_Allele.tpl', $params, false );
 			
 			
 		} else if( $attributeInfo->attribute_type_category_id == "3" ) { // Note Attributes
 			// Get Note View
+			
+			$msg = "Enter Notes Here, Each distinct note on a New Line";
+			if( $isPanel ) {
+				$msg = "Enter notes here! You must have one note for each participant listed in the " . $options['parentName'] . " list above. Enter hyphen '-' if no note is present for a given participant.";
+			}
+			
 			$params = array( 
 				"BASE_NAME" => $id,
-				"PLACEHOLDER_MSG" => "Enter Notes Here, Each distinct note on a New Line"
+				"PLACEHOLDER_MSG" => $msg
 			);
 			
 			$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_Note.tpl', $params, false );
@@ -280,10 +320,10 @@ class CurationBlocks extends lib\Blocks {
 	}
 	
 	/**
-	 * Generate a participant block with a set of passed in parameters
+	 * Generate a participant form with a set of passed in parameters
 	 */
 	 
-	private function fetchParticipantCurationBlock( $id, $options ) {
+	private function fetchParticipantCurationForm( $id, $options ) {
 		
 		$roleID = "";
 		if( isset( $options['role'] ) ) {

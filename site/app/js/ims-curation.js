@@ -387,8 +387,9 @@
 			overwrite: false,
 			content: {
 				text: function( event, api ) {
-					$("#subAttributeParent").val( $(this).data( "parentblockid" ) );
-					$("#subAttributeParentName").val( $(this).data( "parenttitle" ) );
+					$(".subAttributeCount").val( $(this).data( "subcount" ) );
+					$(".subAttributeParent").val( $(this).data( "parentblockid" ) );
+					$(".subAttributeParentName").val( $(this).data( "parenttitle" ) );
 					return $("#subAttributeHTML").html( );
 				},
 				title: {
@@ -419,8 +420,9 @@
 				
 			var form = $(this).parent( );
 			var selectVal = form.find( ".attributeAddSelect" ).val( );
-			var parentBlockID = form.find( "#subAttributeParent" ).val( );
-			var parentBlockName = form.find( "#subAttributeParentName" ).val( );
+			var parentBlockID = form.find( ".subAttributeParent" ).val( );
+			var parentBlockName = form.find( ".subAttributeParentName" ).val( );
+			var subCount = form.find( ".subAttributeCount" ).val( );
 			var datasetID = $("#datasetID").val( );
 			var baseURL = $("head base").attr( "href" );
 			var blockCount = $("#checklistBlockCount").val( );
@@ -430,13 +432,16 @@
 				url: baseURL + "/scripts/AppendChecklistSubItem.php",
 				method: "POST",
 				dataType: "json",
-				data: { selected: selectVal, parent: parentBlockID, parentName: parentBlockName, blockCount: blockCount }
+				data: { selected: selectVal, parent: parentBlockID, parentName: parentBlockName, blockCount: blockCount, subCount: subCount }
 				
 			}).done( function(data) {
 				
 				console.log( data );
 				
-				$("#workflowSubLink-" + parentBlockID).parent( ).before( data['view'] );
+				$("#workflowSubLink-" + parentBlockID).parent( ).before( data['checklist'] );
+				$("#" + parentBlockID + " .curationErrors").before( data['body'] );
+				
+				$("#workflowSubLink-" + parentBlockID).data( "subcount", data['subCount'] )
 				
 				addItemPopup.qtip( 'hide' );
 				clickWorkflowLink( $("#workflowLink-" + parentBlockID) );

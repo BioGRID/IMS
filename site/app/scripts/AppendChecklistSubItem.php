@@ -13,10 +13,12 @@ require_once __DIR__ . '/../../app/lib/Bootstrap.php';
 use IMS\app\classes\blocks;
 
 $curationBlocks = new blocks\CurationBlocks( $_POST['blockCount'], 0 );
-$checklist = $curationBlocks->fetchCurationChecklistSubItem( $_POST['selected'], $_POST['parent'], $_POST['parentName'] );
-$body = $curationBlocks->fetchCurationBlock( $_POST );
+$checklist = $curationBlocks->fetchCurationChecklistSubItem( $_POST['selected'], $_POST['parent'], $_POST['parentName'], $_POST['subCount'] );
+$body = $curationBlocks->fetchCurationPanel( $_POST );
 
-$output = array( "checklist" => $checklist, "body" => $body );
+$subCount = intval($_POST['subCount']);
+
+$output = array( "checklist" => $checklist, "body" => $body, "subCount" => ++$subCount );
 echo json_encode( $output );
 
 ?>
