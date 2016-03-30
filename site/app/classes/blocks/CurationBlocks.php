@@ -88,11 +88,11 @@ class CurationBlocks extends lib\Blocks {
 			
 			case "1" : // Protein-Protein Binary Interaction
 			
-				$links[] = array( "BLOCK" => "participant", "DATA" => array( "role" => "2", "type" => "1", "organism" => $orgID ));
-				$links[] = array( "BLOCK" => "participant", "DATA" => array( "role" => "3", "type" => "1", "organism" => $orgID ));
-				$links[] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "11" ));
-				$links[] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "13" ));
-				$links[] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "22" ));
+				$links[] = array( "BLOCK" => "participant", "DATA" => array( "role" => "2", "type" => "1", "organism" => $orgID, "required" => 1 ) );
+				$links[] = array( "BLOCK" => "participant", "DATA" => array( "role" => "3", "type" => "1", "organism" => $orgID, "required" => 1 ) );
+				$links[] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "11", "required" => 1 ) );
+				$links[] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "13", "required" => 1 ) );
+				$links[] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "22", "required" => 0 ) );
 				
 				$links = $this->processCurationLinks( $links, 1 );
 			
@@ -123,12 +123,12 @@ class CurationBlocks extends lib\Blocks {
 			
 			case "participant" :
 				$link['BLOCK'] = "participant";
-				$link['DATA'] = array( "role" => "1", "type" => "1", "organism" => $orgID );
+				$link['DATA'] = array( "role" => "1", "type" => "1", "organism" => $orgID, "required" => 0 );
 				break;
 				
 			default :
 				$link['BLOCK'] = "attribute";
-				$link['DATA'] = array( "type" => $itemID );
+				$link['DATA'] = array( "type" => $itemID, "required" => 0 );
 				break;
 		}
 		
@@ -193,7 +193,9 @@ class CurationBlocks extends lib\Blocks {
 			"ID" => $options['blockid'], 
 			"TITLE" => $options['blockName'], 
 			"CONTENT" => $view, 
-			"ERRORS" => ""
+			"ERRORS" => "",
+			"REQUIRED" => $options['required'],
+			"SUBPANEL" => false
 		);
 		
 		$curationBlock = $this->processView( 'curation' . DS . 'blocks' . DS . 'Block.tpl', $params, false );
@@ -224,7 +226,8 @@ class CurationBlocks extends lib\Blocks {
 			"ID" => $options['parent'], 
 			"TITLE" => $title, 
 			"CONTENT" => $view, 
-			"ERRORS" => ""
+			"ERRORS" => "",
+			"SUBPANEL" => true
 		);
 		
 		$curationBlock = $this->processView( 'curation' . DS . 'blocks' . DS . 'Panel.tpl', $params, false );

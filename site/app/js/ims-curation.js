@@ -24,6 +24,7 @@
 	function initializeUI( ) {
 		initializeCurationTypeDropdown( );
 		initializeWorkflowLinks( );
+		initializeRemoveButtons( );
 	}
 	
 	/**
@@ -64,6 +65,27 @@
 	}
 	
 	/**
+	 * Setup remove Curation Block Links
+	 */
+	 
+	function initializeRemoveButtons( ) {
+		$("#section-curation").on( "click", ".removeBlockBtn", function( ) {
+			
+			var curationBlock = $(this).closest( '.curationBlock' );
+			var blockID = curationBlock.attr( 'id' );
+			
+			var checklistItem = $("#workflowLink-" + blockID).parent( );
+			var prevItem = checklistItem.prev( ).find( ".workflowLink" );
+			
+			clickWorkflowLink( prevItem );
+			
+			checklistItem.remove( );
+			curationBlock.remove( );
+			
+		});
+	}
+	
+	/**
 	 * Initialize the basic structure of a curation workflow and populate
 	 * the checklist for workflow navigation
 	 */
@@ -99,6 +121,7 @@
 	*/
 	
 	function clickWorkflowLink( link ) {
+		
 		$(".workflowLink").not(link).parent( ).removeClass( "active" ).find( ".curationSubmenu" ).slideUp( 'fast' );
 		
 		// Only Participants have Submenus
