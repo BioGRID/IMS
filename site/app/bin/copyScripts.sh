@@ -4,4 +4,6 @@
 mkdir -p ../www/scripts
 
 # COPY SCRIPT FILES OVER TO WEB ROOT
-cp -rf scripts/*.php ../www/scripts/
+# cp -Rf scripts/*.php ../www/scripts
+cd scripts
+find . -name '*.php' | cpio -updm ../../www/scripts

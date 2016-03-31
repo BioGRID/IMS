@@ -24,7 +24,6 @@
 	function initializeUI( ) {
 		initializeCurationTypeDropdown( );
 		initializeWorkflowLinks( );
-		initializeRemoveButtons( );
 	}
 	
 	/**
@@ -34,15 +33,20 @@
 	function initializeCurationTypeDropdown( ) {
 		
 		$("#curationType").change( function( ) {
+			
 			var baseURL = $("head base").attr( "href" );
-			var curationType = $(this).val( );
+			
+			var ajaxData = {
+				type: $(this).val( ), 
+				script: 'loadCurationChecklist'
+			};
 			
 			$.ajax({
 				
-				url: baseURL + "/scripts/LoadCurationChecklist.php",
+				url: baseURL + "/scripts/curation/Workflow.php",
 				method: "POST",
 				dataType: "html",
-				data: { type: curationType }
+				data: ajaxData
 				
 			}).done( function(data) {
 				
@@ -65,27 +69,6 @@
 	}
 	
 	/**
-	 * Setup remove Curation Block Links
-	 */
-	 
-	function initializeRemoveButtons( ) {
-		$("#section-curation").on( "click", ".removeBlockBtn", function( ) {
-			
-			var curationBlock = $(this).closest( '.curationBlock' );
-			var blockID = curationBlock.attr( 'id' );
-			
-			var checklistItem = $("#workflowLink-" + blockID).parent( );
-			var prevItem = checklistItem.prev( ).find( ".workflowLink" );
-			
-			clickWorkflowLink( prevItem );
-			
-			checklistItem.remove( );
-			curationBlock.remove( );
-			
-		});
-	}
-	
-	/**
 	 * Initialize the basic structure of a curation workflow and populate
 	 * the checklist for workflow navigation
 	 */
@@ -100,7 +83,6 @@
 		});
 		
 		setupCurationChecklist( );
-		setupParticipantAttributeLinks( );
 		setupAddChecklistItemButton( );
 		setupAddChecklistSubItemButton( );
 		
@@ -156,6 +138,7 @@
 		var curationType = $("#curationType").val( );
 		dataAttribs['curationType'] = curationType;
 		dataAttribs['blockName'] = link.html( );
+		dataAttribs['script'] = 'loadCurationBlock';
 		
 		// Hide all currently showing curation panels
 		$(".curationBlock").hide( );
@@ -174,7 +157,7 @@
 			
 			$.ajax({
 				
-				url: baseURL + "/scripts/LoadCurationBlock.php",
+				url: baseURL + "/scripts/curation/Workflow.php",
 				method: "POST",
 				dataType: "html",
 				data: dataAttribs
@@ -182,6 +165,7 @@
 			}).done( function(data) {
 				
 				$("#curationWorkflow").append(data);
+				$("#" + dataAttribs['blockid']).curationBlock( {} );
 				
 			});
 			
@@ -203,19 +187,54 @@
 			base.$el = $(el);
 			base.el = el;
 			
+			base.data = { 
+				id: base.$el.attr( "id" )
+			};
+			
+			base.components = {
+				removeBtn: base.$el.find( ".removeBlockBtn" ),
+				validateBtn: base.$el.find( ".validateBlockBtn" ),
+				checklistItem: $("#workflowLink-" + base.data.id).parent( ),
+				errorBox: base.$el.find( ".curationErrors" )
+			};
+			
+			base.components.activityIcons = base.components.checklistItem.find( ".activityIcons" );
+			base.components.errorList = base.components.errorBox.find( ".curationErrorList" )
+			
 			base.$el.data( "curationBlock", base );
 			
 			base.init = function( ) {
 				base.options = $.extend( {}, $.curationBlock.defaultOptions, options );
+				base.initRemoveBtn( );
+				base.initValidateBtn( );
 			};
 			
-			base.$el.click( function( ) {
-				
-			});
-			
-			base.clickMe = function( ) {
-				//alert( "CLICK ME" );
+			base.clickRemoveBtn = function( ) {
+				var prevItem = base.components.checklistItem.prev( ).find( ".workflowLink" );
+				clickWorkflowLink( prevItem );
+				base.components.checklistItem.remove( );
+				base.el.remove( );
 			};
+			
+			base.clickValidateBtn = function( ) {
+				base.components.activityIcons.find( ".activityIcon" ).hide( );
+				base.components.activityIcons.find( ".activityIconProcessing" ).show( );
+				base.components.errorList.val( "TEST" );
+				base.components.errorBox.show( );
+			};
+			
+			base.initRemoveBtn = function( ) {
+				base.components.removeBtn.on( "click", function( ) {
+					base.clickRemoveBtn( );
+				});
+			};
+			
+			base.initValidateBtn = function( ) {
+				base.components.validateBtn.on( "click", function( ) {
+					base.clickValidateBtn( );
+				});
+			};
+
 			
 			base.init( );
 			
@@ -229,70 +248,6 @@
 			});
 		};
 		
-	}
-	
-	/**
-	 * Setup an attribute addition popup
-	 * that lets you select a new attribute type to add
-	 */
-	 
-	function setupParticipantAttributeLinks( ) {
-			
-		var parentPanel = $(".participantAddAttribute").closest( ".curationBlock" ).attr( "id" );
-				
-		var attributePopup = $(".participantAddAttribute").qtip({
-			overwrite: false,
-			content: {
-				text: function( event, api ) {
-					var attributeForm = "<select class='form-control participantAttributeSelect'><option value='alleles'>Alleles</option><option value='notes'>Notes</option></select><button type='button' data-parent='" + parentPanel + "' class='participantAttributeSubmit btn btn-success btn-block marginTopSm'>ADD <i class='fa fa-lg fa-plus-square-o'></i></button>";
-					return attributeForm;
-				},
-				title: {
-					text: "<strong>Add Attribute</strong>",
-					button: true
-				}
-			},
-			style: {
-				classes: 'qtip-bootstrap',
-				width: '250px'
-			},
-			position: {
-				my: 'bottom center',
-				at: 'top center'
-			},
-			show: {
-				event: "click",
-				solo: true
-			},
-			hide: {
-				delay: 1000,
-				fixed: true,
-				leave: false
-			}
-		}, event);
-		
-		$("body").on( "click", ".participantAttributeSubmit", function( ) {
-				
-			var selectVal = $(this).parent( ).find( ".participantAttributeSelect" ).val( );
-			var datasetID = $("#datasetID").val( );
-			var baseURL = $("head base").attr( "href" );
-			var parentPanel = $(this).data( "parent" );
-			
-			$.ajax({
-				
-				url: baseURL + "/scripts/AppendCurationWorkflow.php",
-				method: "POST",
-				dataType: "html",
-				data: { parent: parentPanel, selected: selectVal }
-				
-			}).done( function(data) {
-				
-				$('#' + parentPanel + ' > .panel-body').append( data );
-				
-			});
-			
-		});
-	
 	}
 	
 	/**
@@ -334,11 +289,14 @@
 		
 		$("body").on( "click", "#fullAttributeSubmit", function( ) {
 				
-			var selectVal = $(this).parent( ).find( ".attributeAddSelect" ).val( );
-			var datasetID = $("#datasetID").val( );
 			var baseURL = $("head base").attr( "href" );
-			var blockCount = $("#checklistBlockCount").val( );
-			var partCount = $("#checklistPartCount").val( );
+			
+			var ajaxData = {
+				selected: $(this).parent( ).find( ".attributeAddSelect" ).val( ),
+				blockCount: $("#checklistBlockCount").val( ),
+				partCount: $("#checklistPartCount").val( ),
+				script: 'appendChecklistItem'
+			};
 			
 			// Check to see if this attribute is already in the
 			// checklist, no need to add the same attribute twice
@@ -347,7 +305,7 @@
 			var linkToShow = "";
 			$(".workflowLink").each( function( i, val ) {
 				var linkData = $(this).data( );
-				if( linkData['block'] == 'attribute' && linkData['type'] == selectVal ) {
+				if( linkData['block'] == 'attribute' && linkData['type'] == ajaxData['selected'] ) {
 					itemExists = true;
 					linkToShow = $(this);
 					return false;
@@ -361,17 +319,17 @@
 			
 				$.ajax({
 					
-					url: baseURL + "/scripts/AppendChecklistItem.php",
+					url: baseURL + "/scripts/curation/Workflow.php",
 					method: "POST",
 					dataType: "json",
-					data: { selected: selectVal, blockCount: blockCount, partCount: partCount }
+					data: ajaxData
 					
 				}).done( function(data) {
 					
 					// If it's a new Participant, append it after participants
 					// rather than to the end
 					
-					if( selectVal == "participant" ) {
+					if( ajaxData['selected'] == "participant" ) {
 						var lastPart = $("#lastParticipant").val( );
 						$("#" + lastPart).parent( ).after( data['view'] );
 						$("#lastParticipant").val( "workflowLink-block-" + data['show'] );
@@ -442,32 +400,33 @@
 		$("body").on( "click", "#subAttributeSubmit", function( ) {
 				
 			var form = $(this).parent( );
-			var selectVal = form.find( ".attributeAddSelect" ).val( );
-			var parentBlockID = form.find( ".subAttributeParent" ).val( );
-			var parentBlockName = form.find( ".subAttributeParentName" ).val( );
-			var subCount = form.find( ".subAttributeCount" ).val( );
-			var datasetID = $("#datasetID").val( );
 			var baseURL = $("head base").attr( "href" );
-			var blockCount = $("#checklistBlockCount").val( );
+			
+			var ajaxData = {
+				selected: form.find( ".attributeAddSelect" ).val( ),
+				parent: form.find( ".subAttributeParent" ).val( ),
+				parentName: form.find( ".subAttributeParentName" ).val( ),
+				subCount: form.find( ".subAttributeCount" ).val( ),
+				blockCount: $("#checklistBlockCount").val( ),
+				script: 'appendChecklistSubItem'
+			};
 		
 			$.ajax({
 				
-				url: baseURL + "/scripts/AppendChecklistSubItem.php",
+				url: baseURL + "/scripts/curation/Workflow.php",
 				method: "POST",
 				dataType: "json",
-				data: { selected: selectVal, parent: parentBlockID, parentName: parentBlockName, blockCount: blockCount, subCount: subCount }
+				data: ajaxData
 				
 			}).done( function(data) {
 				
-				console.log( data );
+				$("#workflowSubLink-" + ajaxData['parent']).parent( ).before( data['checklist'] );
+				$("#" + ajaxData['parent'] + " .curationErrors").before( data['body'] );
 				
-				$("#workflowSubLink-" + parentBlockID).parent( ).before( data['checklist'] );
-				$("#" + parentBlockID + " .curationErrors").before( data['body'] );
-				
-				$("#workflowSubLink-" + parentBlockID).data( "subcount", data['subCount'] )
+				$("#workflowSubLink-" + ajaxData['parent']).data( "subcount", data['subCount'] )
 				
 				addItemPopup.qtip( 'hide' );
-				clickWorkflowLink( $("#workflowLink-" + parentBlockID) );
+				clickWorkflowLink( $("#workflowLink-" + ajaxData['parent']) );
 				
 			});
 			

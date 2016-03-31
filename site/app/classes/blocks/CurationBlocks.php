@@ -29,7 +29,7 @@ class CurationBlocks extends lib\Blocks {
 	private $participantCount = 1;
 	private $lastParticipant = "";
 	 
-	public function __construct( $blockCount = 1, $participantCount = 1 ) {
+	public function __construct( ) {
 		parent::__construct( );
 		
 		$this->lookups = new models\Lookups( );
@@ -40,9 +40,18 @@ class CurationBlocks extends lib\Blocks {
 		$this->attributeTypes = $this->lookups->buildAttributeTypeHASH( );
 		$this->buildAttributeTypeSelectLists( );
 		
+		$this->blockCount = 1;
+		$this->participantCount = 1;
+		
+	}
+	
+	/**
+	 * Set block count and participant count
+	 */
+	 
+	public function setCounts( $blockCount, $participantCount ) {
 		$this->blockCount = $blockCount;
 		$this->participantCount = $participantCount;
-		
 	}
 	
 	/**

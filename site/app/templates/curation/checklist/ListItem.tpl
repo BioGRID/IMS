@@ -1,11 +1,19 @@
 <li>
 
-	<i class='fa fa-angle-right listIcon'></i> 
-	<i class='fa fa-square-o pull-right fa-lg activityIcon'></i><a id='workflowLink-{{ ID }}' data-blockid='{{ ID }}' class='{{ CLASS }} workflowLink' data-block='{{ BLOCK }}'
+	<i class='fa fa-angle-right listIcon'></i>
+	<div class='pull-right activityIcons'>
+		<span class='activityIcon activityIconNew'><i class='fa fa-square-o fa-lg text-primary'></i></span>
+		<span class='activityIcon activityIconError noShow'><i class='fa fa-close fa-lg text-danger'></i></span>
+		<span class='activityIcon activityIconValid noShow'><i class='fa fa-check-square-o fa-lg text-success'></i></span>
+		<span class='activityIcon activityIconProcessing noShow'><i class='fa fa-refresh fa-lg fa-spin text-warning'></i></span>
+	</div>
+	<a id='workflowLink-{{ ID }}' data-blockid='{{ ID }}' class='{{ CLASS }} workflowLink' data-block='{{ BLOCK }}'
 		{% for NAME, VALUE in DATA %}
 			data-{{ NAME }}='{{ VALUE }}' 
 		{% endfor %}
-	>{{ TITLE }}</a>
+	>
+		{{ TITLE }}
+	</a>
 	
 	<ul class='curationSubmenu'>
 		{% for ITEM in SUBMENU %}
