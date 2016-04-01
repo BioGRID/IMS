@@ -55,7 +55,7 @@ class CurationBlocks extends lib\Blocks {
 	}
 	
 	/**
-	 * Wrap each block inside a curation panel
+	 * Build out the basic interface layout for curation
 	 */
 	 
 	public function generateView( $blocks, $links ) {
@@ -68,7 +68,8 @@ class CurationBlocks extends lib\Blocks {
 			"CHECKLIST_BLOCK_COUNT" => $this->blockCount,
 			"CHECKLIST_PART_COUNT" => $this->participantCount,
 			"LAST_PARTICIPANT" => $this->lastParticipant,
-			"CHECKLIST_SUBATTRIBUTES" => $this->checklistSubAttributes
+			"CHECKLIST_SUBATTRIBUTES" => $this->checklistSubAttributes,
+			"CURATION_CODE" => uniqid( )
 		);
 		
 		$view = $this->processView( 'curation' . DS . 'main' . DS . 'Interface.tpl', $params, false );

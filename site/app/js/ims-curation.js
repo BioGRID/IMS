@@ -219,8 +219,36 @@
 			base.clickValidateBtn = function( ) {
 				base.components.activityIcons.find( ".activityIcon" ).hide( );
 				base.components.activityIcons.find( ".activityIconProcessing" ).show( );
-				base.components.errorList.val( "TEST" );
-				base.components.errorBox.show( );
+				// base.components.errorList.val( "TEST" );
+				// base.components.errorBox.show( );
+				
+				$.ajax({
+					
+					url: baseURL + "/scripts/curation/Validate.php",
+					method: "POST",
+					dataType: "json",
+					data: ajaxData
+					
+				}).done( function(data) {
+					
+					// If it's a new Participant, append it after participants
+					// rather than to the end
+					
+					if( ajaxData['selected'] == "participant" ) {
+						var lastPart = $("#lastParticipant").val( );
+						$("#" + lastPart).parent( ).after( data['view'] );
+						$("#lastParticipant").val( "workflowLink-block-" + data['show'] );
+					} else {
+						$('#curationChecklist').append( data['view'] );
+					}
+					
+					$("#checklistBlockCount").val( data['blockCount'] );
+					$("#checklistPartCount").val( data['partCount'] );
+					addItemPopup.qtip( 'hide' );
+					clickWorkflowLink( $("#workflowLink-block-" + data['show']) );
+					
+				});
+				
 			};
 			
 			base.initRemoveBtn = function( ) {
