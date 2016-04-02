@@ -187,8 +187,12 @@
 			base.$el = $(el);
 			base.el = el;
 			
+			var timer;
+			
 			base.data = { 
-				id: base.$el.attr( "id" )
+				id: base.$el.attr( "id" ),
+				type: base.$el.data( "type" ),
+				baseURL: $("head base").attr( "href" )
 			};
 			
 			base.components = {
@@ -201,12 +205,22 @@
 			base.components.activityIcons = base.components.checklistItem.find( ".activityIcons" );
 			base.components.errorList = base.components.errorBox.find( ".curationErrorList" )
 			
+			base.$el.data( "status", "NEW" );
 			base.$el.data( "curationBlock", base );
 			
 			base.init = function( ) {
 				base.options = $.extend( {}, $.curationBlock.defaultOptions, options );
 				base.initRemoveBtn( );
 				base.initValidateBtn( );
+				
+				base.$el.on( "change", "select.changeField", function( ) {
+					base.setStatus( "NEW" );
+				});
+				
+				base.$el.on( "input", "textarea.changeField, input.changeField", function( ) {
+					clearTimeout( timer );
+					timer = setTimeout( function( ) { base.setStatus( "NEW" ); }, base.options.validateDelay );
+				});
 			};
 			
 			base.clickRemoveBtn = function( ) {
@@ -216,36 +230,43 @@
 				base.el.remove( );
 			};
 			
-			base.clickValidateBtn = function( ) {
+			base.setStatus = function( status ) {
+				status = status.toUpperCase( );
 				base.components.activityIcons.find( ".activityIcon" ).hide( );
-				base.components.activityIcons.find( ".activityIconProcessing" ).show( );
+				base.components.activityIcons.find( ".activityIcon" + status ).show( );
+				base.$el.data( "status", status );
+			};
+			
+			base.clickValidateBtn = function( ) {
+				
+				base.setStatus( "PROCESSING" );
 				// base.components.errorList.val( "TEST" );
 				// base.components.errorBox.show( );
 				
+				var ajaxData = $("#" + base.data.id + " :input").serialize( );
+				ajaxData['curationCode'] = $("#curationCode").val( );
+				ajaxData['id'] = base.data.id;
+				ajaxData['type'] = base.data.type;
+					
 				$.ajax({
 					
-					url: baseURL + "/scripts/curation/Validate.php",
+					url: base.data.baseURL + "/scripts/curation/Validate.php",
 					method: "POST",
 					dataType: "json",
 					data: ajaxData
 					
 				}).done( function(data) {
 					
-					// If it's a new Participant, append it after participants
-					// rather than to the end
-					
-					if( ajaxData['selected'] == "participant" ) {
-						var lastPart = $("#lastParticipant").val( );
-						$("#" + lastPart).parent( ).after( data['view'] );
-						$("#lastParticipant").val( "workflowLink-block-" + data['show'] );
+					if( data['status'] == "ERROR" ) {
+						base.setStatus( "ERROR" );
+						// Show Errors
+					} else if( data['status'] == "WARNING" ) {
+						base.setStatus( "WARNING" );
+						// Show Warnings
 					} else {
-						$('#curationChecklist').append( data['view'] );
+						base.setStatus( "VALID" );
+						// Hide Errors
 					}
-					
-					$("#checklistBlockCount").val( data['blockCount'] );
-					$("#checklistPartCount").val( data['partCount'] );
-					addItemPopup.qtip( 'hide' );
-					clickWorkflowLink( $("#workflowLink-block-" + data['show']) );
 					
 				});
 				
@@ -268,7 +289,9 @@
 			
 		};
 		
-		$.curationBlock.defaultOptions = { };
+		$.curationBlock.defaultOptions = { 
+			validateDelay: 1200
+		};
 		
 		$.fn.curationBlock = function( options ) {
 			return this.each( function( ) {

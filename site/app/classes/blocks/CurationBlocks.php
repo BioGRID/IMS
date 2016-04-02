@@ -178,6 +178,7 @@ class CurationBlocks extends lib\Blocks {
 	public function fetchCurationBlock( $options ) {
 	
 		$view = "";
+		$type = "";
 	
 		switch( strtolower($options['block']) ) {
 			
@@ -205,7 +206,8 @@ class CurationBlocks extends lib\Blocks {
 			"CONTENT" => $view, 
 			"ERRORS" => "",
 			"REQUIRED" => $options['required'],
-			"SUBPANEL" => false
+			"SUBPANEL" => false,
+			"TYPE" => $options['block']
 		);
 		
 		$curationBlock = $this->processView( 'curation' . DS . 'blocks' . DS . 'Block.tpl', $params, false );
