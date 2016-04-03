@@ -10,11 +10,11 @@ header( "Cache-control: private" );
 
 require_once __DIR__ . '/../../../app/lib/Bootstrap.php';
 
-use IMS\app\classes\blocks;
+use IMS\app\classes\models;
 
 if( isset( $_POST['script'] ) ) {
 	
-	$curationBlocks = new blocks\CurationBlocks( );
+	$curationBlocks = new models\CurationBlocks( );
 	
 	switch( $_POST['script'] ) {
 	

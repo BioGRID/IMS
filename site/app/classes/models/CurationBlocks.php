@@ -1,7 +1,7 @@
 <?php
 
 
-namespace IMS\app\classes\blocks;
+namespace IMS\app\classes\models;
 
 /**
  * Curation Blocks
