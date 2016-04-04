@@ -8,7 +8,7 @@
 			<button class='btn btn-success btn-sm validateBlockBtn'>Validate <i class='fa fa-lg fa-refresh'></i></button>
 		</div>
 		{% endif %}
-		{{ TITLE }} 
+		{{ TITLE }}
 	</div>
 	<div class='panel-body'>
 	

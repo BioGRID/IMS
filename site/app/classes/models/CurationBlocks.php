@@ -33,7 +33,7 @@ class CurationBlocks extends lib\Blocks {
 		parent::__construct( );
 		
 		$this->lookups = new models\Lookups( );
-		$this->partTypes = $this->lookups->buildParticipantTypesHash( );
+		$this->partTypes = $this->lookups->buildParticipantTypesHash( false );
 		$this->partRoles = $this->lookups->buildParticipantRoleHash( );
 		$this->orgNames = $this->lookups->buildOrganismNameHash( );
 		$this->idTypes = $this->lookups->buildIDTypeHash( );
@@ -202,7 +202,7 @@ class CurationBlocks extends lib\Blocks {
 		
 		$params = array( 
 			"ID" => $options['blockid'], 
-			"TITLE" => $options['blockName'], 
+			"TITLE" => trim($options['blockName']), 
 			"CONTENT" => $view, 
 			"ERRORS" => "",
 			"REQUIRED" => $options['required'],

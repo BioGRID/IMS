@@ -192,6 +192,7 @@
 			base.data = { 
 				id: base.$el.attr( "id" ),
 				type: base.$el.data( "type" ),
+				name: base.$el.data( "name" ),
 				baseURL: $("head base").attr( "href" )
 			};
 			
@@ -247,6 +248,7 @@
 				ajaxData['curationCode'] = $("#curationCode").val( );
 				ajaxData['id'] = base.data.id;
 				ajaxData['type'] = base.data.type;
+				ajaxData['name'] = base.data.name;
 					
 				$.ajax({
 					

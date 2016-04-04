@@ -1,4 +1,4 @@
-<div class='curationBlock' id='{{ ID }}' data-type='{{ TYPE }}'>
+<div class='curationBlock' id='{{ ID }}' data-type='{{ TYPE }}' data-name='{{ TITLE }}'>
 
 	{% include 'curation/blocks/Panel.tpl' %}
 	
