@@ -4,7 +4,7 @@
 	
 	<div class='curationErrors marginTopSm col-lg-12'>
 		<h3>Errors</h3>
-		<textarea class="form-control curationErrorList" rows="5">{{ ERRORS|raw }}</textarea>
+		<div class="curationErrorList">{{ ERRORS|raw }}</div>
 	</div>
 	
 </div>

@@ -1,4 +1,4 @@
-<?php
+<?php	
 
 
 namespace IMS\app\classes\models;
@@ -22,6 +22,9 @@ class CurationValidation {
 		$this->db = new PDO( DB_CONNECT, DB_USER, DB_PASS );
 		$this->db->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
 		
+		$loader = new \Twig_Loader_Filesystem( TEMPLATE_PATH );
+		$this->twig = new \Twig_Environment( $loader );
+		
 		$this->blockName = $blockName;
 	}
 	
@@ -34,6 +37,7 @@ class CurationValidation {
 		
 		$messages = array( );
 		$identifiers = trim( $identifiers );
+		$mapping = array( );
 		
 		if( $isRequired && strlen( $identifiers ) <= 0 ) {
 			$status = "ERROR";
@@ -41,15 +45,82 @@ class CurationValidation {
 		} else if( !$isRequired && strlen( $identifiers ) <= 0 ) {
 			$status = "VALID";
 		} else {
+			
 			$identifiers = explode( PHP_EOL, $identifiers );
 			$uniqueIdentifiers = array_unique( $identifiers );
 			
+			$annotationSet = array( );
 			foreach( $uniqueIdentifiers as $identifier ) {
-				$identifier = trim( filter_var( $str, FILTER_SANITIZE_STRING ));
-				$annotationInfo = $this->fetchMatchingAnnotation( $identifier, $type, $taxa, $idType );
+				$identifier = strtoupper( trim( filter_var( $identifier, FILTER_SANITIZE_STRING )));
+				
+				if( !isset( $annotationSet[$identifier] )) {
+					$annotationInfo = $this->fetchMatchingIdentifiers( $identifier, $type, $taxa, $idType );
+					$annotationSet[$identifier] = $annotationInfo;
+				}
+				
 			}
+			
+			$lineCount = 1;
+			$errorList = array( );
+			$warningList = array( );
+			foreach( $identifiers as $identifier ) {
+				$identifier = strtoupper( trim( filter_var( $identifier, FILTER_SANITIZE_STRING )));
+				
+				$annotation = $annotationSet[$identifier];
+				
+				if( !isset( $mapping ) ) {
+					$mapping[$identifier] = "UNKNOWN";
+				}
+				
+				if( sizeof( $annotation ) <= 0 ) {
+					
+					// UNKNOWN
+					if( !isset( $warningList[$identifier] ) ) {
+						$warningList[$identifier] = array( );
+					}
+					
+					$warningList[$identifier][] = $lineCount;
+					
+				} else if( sizeof( $annotation ) > 1 ) {
+					
+					// AMBIGUOUS
+					if( !isset( $errorList[$identifier] ) ) {
+						$errorList[$identifier] = array( );
+					}
+					
+					$errorList[$identifier][] = $lineCount;
+					$mapping[$identifier] = "AMBIGUOUS";
+					
+				} else {
+					// VALID MAPPING
+					$mapping[$identifier] = $annotation[0]['gene_id'];
+					
+				}
+				
+				$lineCount++;
+			}
+			
+			foreach( $warningList as $identifier => $lines ) {
+				$messages[] = $this->generateError( "UNKNOWN", array( "identifier" => $identifier, "lines" => $lines ) );
+			}
+			
+			foreach( $errorList as $identifier => $lines ) {
+				$messages[] = $this->generateError( "AMBIGUOUS", array( "identifier" => $identifier, "lines" => $lines, "options" => $annotationSet[$identifier] ) );
+			}
+			
+			if( sizeof( $errorList ) > 0 ) {
+				$status = "ERROR";
+			} else if( sizeof( $warningList ) > 0 ) {
+				$status = "WARNING";
+			} else {
+				$status = "VALID";
+			}
+			
+			$errors = $this->twig->render( 'curation' . DS . 'error' . DS . 'CurationError.tpl', array( "ERRORS" => $messages ) );
+			
+		}
 		
-		return array( "STATUS" => $status, "MESSAGES" => $messages );
+		return array( "STATUS" => $status, "ERRORS" => $errors );
 		
 	}
 	
@@ -67,16 +138,18 @@ class CurationValidation {
 			$idTypeQuery = $this->fetchIDTypeQuery( $idType );
 			
 			$stmt = $this->db->prepare( "SELECT gene_id FROM " . DB_QUICK . ".quick_identifiers WHERE quick_identifier_value=? AND organism_id=? " . $idTypeQuery . " GROUP BY gene_id" );
+			
 			$stmt->execute( array( $identifier, $taxa ) );
 			
-			$datasetTypes = array( );
+			$geneIDs = array( );
 			while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
-				$datasetTypes[$row->dataset_type_id] = $row->dataset_type_name;
+				$geneIDs[] = $row->geneID;
 			}
+			
+			return $this->fetchMatchingAnnotation( $geneIDs, $type );
 			
 		}
 		
-		return $datasetTypes;
 		
 	}
 	
@@ -95,7 +168,7 @@ class CurationValidation {
 			$stmt = $this->db->prepare( "SELECT gene_id, systematic_name, official_symbol, aliases, organism_id, organism_official_name, organism_abbreviation, organism_strain FROM " . DB_QUICK . ".quick_annotation WHERE gene_id IN ( " . $params . " )" );
 			$stmt->execute( $geneIDs );
 
-			while( $row = stmt->fetch( PDO::FETCH_OBJ ) ) {
+			while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
 				
 				$annotation = array( );
 				$annotation['gene_id'] = $row->gene_id;
@@ -158,12 +231,18 @@ class CurationValidation {
 	 * based on the type of error
 	 */
 	 
-	private function generateError( $errorType ) {
+	private function generateError( $errorType, $details = array( ) ) {
 	
 		switch( strtoupper( $errorType ) ) {
 			
 			case "REQUIRED" :
-				return $this->blockName . " is a required field. It will not validate while no data has been entered in the provided fields.";
+				return array( "class" => "danger", "message" => $this->blockName . " is a required field. It will not validate while no data has been entered in the provided fields." );
+				
+			case "AMBIGUOUS" :
+				return array( "class" => "danger", "message" => "The identifier " . $details['identifier'] . " is AMBIGUOUS on lines " . implode( ", ", $details['lines'] ) . ". Options available are: A,B,C" );
+				
+			case "UNKNOWN" :
+				return array( "class" => "warning", "message" => "The identifier " . $details['identifier'] . " is UNKNOWN on lines " . implode( ", ", $details['lines'] ) . ". If you believe it to not be a mistake, you can leave it and it will be added as an unknown participant. Alternatively, if you have a correction, enter it here to replace all occurrences above: " );
 
 			default:
 				return "An unknown error has occurred.";

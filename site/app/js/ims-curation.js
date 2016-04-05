@@ -241,33 +241,40 @@
 			base.clickValidateBtn = function( ) {
 				
 				base.setStatus( "PROCESSING" );
-				// base.components.errorList.val( "TEST" );
-				// base.components.errorBox.show( );
 				
-				var ajaxData = $("#" + base.data.id + " :input").serialize( );
-				ajaxData['curationCode'] = $("#curationCode").val( );
-				ajaxData['id'] = base.data.id;
-				ajaxData['type'] = base.data.type;
-				ajaxData['name'] = base.data.name;
+				var ajaxData = $("#" + base.data.id + " :input").serializeArray( );
+				ajaxData.push({name: 'curationCode', value: $("#curationCode").val( )});
+				ajaxData.push({name: 'id', value: base.data.id});
+				ajaxData.push({name: 'type', value: base.data.type});
+				ajaxData.push({name: 'name', value: base.data.name});
+				
+				console.log( ajaxData );
 					
 				$.ajax({
 					
 					url: base.data.baseURL + "/scripts/curation/Validate.php",
 					method: "POST",
-					dataType: "json",
-					data: ajaxData
+					dataType: "html",
+					data: ajaxData,
+					beforeSend: function( ) {
+						base.components.errorList.html( "" );
+					}
 					
 				}).done( function(data) {
 					
-					if( data['status'] == "ERROR" ) {
+					console.log( data );
+					
+					if( data['STATUS'] == "ERROR" ) {
 						base.setStatus( "ERROR" );
-						// Show Errors
-					} else if( data['status'] == "WARNING" ) {
+						base.components.errorList.html( data['ERRORS'] );
+						base.components.errorBox.show( );
+					} else if( data['STATUS'] == "WARNING" ) {
 						base.setStatus( "WARNING" );
-						// Show Warnings
+						base.components.errorList.html( data['ERRORS'] );
+						base.components.errorBox.show( );
 					} else {
 						base.setStatus( "VALID" );
-						// Hide Errors
+						base.components.errorBox.hide( );
 					}
 					
 				});
