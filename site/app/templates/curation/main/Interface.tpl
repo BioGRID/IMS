@@ -19,6 +19,8 @@
 	
 	<div id='curationHidden'>
 	
+		<input type='hidden' id='curationCode' value='{{ CURATION_CODE }}' />
+	
 		<div id='fullAttributeHTML'>
 			<select class='form-control attributeAddSelect' id='fullAttributeSelect'>
 				<optgroup label='Participants'>

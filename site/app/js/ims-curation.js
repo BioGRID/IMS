@@ -187,8 +187,14 @@
 			base.$el = $(el);
 			base.el = el;
 			
+			var timer;
+			
 			base.data = { 
-				id: base.$el.attr( "id" )
+				id: base.$el.attr( "id" ),
+				type: base.$el.data( "type" ),
+				name: base.$el.data( "name" ),
+				required: base.$el.data( "required" ),
+				baseURL: $("head base").attr( "href" )
 			};
 			
 			base.components = {
@@ -201,12 +207,22 @@
 			base.components.activityIcons = base.components.checklistItem.find( ".activityIcons" );
 			base.components.errorList = base.components.errorBox.find( ".curationErrorList" )
 			
+			base.$el.data( "status", "NEW" );
 			base.$el.data( "curationBlock", base );
 			
 			base.init = function( ) {
 				base.options = $.extend( {}, $.curationBlock.defaultOptions, options );
 				base.initRemoveBtn( );
 				base.initValidateBtn( );
+				
+				base.$el.on( "change", "select.changeField", function( ) {
+					base.setStatus( "NEW" );
+				});
+				
+				base.$el.on( "input", "textarea.changeField, input.changeField", function( ) {
+					clearTimeout( timer );
+					timer = setTimeout( function( ) { base.setStatus( "NEW" ); }, base.options.validateDelay );
+				});
 			};
 			
 			base.clickRemoveBtn = function( ) {
@@ -216,11 +232,58 @@
 				base.el.remove( );
 			};
 			
-			base.clickValidateBtn = function( ) {
+			base.setStatus = function( status ) {
+				status = status.toUpperCase( );
 				base.components.activityIcons.find( ".activityIcon" ).hide( );
-				base.components.activityIcons.find( ".activityIconProcessing" ).show( );
-				base.components.errorList.val( "TEST" );
-				base.components.errorBox.show( );
+				base.components.activityIcons.find( ".activityIcon" + status ).show( );
+				base.$el.data( "status", status );
+			};
+			
+			base.clickValidateBtn = function( ) {
+				
+				base.setStatus( "PROCESSING" );
+				
+				var ajaxData = $("#" + base.data.id + " :input").serializeArray( );
+				ajaxData.push({name: 'curationCode', value: $("#curationCode").val( )});
+				ajaxData.push({name: 'id', value: base.data.id});
+				ajaxData.push({name: 'type', value: base.data.type});
+				ajaxData.push({name: 'name', value: base.data.name});
+				ajaxData.push({name: 'required', value: base.data.required});
+				
+				console.log( ajaxData );
+					
+				$.ajax({
+					
+					url: base.data.baseURL + "/scripts/curation/Validate.php",
+					method: "POST",
+					dataType: "json",
+					data: ajaxData,
+					beforeSend: function( ) {
+						base.components.errorList.html( "" );
+						base.components.errorBox.hide( );
+					}
+					
+				}).done( function(data) {
+					
+					console.log( data );
+					
+					if( data['STATUS'] == "ERROR" ) {
+						base.setStatus( "ERROR" );
+						base.components.errorList.html( data['ERRORS'] );
+						base.components.errorBox.show( );
+					} else if( data['STATUS'] == "WARNING" ) {
+						base.setStatus( "WARNING" );
+						base.components.errorList.html( data['ERRORS'] );
+						base.components.errorBox.show( );
+					} else {
+						base.setStatus( "VALID" );
+						base.components.errorBox.hide( );
+					}
+					
+				}).fail( function( jqXHR, textStatus ) {
+					console.log( textStatus );
+				});
+				
 			};
 			
 			base.initRemoveBtn = function( ) {
@@ -240,7 +303,9 @@
 			
 		};
 		
-		$.curationBlock.defaultOptions = { };
+		$.curationBlock.defaultOptions = { 
+			validateDelay: 1200
+		};
 		
 		$.fn.curationBlock = function( options ) {
 			return this.each( function( ) {

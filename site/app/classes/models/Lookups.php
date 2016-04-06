@@ -154,13 +154,17 @@ class Lookups {
 	 * when fetching datasets in bulk
 	 */
 	 
-	public function buildParticipantTypesHash( ) {
+	public function buildParticipantTypesHash( $includeUnknown = false ) {
 		
 		$mappingHash = array( );
 		$stmt = $this->db->prepare( "SELECT participant_type_id, participant_type_name FROM " . DB_IMS . ".participant_types" );
 		$stmt->execute( );
 		
 		while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			if( strtolower( $row->participant_type_name ) == "unknown" && !$includeUnknown ) {
+				continue;
+			}
+			
 			$mappingHash[$row->participant_type_id] = $row->participant_type_name;
 		}
 
@@ -192,7 +196,7 @@ class Lookups {
 	 * when fetching datasets in bulk
 	 */
 	 
-	public function buildParticipantTypeMappingHash( ) {
+	public function buildParticipantTypeMappingHash( $includeUnknown = true ) {
 		
 		$mappingHash = array( );
 		$stmt = $this->db->prepare( "SELECT participant_id, participant_type_id FROM " . DB_IMS . ".participants" );

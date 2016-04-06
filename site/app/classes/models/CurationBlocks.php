@@ -1,7 +1,7 @@
 <?php
 
 
-namespace IMS\app\classes\blocks;
+namespace IMS\app\classes\models;
 
 /**
  * Curation Blocks
@@ -33,7 +33,7 @@ class CurationBlocks extends lib\Blocks {
 		parent::__construct( );
 		
 		$this->lookups = new models\Lookups( );
-		$this->partTypes = $this->lookups->buildParticipantTypesHash( );
+		$this->partTypes = $this->lookups->buildParticipantTypesHash( false );
 		$this->partRoles = $this->lookups->buildParticipantRoleHash( );
 		$this->orgNames = $this->lookups->buildOrganismNameHash( );
 		$this->idTypes = $this->lookups->buildIDTypeHash( );
@@ -55,7 +55,7 @@ class CurationBlocks extends lib\Blocks {
 	}
 	
 	/**
-	 * Wrap each block inside a curation panel
+	 * Build out the basic interface layout for curation
 	 */
 	 
 	public function generateView( $blocks, $links ) {
@@ -68,7 +68,8 @@ class CurationBlocks extends lib\Blocks {
 			"CHECKLIST_BLOCK_COUNT" => $this->blockCount,
 			"CHECKLIST_PART_COUNT" => $this->participantCount,
 			"LAST_PARTICIPANT" => $this->lastParticipant,
-			"CHECKLIST_SUBATTRIBUTES" => $this->checklistSubAttributes
+			"CHECKLIST_SUBATTRIBUTES" => $this->checklistSubAttributes,
+			"CURATION_CODE" => uniqid( )
 		);
 		
 		$view = $this->processView( 'curation' . DS . 'main' . DS . 'Interface.tpl', $params, false );
@@ -177,6 +178,7 @@ class CurationBlocks extends lib\Blocks {
 	public function fetchCurationBlock( $options ) {
 	
 		$view = "";
+		$type = "";
 	
 		switch( strtolower($options['block']) ) {
 			
@@ -200,11 +202,12 @@ class CurationBlocks extends lib\Blocks {
 		
 		$params = array( 
 			"ID" => $options['blockid'], 
-			"TITLE" => $options['blockName'], 
+			"TITLE" => trim($options['blockName']), 
 			"CONTENT" => $view, 
 			"ERRORS" => "",
 			"REQUIRED" => $options['required'],
-			"SUBPANEL" => false
+			"SUBPANEL" => false,
+			"TYPE" => $options['block']
 		);
 		
 		$curationBlock = $this->processView( 'curation' . DS . 'blocks' . DS . 'Block.tpl', $params, false );
