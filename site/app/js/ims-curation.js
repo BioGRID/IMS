@@ -193,6 +193,7 @@
 				id: base.$el.attr( "id" ),
 				type: base.$el.data( "type" ),
 				name: base.$el.data( "name" ),
+				required: base.$el.data( "required" ),
 				baseURL: $("head base").attr( "href" )
 			};
 			
@@ -247,6 +248,7 @@
 				ajaxData.push({name: 'id', value: base.data.id});
 				ajaxData.push({name: 'type', value: base.data.type});
 				ajaxData.push({name: 'name', value: base.data.name});
+				ajaxData.push({name: 'required', value: base.data.required});
 				
 				console.log( ajaxData );
 					
@@ -254,10 +256,11 @@
 					
 					url: base.data.baseURL + "/scripts/curation/Validate.php",
 					method: "POST",
-					dataType: "html",
+					dataType: "json",
 					data: ajaxData,
 					beforeSend: function( ) {
 						base.components.errorList.html( "" );
+						base.components.errorBox.hide( );
 					}
 					
 				}).done( function(data) {
@@ -277,6 +280,8 @@
 						base.components.errorBox.hide( );
 					}
 					
+				}).fail( function( jqXHR, textStatus ) {
+					console.log( textStatus );
 				});
 				
 			};

@@ -93,7 +93,8 @@ class CurationValidation {
 					
 				} else {
 					// VALID MAPPING
-					$mapping[$identifier] = $annotation[0]['gene_id'];
+					$annotationDetails = current( $annotation );
+					$mapping[$identifier] = $annotationDetails['gene_id'];
 					
 				}
 				
@@ -116,10 +117,9 @@ class CurationValidation {
 				$status = "VALID";
 			}
 			
-			$errors = $this->twig->render( 'curation' . DS . 'error' . DS . 'CurationError.tpl', array( "ERRORS" => $messages ) );
-			
 		}
 		
+		$errors = $this->twig->render( 'curation' . DS . 'error' . DS . 'CurationError.tpl', array( "ERRORS" => $messages ) );
 		return array( "STATUS" => $status, "ERRORS" => $errors );
 		
 	}
@@ -131,25 +131,27 @@ class CurationValidation {
 	 
 	private function fetchMatchingIdentifiers( $identifier, $type, $taxa, $idType ) {
 		
-		$type = strtolower( $type );
-		
-		if( $type == "gene" ) {
+		switch( $type ) {
 			
-			$idTypeQuery = $this->fetchIDTypeQuery( $idType );
-			
-			$stmt = $this->db->prepare( "SELECT gene_id FROM " . DB_QUICK . ".quick_identifiers WHERE quick_identifier_value=? AND organism_id=? " . $idTypeQuery . " GROUP BY gene_id" );
-			
-			$stmt->execute( array( $identifier, $taxa ) );
-			
-			$geneIDs = array( );
-			while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
-				$geneIDs[] = $row->geneID;
-			}
-			
-			return $this->fetchMatchingAnnotation( $geneIDs, $type );
+			case "1" : // Gene
+				$idTypeQuery = $this->fetchIDTypeQuery( $idType );
+				
+				$stmt = $this->db->prepare( "SELECT gene_id FROM " . DB_QUICK . ".quick_identifiers WHERE quick_identifier_value=? AND organism_id=? " . $idTypeQuery . " GROUP BY gene_id" );
+				
+				$stmt->execute( array( $identifier, $taxa ) );
+				
+				$geneIDs = array( );
+				while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+					$geneIDs[] = $row->gene_id;
+				}
+				
+				if( sizeof( $geneIDs ) <= 0 ) {
+					return array( );
+				}
+				
+				return $this->fetchMatchingAnnotation( $geneIDs, $type );
 			
 		}
-		
 		
 	}
 	
@@ -160,42 +162,45 @@ class CurationValidation {
 	private function fetchMatchingAnnotation( $geneIDs, $type ) {
 		
 		$matchingAnnotation = array( );
-		$type = strtolower( $type );
 		
-		if( $type == "gene" ) {
+		switch( $type ) {
 			
-			$params = str_repeat( "?", sizeof( $geneIDs ) );
-			$stmt = $this->db->prepare( "SELECT gene_id, systematic_name, official_symbol, aliases, organism_id, organism_official_name, organism_abbreviation, organism_strain FROM " . DB_QUICK . ".quick_annotation WHERE gene_id IN ( " . $params . " )" );
-			$stmt->execute( $geneIDs );
+			case "1" : // Gene
+			
+				$params = implode( ",", array_fill( 0, sizeof( $geneIDs ), "?" ));
+				$stmt = $this->db->prepare( "SELECT gene_id, systematic_name, official_symbol, aliases, organism_id, organism_official_name, organism_abbreviation, organism_strain FROM " . DB_QUICK . ".quick_annotation WHERE gene_id IN ( " . $params . " )" );
+				$stmt->execute( $geneIDs );
 
-			while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
-				
-				$annotation = array( );
-				$annotation['gene_id'] = $row->gene_id;
-				
-				if( $row->aliases != "-" ) {
-					$annotation['aliases'] = explode( "|", $row->aliases );
+				while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+					
+					$annotation = array( );
+					$annotation['gene_id'] = $row->gene_id;
+					
+					if( $row->aliases != "-" ) {
+						$annotation['aliases'] = explode( "|", $row->aliases );
+					}
+					
+					$annotation['primary_name'] = $row->official_symbol;
+					$annotation['aliases'][] = $annotation['primary_name'];
+					
+					if( $row->systematic_name != "-" ) {
+						$annotation['systematic_name'] = $row->systematic_name;
+						$annotation['aliases'][] = $row->systematic_name;
+					}
+					
+					$annotation['organism_id'] = $row->organism_id;
+					$annotation['organism_official_name'] = $row->organism_official_name;
+					$annotation['organism_abbreviation'] = $row->organism_abbreviation;
+					
+					if( $row->organism_strain != "-" ) {
+						$annotation['organism_abbreviation'] .= " (" . $row->organism_strain . ")";
+						$annotation['organism_strain'] = $row->organism_strain;
+					}
+					
+					$matchingAnnotation[$row->gene_id] = $annotation;
 				}
 				
-				$annotation['primary_name'] = $row->official_symbol;
-				$annotation['aliases'][] = $annotation['primary_name'];
-				
-				if( $row->systematic_name != "-" ) {
-					$annotation['systematic_name'] = $row->systematic_name;
-					$annotation['aliases'][] = $row->systematic_name;
-				}
-				
-				$annotation['organism_id'] = $row->organism_id;
-				$annotation['organism_official_name'] = $row->organism_official_name;
-				$annotation['organism_abbreviation'] = $row->organism_abbreviation;
-				
-				if( $row->organism_strain != "-" ) {
-					$annotation['organism_abbreviation'] .= " (" . $row->organism_strain . ")";
-					$annotation['organism_strain'] = $row->organism_strain;
-				}
-				
-				$matchingAnnotation[$row->gene_id] = $annotation;
-			}
+				break;
 			
 		}
 		
