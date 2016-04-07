@@ -69,7 +69,7 @@ class CurationBlocks extends lib\Blocks {
 			"CHECKLIST_PART_COUNT" => $this->participantCount,
 			"LAST_PARTICIPANT" => $this->lastParticipant,
 			"CHECKLIST_SUBATTRIBUTES" => $this->checklistSubAttributes,
-			"CURATION_CODE" => uniqid( )
+			"CURATION_CODE" => uniqid( ) //"5705f2c3758bb"
 		);
 		
 		$view = $this->processView( 'curation' . DS . 'main' . DS . 'Interface.tpl', $params, false );

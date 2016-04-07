@@ -33,12 +33,15 @@ class CurationValidation {
 	 * attempt to map each one to a database identifier based on the string text
 	 */
 	
-	public function validateIdentifiers( $identifiers, $role, $type, $taxa, $idType, $isRequired = false ) {
+	public function validateIdentifiers( $identifiers, $role, $type, $taxa, $idType, $curationCode, $block, $isRequired = false ) {
 		
 		$messages = array( );
 		$identifiers = trim( $identifiers );
-		$mapping = array( );
 		
+		$mapping = array( );
+		$annotationSet = $this->fetchCurationEntry( $curationCode, $block, "participant_annotation", 0 );
+		
+		$counts = array( "VALID" => 0, "AMBIGUOUS" => 0, "UNKNOWN" => 0 );
 		if( $isRequired && strlen( $identifiers ) <= 0 ) {
 			$status = "ERROR";
 			$messages[] = $this->generateError( "REQUIRED" );
@@ -49,7 +52,6 @@ class CurationValidation {
 			$identifiers = explode( PHP_EOL, $identifiers );
 			$uniqueIdentifiers = array_unique( $identifiers );
 			
-			$annotationSet = array( );
 			foreach( $uniqueIdentifiers as $identifier ) {
 				$identifier = strtoupper( trim( filter_var( $identifier, FILTER_SANITIZE_STRING )));
 				
@@ -80,6 +82,7 @@ class CurationValidation {
 					}
 					
 					$warningList[$identifier][] = $lineCount;
+					$counts["UNKNOWN"]++;
 					
 				} else if( sizeof( $annotation ) > 1 ) {
 					
@@ -90,23 +93,24 @@ class CurationValidation {
 					
 					$errorList[$identifier][] = $lineCount;
 					$mapping[$identifier] = "AMBIGUOUS";
+					$counts["AMBIGUOUS"]++;
 					
 				} else {
 					// VALID MAPPING
 					$annotationDetails = current( $annotation );
 					$mapping[$identifier] = $annotationDetails['gene_id'];
-					
+					$counts["VALID"]++;
 				}
 				
 				$lineCount++;
 			}
 			
-			foreach( $warningList as $identifier => $lines ) {
-				$messages[] = $this->generateError( "UNKNOWN", array( "identifier" => $identifier, "lines" => $lines ) );
-			}
-			
 			foreach( $errorList as $identifier => $lines ) {
 				$messages[] = $this->generateError( "AMBIGUOUS", array( "identifier" => $identifier, "lines" => $lines, "options" => $annotationSet[$identifier] ) );
+			}
+			
+			foreach( $warningList as $identifier => $lines ) {
+				$messages[] = $this->generateError( "UNKNOWN", array( "identifier" => $identifier, "lines" => $lines ) );
 			}
 			
 			if( sizeof( $errorList ) > 0 ) {
@@ -119,8 +123,53 @@ class CurationValidation {
 			
 		}
 		
-		$errors = $this->twig->render( 'curation' . DS . 'error' . DS . 'CurationError.tpl', array( "ERRORS" => $messages ) );
-		return array( "STATUS" => $status, "ERRORS" => $errors );
+		$errors = $this->processErrors( $messages );
+		
+		// Update Curation Database Entries
+		$this->updateCurationEntries( $curationCode, $status, $block, $mapping, "participant", 0 );
+		$this->updateCurationEntries( $curationCode, "NEW", $block, $annotationSet, "participant_annotation", 0 );
+		
+		return array( "STATUS" => $status, "ERRORS" => $errors, "COUNTS" => $counts );
+		
+	}
+	
+	/**
+	 * Add entries to the curation table based on passed in parameters
+	 * and the format of the table
+	 */
+	 
+	private function updateCurationEntries( $code, $status, $block, $data, $type, $index ) {
+		
+		$stmt = $this->db->prepare( "SELECT curation_id FROM " . DB_IMS . ".curation WHERE curation_code=? AND curation_block=? AND curation_type=? AND curation_index=? LIMIT 1" );
+		
+		$stmt->execute( array( $code, $block, $type, $index ) );
+		if( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			// PERFORM UPDATE INSTEAD OF INSERT
+			$stmt = $this->db->prepare( "UPDATE " . DB_IMS . ".curation SET curation_status=?, curation_data=? WHERE curation_id=?" );
+			$stmt->execute( array( $status, json_encode( $data ), $row->curation_id ) );
+		} else {
+			// PERFORM INSERT
+			$stmt = $this->db->prepare( "INSERT INTO " . DB_IMS . ".curation VALUES ( '0',?,?,?,?,?,?,NOW( ) )" );
+			$stmt->execute( array( $code, $status, $block, json_encode( $data ), $type, $index ) );
+		}
+		
+	}
+	
+	/**
+	 * Fetch an existing curation entry out of the database
+	 * if it exists, otherwise an empty array
+	 */
+	 
+	private function fetchCurationEntry( $code, $block, $type, $index ) {
+		
+		$stmt = $this->db->prepare( "SELECT curation_data FROM " . DB_IMS . ".curation WHERE curation_code=? AND curation_block=? AND curation_type=? AND curation_index=? LIMIT 1" );
+		
+		$stmt->execute( array( $code, $block, $type, $index ) );
+		if( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			return json_decode( $row->curation_data, true );
+		} 
+		
+		return array( );
 		
 	}
 	
@@ -232,11 +281,20 @@ class CurationValidation {
 	}
 	
 	/**
+	 * Process messages to create errors
+	 */
+	 
+	public function processErrors( $messages ) {
+		$errors = $this->twig->render( 'curation' . DS . 'error' . DS . 'CurationError.tpl', array( "ERRORS" => $messages ) );
+		return $errors;
+	}
+	
+	/**
 	 * Generate text for validation error messages
 	 * based on the type of error
 	 */
 	 
-	private function generateError( $errorType, $details = array( ) ) {
+	public function generateError( $errorType, $details = array( ) ) {
 	
 		switch( strtoupper( $errorType ) ) {
 			
@@ -248,9 +306,12 @@ class CurationValidation {
 				
 			case "UNKNOWN" :
 				return array( "class" => "warning", "message" => "The identifier " . $details['identifier'] . " is UNKNOWN on lines " . implode( ", ", $details['lines'] ) . ". If you believe it to not be a mistake, you can leave it and it will be added as an unknown participant. Alternatively, if you have a correction, enter it here to replace all occurrences above: " );
+				
+			case "NOCODE" :
+				return array( "class" => "danger", "message" => "No curation code was passed to the validation script. Please try again!" );
 
 			default:
-				return "An unknown error has occurred.";
+				return array( "class" => "danger", "message" => "An unknown error has occurred." );
 			
 		}
 	

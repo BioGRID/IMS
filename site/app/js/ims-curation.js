@@ -249,8 +249,6 @@
 				ajaxData.push({name: 'type', value: base.data.type});
 				ajaxData.push({name: 'name', value: base.data.name});
 				ajaxData.push({name: 'required', value: base.data.required});
-				
-				console.log( ajaxData );
 					
 				$.ajax({
 					
@@ -280,10 +278,23 @@
 						base.components.errorBox.hide( );
 					}
 					
+					// If participants, set the checklist item showing stats
+					// on what was found to the correct count values
+					
+					if( base.data.type == "participant" && "COUNTS" in data ) {
+						base.setCounts( data['COUNTS'] );
+					}
+					
 				}).fail( function( jqXHR, textStatus ) {
 					console.log( textStatus );
 				});
 				
+			};
+			
+			base.setCounts = function( data ) {
+				base.components.checklistItem.find( ".validParticipants" ).html( data["VALID"] );
+				base.components.checklistItem.find( ".unknownParticipants" ).html( data["UNKNOWN"] );
+				base.components.checklistItem.find( ".ambiguousParticipants" ).html( data["AMBIGUOUS"] );
 			};
 			
 			base.initRemoveBtn = function( ) {
