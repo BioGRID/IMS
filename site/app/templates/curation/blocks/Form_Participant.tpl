@@ -1,6 +1,6 @@
 <div>
 	<div class='col-lg-6 col-md-5 col-sm-6 col-xs-6'>
-		<textarea class="form-control changeField" spellcheck="false" placeholder='{{ PLACEHOLDER_MSG }}' name='participants' id='{{BASE_NAME}}-participants' rows="12"></textarea>
+		<textarea class="form-control changeField participants" spellcheck="false" placeholder='{{ PLACEHOLDER_MSG }}' name='participants' id='{{BASE_NAME}}-participants' rows="12"></textarea>
 	</div>
 	<div class='col-lg-6 col-md-7 col-sm-6 col-xs-6'>
 		<div class='form-group'>

@@ -223,6 +223,10 @@
 					clearTimeout( timer );
 					timer = setTimeout( function( ) { base.setStatus( "NEW" ); }, base.options.validateDelay );
 				});
+				
+				base.$el.on( "click", ".lineReplace", function( ) {
+					base.swapIdentifiers( $(this).data( "lines" ), $(this).data( "value" ), $(this).parent( ).find( ".statusMsg" ) );
+				});
 			};
 			
 			base.clickRemoveBtn = function( ) {
@@ -264,14 +268,13 @@
 				}).done( function(data) {
 					
 					console.log( data );
+					base.components.errorList.html( data['ERRORS'] );
 					
 					if( data['STATUS'] == "ERROR" ) {
 						base.setStatus( "ERROR" );
-						base.components.errorList.html( data['ERRORS'] );
 						base.components.errorBox.show( );
 					} else if( data['STATUS'] == "WARNING" ) {
 						base.setStatus( "WARNING" );
-						base.components.errorList.html( data['ERRORS'] );
 						base.components.errorBox.show( );
 					} else {
 						base.setStatus( "VALID" );
@@ -295,6 +298,27 @@
 				base.components.checklistItem.find( ".validParticipants" ).html( data["VALID"] );
 				base.components.checklistItem.find( ".unknownParticipants" ).html( data["UNKNOWN"] );
 				base.components.checklistItem.find( ".ambiguousParticipants" ).html( data["AMBIGUOUS"] );
+			};
+			
+			base.swapIdentifiers = function( lines, identifier, msgOutput ) {
+				
+				var participantField = base.$el.find( ".participants" );
+				var participantData = participantField.val( );
+				
+				$.ajax({
+					url: base.data.baseURL + "/scripts/curation/Replace.php",
+					method: "POST",
+					dataType: "json",
+					data: { data: participantData, lines: lines, identifier: identifier },
+					beforeSend: function( ) {
+						msgOutput.html( "" );
+					}
+					
+				}).done( function(data) {
+					participantField.val( data['REPLACEMENT'] );
+					msgOutput.html( data['MESSAGE'] );
+				});
+				
 			};
 			
 			base.initRemoveBtn = function( ) {

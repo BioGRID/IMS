@@ -54,10 +54,16 @@ class CurationValidation {
 			
 			foreach( $uniqueIdentifiers as $identifier ) {
 				$identifier = strtoupper( trim( filter_var( $identifier, FILTER_SANITIZE_STRING )));
+				$splitIdentifier = explode( "|", $identifier );
 				
-				if( !isset( $annotationSet[$identifier] )) {
-					$annotationInfo = $this->fetchMatchingIdentifiers( $identifier, $type, $taxa, $idType );
-					$annotationSet[$identifier] = $annotationInfo;
+				if( sizeof( $splitIdentifier ) > 1 ) {
+					$annotationInfo = $this->fetchMatchingAnnotation( array( $splitIdentifier[0] ), $type );
+					$annotationSet[$splitIdentifier[1]] = $annotationInfo;
+				} else {
+					if( !isset( $annotationSet[$identifier] )) {
+						$annotationInfo = $this->fetchMatchingIdentifiers( $identifier, $type, $taxa, $idType );
+						$annotationSet[$identifier] = $annotationInfo;
+					}
 				}
 				
 			}
@@ -68,6 +74,10 @@ class CurationValidation {
 			foreach( $identifiers as $identifier ) {
 				$identifier = strtoupper( trim( filter_var( $identifier, FILTER_SANITIZE_STRING )));
 				
+				$splitIdentifier = explode( "|", $identifier );
+				if( sizeof( $splitIdentifier ) > 1 ) {
+					$identifier = $splitIdentifier[1];
+				} 
 				$annotation = $annotationSet[$identifier];
 				
 				if( !isset( $mapping ) ) {
@@ -302,7 +312,14 @@ class CurationValidation {
 				return array( "class" => "danger", "message" => $this->blockName . " is a required field. It will not validate while no data has been entered in the provided fields." );
 				
 			case "AMBIGUOUS" :
-				return array( "class" => "danger", "message" => "The identifier " . $details['identifier'] . " is AMBIGUOUS on lines " . implode( ", ", $details['lines'] ) . ". Options available are: A,B,C" );
+			
+				$message = "The identifier <strong>" . $details['identifier'] . "</strong> is AMBIGUOUS on lines <strong>" . implode( ", ", $details['lines'] ) . "</strong>. <br />Ambiguities are: ";
+				foreach( $details['options'] as $geneID => $annotation ) {
+					$options[] = "<a href='http://thebiogrid.org/" . $annotation['gene_id'] . "' target='_blank'>" . $annotation['primary_name'] . "</a> (<a class='lineReplace' data-lines='" . implode( "|", $details['lines'] ) . "' data-value='" . $annotation['gene_id'] . "'>" . "<i class='fa fa-lg fa-exchange'></i>" . "</a>)</a>";
+				}
+				
+				$message .= implode( ", ", $options ) . "<div class='text-success statusMsg'></div>";
+				return array( "class" => "danger", "message" => $message );
 				
 			case "UNKNOWN" :
 				return array( "class" => "warning", "message" => "The identifier " . $details['identifier'] . " is UNKNOWN on lines " . implode( ", ", $details['lines'] ) . ". If you believe it to not be a mistake, you can leave it and it will be added as an unknown participant. Alternatively, if you have a correction, enter it here to replace all occurrences above: " );
@@ -315,6 +332,31 @@ class CurationValidation {
 			
 		}
 	
+	}
+	
+	/**
+	 * Step through array row by row, and replace specific lines
+	 * with a newly formatted entry
+	 */
+	 
+	public function replaceParticipantLines( $participants, $lines, $value ) {
+		
+		$participants = explode( PHP_EOL, $participants );
+		$lines = explode( "|", $lines );
+		
+		foreach( $lines as $line ) {
+			$participant = $participants[$line-1];
+			$participant = explode( "|", $participant );
+			
+			if( sizeof( $participant ) > 1 ) {
+				$participants[$line-1] = $value . "|" . $participant[1];
+			} else {
+				$participants[$line-1] = $value . "|" . $participant[0];
+			}
+			
+		}
+		
+		return implode( PHP_EOL, $participants );
 	}
 	
 }
