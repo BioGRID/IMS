@@ -314,6 +314,7 @@ class CurationValidation {
 			case "AMBIGUOUS" :
 			
 				$message = "The identifier <strong>" . $details['identifier'] . "</strong> is AMBIGUOUS on lines <strong>" . implode( ", ", $details['lines'] ) . "</strong>. <br />Ambiguities are: ";
+				
 				foreach( $details['options'] as $geneID => $annotation ) {
 					$options[] = "<a href='http://thebiogrid.org/" . $annotation['gene_id'] . "' target='_blank'>" . $annotation['primary_name'] . "</a> (<a class='lineReplace' data-lines='" . implode( "|", $details['lines'] ) . "' data-value='" . $annotation['gene_id'] . "'>" . "<i class='fa fa-lg fa-exchange'></i>" . "</a>)</a>";
 				}
@@ -322,7 +323,7 @@ class CurationValidation {
 				return array( "class" => "danger", "message" => $message );
 				
 			case "UNKNOWN" :
-				return array( "class" => "warning", "message" => "The identifier " . $details['identifier'] . " is UNKNOWN on lines " . implode( ", ", $details['lines'] ) . ". If you believe it to not be a mistake, you can leave it and it will be added as an unknown participant. Alternatively, if you have a correction, enter it here to replace all occurrences above: " );
+				return array( "class" => "warning", "message" => "The identifier <strong>" . $details['identifier'] . "</strong> is UNKNOWN on lines <strong>" . implode( ", ", $details['lines'] ) . "</strong>. If you believe it to not be a mistake, you can leave it and it will be added as an unknown participant. Alternatively, if you have a correction, enter it here to replace all occurrences above: " );
 				
 			case "NOCODE" :
 				return array( "class" => "danger", "message" => "No curation code was passed to the validation script. Please try again!" );

@@ -140,9 +140,12 @@
 		dataAttribs['blockName'] = link.html( );
 		dataAttribs['script'] = 'loadCurationBlock';
 		
-		// Hide all currently showing curation panels
-		$(".curationBlock").hide( );
-			
+		// Hide currently showing curation panel
+		var closingBlock = $(".curationBlock:visible").hide( ).attr( "id" );
+		if( closingBlock != undefined ) {
+			$("#" + closingBlock).data( 'curationBlock' ).hideBlock( );
+		}
+		
 		if( $("#" + dataAttribs['blockid']).length ) {
 			
 			// Show the one we clicked instead of reloading
@@ -227,6 +230,10 @@
 				base.$el.on( "click", ".lineReplace", function( ) {
 					base.swapIdentifiers( $(this).data( "lines" ), $(this).data( "value" ), $(this).parent( ).find( ".statusMsg" ) );
 				});
+				
+				base.$el.on( "click", ".closeError", function( ) {
+					$(this).parent( ).remove( );
+				});
 			};
 			
 			base.clickRemoveBtn = function( ) {
@@ -265,15 +272,15 @@
 						base.components.errorBox.hide( );
 					}
 					
-				}).done( function(data) {
+				}).done( function(results) {
 					
-					console.log( data );
-					base.components.errorList.html( data['ERRORS'] );
+					console.log( results );
+					base.components.errorList.html( results['ERRORS'] );
 					
-					if( data['STATUS'] == "ERROR" ) {
+					if( results['STATUS'] == "ERROR" ) {
 						base.setStatus( "ERROR" );
 						base.components.errorBox.show( );
-					} else if( data['STATUS'] == "WARNING" ) {
+					} else if( results['STATUS'] == "WARNING" ) {
 						base.setStatus( "WARNING" );
 						base.components.errorBox.show( );
 					} else {
@@ -284,8 +291,8 @@
 					// If participants, set the checklist item showing stats
 					// on what was found to the correct count values
 					
-					if( base.data.type == "participant" && "COUNTS" in data ) {
-						base.setCounts( data['COUNTS'] );
+					if( base.data.type == "participant" && "COUNTS" in results ) {
+						base.setCounts( results['COUNTS'] );
 					}
 					
 				}).fail( function( jqXHR, textStatus ) {
@@ -294,10 +301,10 @@
 				
 			};
 			
-			base.setCounts = function( data ) {
-				base.components.checklistItem.find( ".validParticipants" ).html( data["VALID"] );
-				base.components.checklistItem.find( ".unknownParticipants" ).html( data["UNKNOWN"] );
-				base.components.checklistItem.find( ".ambiguousParticipants" ).html( data["AMBIGUOUS"] );
+			base.setCounts = function( stats ) {
+				base.components.checklistItem.find( ".validParticipants" ).html( stats["VALID"] );
+				base.components.checklistItem.find( ".unknownParticipants" ).html( stats["UNKNOWN"] );
+				base.components.checklistItem.find( ".ambiguousParticipants" ).html( stats["AMBIGUOUS"] );
 			};
 			
 			base.swapIdentifiers = function( lines, identifier, msgOutput ) {
@@ -314,9 +321,9 @@
 						msgOutput.html( "" );
 					}
 					
-				}).done( function(data) {
-					participantField.val( data['REPLACEMENT'] );
-					msgOutput.html( data['MESSAGE'] );
+				}).done( function(results) {
+					participantField.val( results['REPLACEMENT'] );
+					msgOutput.html( results['MESSAGE'] );
 				});
 				
 			};
@@ -331,6 +338,12 @@
 				base.components.validateBtn.on( "click", function( ) {
 					base.clickValidateBtn( );
 				});
+			};
+			
+			base.hideBlock = function( ) {
+				if( base.$el.data( "status" ) == "NEW" ) {
+					base.clickValidateBtn( );
+				} 
 			};
 
 			
