@@ -140,9 +140,12 @@
 		dataAttribs['blockName'] = link.html( );
 		dataAttribs['script'] = 'loadCurationBlock';
 		
-		// Hide all currently showing curation panels
-		$(".curationBlock").hide( );
-			
+		// Hide currently showing curation panel
+		var closingBlock = $(".curationBlock:visible").hide( ).attr( "id" );
+		if( closingBlock != undefined ) {
+			$("#" + closingBlock).data( 'curationBlock' ).hideBlock( );
+		}
+		
 		if( $("#" + dataAttribs['blockid']).length ) {
 			
 			// Show the one we clicked instead of reloading
@@ -223,6 +226,22 @@
 					clearTimeout( timer );
 					timer = setTimeout( function( ) { base.setStatus( "NEW" ); }, base.options.validateDelay );
 				});
+				
+				base.$el.on( "click", ".lineReplace", function( ) {
+					base.swapIdentifiers( $(this).data( "lines" ), $(this).data( "value" ), $(this).parent( ).find( ".statusMsg" ) );
+				});
+				
+				base.$el.on( "click", ".closeError", function( ) {
+					$(this).parent( ).remove( );
+				});
+				
+				base.$el.on( "click", ".unknownReplaceSubmit", function( ) {
+					var inputGroup = $(this).parent( ).parent( );
+					var replacementVal = inputGroup.find( ".unknownReplaceField" ).val( );
+					if( replacementVal.trim( ).length > 0 ) {
+						base.swapIdentifiers( $(this).data( "lines" ), replacementVal, inputGroup.find( ".statusMsg" ) );
+					}
+				});
 			};
 			
 			base.clickRemoveBtn = function( ) {
@@ -249,8 +268,6 @@
 				ajaxData.push({name: 'type', value: base.data.type});
 				ajaxData.push({name: 'name', value: base.data.name});
 				ajaxData.push({name: 'required', value: base.data.required});
-				
-				console.log( ajaxData );
 					
 				$.ajax({
 					
@@ -263,25 +280,58 @@
 						base.components.errorBox.hide( );
 					}
 					
-				}).done( function(data) {
+				}).done( function(results) {
 					
-					console.log( data );
+					console.log( results );
+					base.components.errorList.html( results['ERRORS'] );
 					
-					if( data['STATUS'] == "ERROR" ) {
+					if( results['STATUS'] == "ERROR" ) {
 						base.setStatus( "ERROR" );
-						base.components.errorList.html( data['ERRORS'] );
 						base.components.errorBox.show( );
-					} else if( data['STATUS'] == "WARNING" ) {
+					} else if( results['STATUS'] == "WARNING" ) {
 						base.setStatus( "WARNING" );
-						base.components.errorList.html( data['ERRORS'] );
 						base.components.errorBox.show( );
 					} else {
 						base.setStatus( "VALID" );
 						base.components.errorBox.hide( );
 					}
 					
+					// If participants, set the checklist item showing stats
+					// on what was found to the correct count values
+					
+					if( base.data.type == "participant" && "COUNTS" in results ) {
+						base.setCounts( results['COUNTS'] );
+					}
+					
 				}).fail( function( jqXHR, textStatus ) {
 					console.log( textStatus );
+				});
+				
+			};
+			
+			base.setCounts = function( stats ) {
+				base.components.checklistItem.find( ".validParticipants" ).html( stats["VALID"] );
+				base.components.checklistItem.find( ".unknownParticipants" ).html( stats["UNKNOWN"] );
+				base.components.checklistItem.find( ".ambiguousParticipants" ).html( stats["AMBIGUOUS"] );
+			};
+			
+			base.swapIdentifiers = function( lines, identifier, msgOutput ) {
+				
+				var participantField = base.$el.find( ".participants" );
+				var participantData = participantField.val( );
+				
+				$.ajax({
+					url: base.data.baseURL + "/scripts/curation/Replace.php",
+					method: "POST",
+					dataType: "json",
+					data: { data: participantData, lines: lines, identifier: identifier },
+					beforeSend: function( ) {
+						msgOutput.html( "" );
+					}
+					
+				}).done( function(results) {
+					participantField.val( results['REPLACEMENT'] );
+					msgOutput.html( results['MESSAGE'] );
 				});
 				
 			};
@@ -296,6 +346,12 @@
 				base.components.validateBtn.on( "click", function( ) {
 					base.clickValidateBtn( );
 				});
+			};
+			
+			base.hideBlock = function( ) {
+				if( base.$el.data( "status" ) == "NEW" ) {
+					base.clickValidateBtn( );
+				} 
 			};
 
 			

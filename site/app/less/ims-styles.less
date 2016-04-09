@@ -11,6 +11,8 @@ h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 { margin-top: 0px; margin-b
 .marginBotXs { margin-bottom: @line-height-computed / 3; }
 .marginTopNone { margin-top: 0px; }
 .marginBotNone { margin-bottom: 0px; }
+.marginRightSm { margin-right: @line-height-computed / 2; }
+.marginLeftSm { margin-left: @line-height-computed / 2; }
 .paddingBot { padding-bottom: @line-height-computed; }
 .paddingTop { padding-top: @line-height-computed; }
 .paddingTopSm { padding-top: @line-height-computed / 2; }
@@ -280,6 +282,18 @@ h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 { margin-top: 0px; margin-b
 								max-height: 500px;
 								overflow-y: auto;
 								padding-right: 10px;
+								
+								.curationError {
+									a {
+										text-decoration: none;
+										cursor: pointer;
+										font-weight: bold;
+										
+										&:hover {
+											text-decoration: none;
+										}
+									}
+								}
 							}
 						}
 					}

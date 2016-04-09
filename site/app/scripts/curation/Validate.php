@@ -18,8 +18,19 @@ if( $_POST['required'] == "1" ) {
 }
 
 $validate = new models\CurationValidation( $_POST['name'] );
-$results = $validate->validateIdentifiers( $_POST['participants'], $_POST['role'], $_POST['participant_type'], $_POST['organism'], $_POST['id_type'], $required );
 
-echo json_encode( $results );
+if( isset( $_POST['curationCode'] ) ) {
+	$curationCode = $_POST['curationCode'];
+
+	$results = $validate->validateIdentifiers( $_POST['participants'], $_POST['role'], $_POST['participant_type'], $_POST['organism'], $_POST['id_type'], $curationCode, $_POST['id'], $required );
+
+	echo json_encode( $results );
+	
+} else {
+
+	$errors = $validate->processErrors( array( $validate->generateError( "NOCODE" )) );
+	echo json_encode( array( "STATUS" => "ERROR", "ERRORS" => $errors ) );
+
+}
 
 ?>
