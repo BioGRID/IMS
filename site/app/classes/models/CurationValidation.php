@@ -316,14 +316,21 @@ class CurationValidation {
 				$message = "The identifier <strong>" . $details['identifier'] . "</strong> is AMBIGUOUS on lines <strong>" . implode( ", ", $details['lines'] ) . "</strong>. <br />Ambiguities are: ";
 				
 				foreach( $details['options'] as $geneID => $annotation ) {
-					$options[] = "<a href='http://thebiogrid.org/" . $annotation['gene_id'] . "' target='_blank'>" . $annotation['primary_name'] . "</a> (<a class='lineReplace' data-lines='" . implode( "|", $details['lines'] ) . "' data-value='" . $annotation['gene_id'] . "'>" . "<i class='fa fa-lg fa-exchange'></i>" . "</a>)</a>";
+					$options[] = "<a href='http://thebiogrid.org/" . $annotation['gene_id'] . "' target='_blank'>" . $annotation['primary_name'] . "</a> (<a class='lineReplace' data-lines='" . implode( "|", $details['lines'] ) . "' data-value='BG_" . $annotation['gene_id'] . "'>" . "<i class='fa fa-lg fa-exchange'></i>" . "</a>)</a>";
 				}
 				
 				$message .= implode( ", ", $options ) . "<div class='text-success statusMsg'></div>";
 				return array( "class" => "danger", "message" => $message );
 				
 			case "UNKNOWN" :
-				return array( "class" => "warning", "message" => "The identifier <strong>" . $details['identifier'] . "</strong> is UNKNOWN on lines <strong>" . implode( ", ", $details['lines'] ) . "</strong>. If you believe it to not be a mistake, you can leave it and it will be added as an unknown participant. Alternatively, if you have a correction, enter it here to replace all occurrences above: " );
+			
+				$message = "The identifier <strong>" . $details['identifier'] . "</strong> is UNKNOWN on lines <strong>" . implode( ", ", $details['lines'] ) . "</strong>. If you believe it to be valid, you can add it as an unknown participant. Alternatively, you can correct it, by entering an alternative identifier below. To enter a BioGRID ID, preface term with BG_ (example: BG_123456). Otherwise, any other term will be assumed to be the same ID Type as the others listed above...";
+				
+				$message .= "<div class='clearfix'><div class='input-group col-lg-6 col-md-6 col-sm-12 col-xs-12 marginTopSm'><input type='text' class=' form-control unknownReplaceField' placeholder='Enter Replacement Term' value='' /><span class='input-group-btn'><button data-lines='" . implode( "|", $details['lines'] ) . "' class='btn btn-success unknownReplaceSubmit' type='button'>Replace</button></span></div></div>";
+				
+				$message .= "<div class='text-success statusMsg'></div>";
+				
+				return array( "class" => "warning", "message" => $message );
 				
 			case "NOCODE" :
 				return array( "class" => "danger", "message" => "No curation code was passed to the validation script. Please try again!" );
@@ -347,13 +354,19 @@ class CurationValidation {
 		
 		foreach( $lines as $line ) {
 			$participant = $participants[$line-1];
-			$participant = explode( "|", $participant );
+			$participant = explode( "|", trim($participant) );
 			
+			$participantText = $participant[0];
 			if( sizeof( $participant ) > 1 ) {
-				$participants[$line-1] = $value . "|" . $participant[1];
-			} else {
-				$participants[$line-1] = $value . "|" . $participant[0];
+				$participantText = $participant[1];
 			}
+			
+			$replaceVal = $value;
+			if( strtoupper( substr( $replaceVal, 0, 3 ) ) === "BG_" ) {
+				$replaceVal = substr( $replaceVal, 3 ) . "|" . $participantText;
+			} 
+			
+			$participants[$line-1] = $replaceVal;
 			
 		}
 		

@@ -234,6 +234,14 @@
 				base.$el.on( "click", ".closeError", function( ) {
 					$(this).parent( ).remove( );
 				});
+				
+				base.$el.on( "click", ".unknownReplaceSubmit", function( ) {
+					var inputGroup = $(this).parent( ).parent( );
+					var replacementVal = inputGroup.find( ".unknownReplaceField" ).val( );
+					if( replacementVal.trim( ).length > 0 ) {
+						base.swapIdentifiers( $(this).data( "lines" ), replacementVal, inputGroup.find( ".statusMsg" ) );
+					}
+				});
 			};
 			
 			base.clickRemoveBtn = function( ) {
