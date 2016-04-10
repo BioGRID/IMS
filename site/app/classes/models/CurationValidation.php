@@ -38,10 +38,15 @@ class CurationValidation {
 		$messages = array( );
 		$identifiers = trim( $identifiers );
 		
+		// Get already stored mapping info
+		// to help save time on lookups
+		
 		$mapping = array( );
 		$annotationSet = $this->fetchCurationEntry( $curationCode, $block, "participant_annotation", 0 );
+		$termMap = $this->fetchCurationEntry( $curationCode, $block, "participant_terms", 0 );
 		
-		$counts = array( "VALID" => 0, "AMBIGUOUS" => 0, "UNKNOWN" => 0 );
+		$counts = array( "VALID" => 0, "AMBIGUOUS" => 0, "UNKNOWN" => 0, "TOTAL" => 0 );
+		
 		if( $isRequired && strlen( $identifiers ) <= 0 ) {
 			$status = "ERROR";
 			$messages[] = $this->generateError( "REQUIRED" );
@@ -52,20 +57,48 @@ class CurationValidation {
 			$identifiers = explode( PHP_EOL, $identifiers );
 			$uniqueIdentifiers = array_unique( $identifiers );
 			
+			$toAnnotate = array( );
 			foreach( $uniqueIdentifiers as $identifier ) {
+				
 				$identifier = strtoupper( trim( filter_var( $identifier, FILTER_SANITIZE_STRING )));
 				$splitIdentifier = explode( "|", $identifier );
 				
 				if( sizeof( $splitIdentifier ) > 1 ) {
-					$annotationInfo = $this->fetchMatchingAnnotation( array( $splitIdentifier[0] ), $type );
-					$annotationSet[$splitIdentifier[1]] = $annotationInfo;
-				} else {
-					if( !isset( $annotationSet[$identifier] )) {
-						$annotationInfo = $this->fetchMatchingIdentifiers( $identifier, $type, $taxa, $idType );
-						$annotationSet[$identifier] = $annotationInfo;
+					$identifier = $splitIdentifier[1];
+				}
+				
+				if( !isset( $termMap[$identifier] )) {
+					$matchList = $this->fetchMatchingIdentifiers( $identifier, $type, $taxa, $idType );
+					$termMap[$identifier] = $matchList;
+					
+					foreach( $matchList as $matchID => $matchInfo ) {
+						if( !isset( $annotationSet[$matchID] ) ) {
+							$annotationSet[$matchID] = array( );
+							$toAnnotate[] = $matchID;
+						}
+					}
+					
+				}
+				
+				// If we passed in a BioGRID ID alternative, we need to make sure it's in the list of options
+				// for that identifier in the termMap and also make sure we have annotation for it in the
+				// annotation set.
+				
+				if( sizeof( $splitIdentifier ) > 1 ) {
+					if( !isset( $termMap[$identifier][$splitIdentifier[0]] ) ) {
+						$termMap[$identifier][$splitIdentifier[0]] = $splitIdentifier[0];
+						if( !isset( $annotationSet[$splitIdentifier[0]] ) ) {
+							$annotationSet[$splitIdentifier[0]] = array( );
+							$toAnnotate[] = $splitIdentifier[0];
+						}
 					}
 				}
 				
+			}
+			
+			$toAnnotate = array_chunk( $toAnnotate, 1000 );
+			foreach( $toAnnotate as $idChunk ) {
+				$this->fetchMatchingAnnotation( $idChunk, $type, $annotationSet );
 			}
 			
 			$lineCount = 1;
@@ -74,17 +107,26 @@ class CurationValidation {
 			foreach( $identifiers as $identifier ) {
 				$identifier = strtoupper( trim( filter_var( $identifier, FILTER_SANITIZE_STRING )));
 				
+				// If we have an identifier with a | in it
+				// then it's a BIOGRID ID | STRING ID type of
+				// identifier
+				
 				$splitIdentifier = explode( "|", $identifier );
 				if( sizeof( $splitIdentifier ) > 1 ) {
 					$identifier = $splitIdentifier[1];
 				} 
-				$annotation = $annotationSet[$identifier];
 				
-				if( !isset( $mapping ) ) {
-					$mapping[$identifier] = "UNKNOWN";
+				$termIDs = $termMap[$identifier];
+				
+				// If we specified a specific GENE ID to use, then here
+				// we convert the annotation from a pack of ids to a 
+				// specific set of annotation
+				
+				if( sizeof( $splitIdentifier ) > 1 && isset( $termIDs[$splitIdentifier[0]] ) ) {
+					$termIDs = array( $splitIdentifier[0] );
 				}
 				
-				if( sizeof( $annotation ) <= 0 ) {
+				if( sizeof( $termIDs ) <= 0 ) {
 					
 					// UNKNOWN
 					if( !isset( $warningList[$identifier] ) ) {
@@ -92,9 +134,10 @@ class CurationValidation {
 					}
 					
 					$warningList[$identifier][] = $lineCount;
+					$mapping[] = array( "id" => "", "key" => $identifier, "status" => "UNKNOWN", "annotation" => array( ) );
 					$counts["UNKNOWN"]++;
 					
-				} else if( sizeof( $annotation ) > 1 ) {
+				} else if( sizeof( $termIDs ) > 1 ) {
 					
 					// AMBIGUOUS
 					if( !isset( $errorList[$identifier] ) ) {
@@ -102,21 +145,27 @@ class CurationValidation {
 					}
 					
 					$errorList[$identifier][] = $lineCount;
-					$mapping[$identifier] = "AMBIGUOUS";
+					$mapping[] = array( "id" => "", "key" => $identifier, "status" => "AMBIGUOUS", "annotation" => array( ) );
 					$counts["AMBIGUOUS"]++;
 					
 				} else {
 					// VALID MAPPING
-					$annotationDetails = current( $annotation );
-					$mapping[$identifier] = $annotationDetails['gene_id'];
+					$termID = current( $termIDs );
+					$mapping[] = array( "id" => $termID, "key" => $identifier, "status" => "VALID", "annotation" => $annotationSet[$termID] );
 					$counts["VALID"]++;
 				}
 				
+				$counts["TOTAL"]++;
 				$lineCount++;
 			}
 			
 			foreach( $errorList as $identifier => $lines ) {
-				$messages[] = $this->generateError( "AMBIGUOUS", array( "identifier" => $identifier, "lines" => $lines, "options" => $annotationSet[$identifier] ) );
+				$termSet = $termMap[$identifier];
+				$options = array( );
+				foreach( $termSet as $termID => $termDetails ) {
+					$options[$termID] = $annotationSet[$termID];
+				}
+				$messages[] = $this->generateError( "AMBIGUOUS", array( "identifier" => $identifier, "lines" => $lines, "options" => $options ) );
 			}
 			
 			foreach( $warningList as $identifier => $lines ) {
@@ -138,6 +187,7 @@ class CurationValidation {
 		// Update Curation Database Entries
 		$this->updateCurationEntries( $curationCode, $status, $block, $mapping, "participant", 0 );
 		$this->updateCurationEntries( $curationCode, "NEW", $block, $annotationSet, "participant_annotation", 0 );
+		$this->updateCurationEntries( $curationCode, "NEW", $block, $termMap, "participant_terms", 0 );
 		
 		return array( "STATUS" => $status, "ERRORS" => $errors, "COUNTS" => $counts );
 		
@@ -201,14 +251,14 @@ class CurationValidation {
 				
 				$geneIDs = array( );
 				while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
-					$geneIDs[] = $row->gene_id;
+					$geneIDs[$row->gene_id] = $row->gene_id;
 				}
 				
 				if( sizeof( $geneIDs ) <= 0 ) {
 					return array( );
 				}
 				
-				return $this->fetchMatchingAnnotation( $geneIDs, $type );
+				return $geneIDs;//$this->fetchMatchingAnnotation( $geneIDs, $type );
 			
 		}
 		
@@ -218,7 +268,7 @@ class CurationValidation {
 	 * Fetch matching annotation by the gene ids that are passed in
 	 */
 	 
-	private function fetchMatchingAnnotation( $geneIDs, $type ) {
+	private function fetchMatchingAnnotation( $geneIDs, $type, &$annotationSet ) {
 		
 		$matchingAnnotation = array( );
 		
@@ -256,14 +306,12 @@ class CurationValidation {
 						$annotation['organism_strain'] = $row->organism_strain;
 					}
 					
-					$matchingAnnotation[$row->gene_id] = $annotation;
+					$annotationSet[$annotation['gene_id']] = $annotation;
 				}
 				
 				break;
 			
 		}
-		
-		return $matchingAnnotation;
 		
 	}
 	
