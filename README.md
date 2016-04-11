@@ -3,7 +3,7 @@ This resource contains the complete BIoGRID Interaction Management System (IMS) 
 
 ## Development Status
 + **Unstable** - In Development
-+ Current Version: **4.0.2.2 ALPHA**
++ Current Version: **4.0.3.1 ALPHA**
 
 ## System Requirements
 To use all of the tools contained within, you require at least the following:
