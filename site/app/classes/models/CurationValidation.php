@@ -29,6 +29,35 @@ class CurationValidation {
 	}
 	
 	/**
+	 * Take a set of alleles and validate them compared to a set of identifiers
+	 */
+	 
+	public function validateAlleles( $alleles, $participantCount, &$results ) {
+		
+		$messages = array( );
+		
+		foreach( $alleles as $alleleBoxNumber => $alleleList ) {
+			$alleleList = trim( $alleleList );
+			$alleleList = explode( PHP_EOL, $alleleList );
+			
+			if( sizeof( $alleleList ) != $participantCount ) {
+				$messages[] = $this->generateError( "ALLELE_MISMATCH", array( "alleleBoxNumber" => $alleleBoxNumber ) );
+			}
+			
+			// INSERT/UPDATE IT IN THE DATABASE
+			
+		}
+		
+		if( sizeof( $messages ) > 0 ) {
+			$results["STATUS"] = "ERROR";
+			$results["ERRORS"] = array_merge( $results['ERRORS'], $messages );
+		} 
+		
+		return $results;
+		
+	}
+	
+	/**
 	 * Take a string of passed in identifiers and various search parameters, and
 	 * attempt to map each one to a database identifier based on the string text
 	 */
@@ -182,14 +211,12 @@ class CurationValidation {
 			
 		}
 		
-		$errors = $this->processErrors( $messages );
-		
 		// Update Curation Database Entries
 		$this->updateCurationEntries( $curationCode, $status, $block, $mapping, "participant", 0 );
 		$this->updateCurationEntries( $curationCode, "NEW", $block, $annotationSet, "participant_annotation", 0 );
 		$this->updateCurationEntries( $curationCode, "NEW", $block, $termMap, "participant_terms", 0 );
 		
-		return array( "STATUS" => $status, "ERRORS" => $errors, "COUNTS" => $counts );
+		return array( "STATUS" => $status, "ERRORS" => $messages, "COUNTS" => $counts );
 		
 	}
 	
@@ -379,6 +406,12 @@ class CurationValidation {
 				$message .= "<div class='text-success statusMsg'></div>";
 				
 				return array( "class" => "warning", "message" => $message );
+				
+			case "ALLELE_MISMATCH" :
+				
+				$message = "The number of alleles in <strong>Allele Box #" . $details['alleleBoxNumber'] . "</strong> does not match the number of participants in specified. You must enter an allele for every participant or use a hyphen (-) if wanting no allele. Please correct this and try validation again.";
+				
+				return array( "class" => "danger", "message" => $message );
 				
 			case "NOCODE" :
 				return array( "class" => "danger", "message" => "No curation code was passed to the validation script. Please try again!" );
