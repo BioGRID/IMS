@@ -32,9 +32,10 @@ class CurationValidation {
 	 * Take a set of alleles and validate them compared to a set of identifiers
 	 */
 	 
-	public function validateAlleles( $alleles, $participantCount, &$results ) {
+	public function validateAlleles( $alleles, $participantCount, &$results, $block, $curationCode ) {
 		
 		$messages = array( );
+		$alleleSet = array( );
 		
 		foreach( $alleles as $alleleBoxNumber => $alleleList ) {
 			$alleleList = trim( $alleleList );
@@ -44,7 +45,8 @@ class CurationValidation {
 				$messages[] = $this->generateError( "ALLELE_MISMATCH", array( "alleleBoxNumber" => $alleleBoxNumber ) );
 			}
 			
-			// INSERT/UPDATE IT IN THE DATABASE
+			// Remove Left Over NewLines
+			$alleleSet[] = array_map( 'trim', $alleleList );
 			
 		}
 		
@@ -52,6 +54,9 @@ class CurationValidation {
 			$results["STATUS"] = "ERROR";
 			$results["ERRORS"] = array_merge( $results['ERRORS'], $messages );
 		} 
+		
+		// INSERT/UPDATE IT IN THE DATABASE
+		$this->updateCurationEntries( $curationCode, $results["STATUS"], $block, $alleleSet, "allele", 0 );
 		
 		return $results;
 		
@@ -409,7 +414,7 @@ class CurationValidation {
 				
 			case "ALLELE_MISMATCH" :
 				
-				$message = "The number of alleles in <strong>Allele Box #" . $details['alleleBoxNumber'] . "</strong> does not match the number of participants in specified. You must enter an allele for every participant or use a hyphen (-) if wanting no allele. Please correct this and try validation again.";
+				$message = "The number of alleles in <strong>Allele Box #" . $details['alleleBoxNumber'] . "</strong> does not match the number of participants specified. You must enter an allele for every participant or use a hyphen (-) if wanting no allele. Please correct this and try validation again.";
 				
 				return array( "class" => "danger", "message" => $message );
 				

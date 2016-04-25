@@ -29,7 +29,7 @@ if( isset( $_POST['curationCode'] ) ) {
 		$results = $validate->validateIdentifiers( $_POST['participants'], $_POST['role'], $_POST['participant_type'], $_POST['organism'], $_POST['id_type'], $curationCode, $_POST['id'], $required );
 		
 		if( isset( $_POST['allele'] ) && sizeof( $_POST['allele'] ) > 0 ) {
-			$results = $validate->validateAlleles( $_POST['allele'], $results['COUNTS']['TOTAL'], $results );
+			$results = $validate->validateAlleles( $_POST['allele'], $results['COUNTS']['TOTAL'], $results, $curationCode, $_POST['id'] );
 		}
 
 		if( sizeof( $results['ERRORS'] ) > 0 ) {
