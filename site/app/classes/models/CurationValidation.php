@@ -29,6 +29,43 @@ class CurationValidation {
 	}
 	
 	/**
+	 * Take a set of notes and sanitize and validate them
+	 */
+	 
+	public function validateInteractionNotes( $notes, $block, $curationCode, $isRequired = false ) {
+		
+		$messages = array( );
+		$noteSet = array( );
+		
+		$notesList = explode( PHP_EOL, trim($notes) );
+		foreach( $notesList as $note ) {
+			$note = trim( filter_var( $note, FILTER_SANITIZE_STRING ) );
+			if( strlen( $note ) > 0 ) {
+				$noteSet[] = $note;
+			}
+		}
+		
+		$status = "VALID";
+		if( $isRequired ) {
+			if( sizeof( $noteSet ) <= 0 ) {
+				$messages[] = $this->generateError( "REQUIRED" );
+				$status = "ERROR";
+			}
+		} else {
+			if( sizeof( $noteSet ) <= 0 ) {
+				$messages[] = $this->generateError( "BLANK" );
+				$status = "WARNING";
+			}
+		}
+		
+		// INSERT/UPDATE IT IN THE DATABASE
+		$this->updateCurationEntries( $curationCode, $status, $block, $noteSet, "note", 0 );
+		
+		return array( "STATUS" => $status, "ERRORS" => $messages );
+		
+	}
+	
+	/**
 	 * Take a set of alleles and validate them compared to a set of identifiers
 	 */
 	 
@@ -420,6 +457,9 @@ class CurationValidation {
 				
 			case "NOCODE" :
 				return array( "class" => "danger", "message" => "No curation code was passed to the validation script. Please try again!" );
+				
+			case "BLANK" :
+				return array( "class" => "warning", "message" => $this->blockName . " is currently blank but is not a required field. If you do not wish to use it, try removing it instead or simply leave it blank to ignore it." );
 
 			default:
 				return array( "class" => "danger", "message" => "An unknown error has occurred." );
