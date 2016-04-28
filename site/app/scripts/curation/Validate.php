@@ -26,21 +26,23 @@ if( isset( $_POST['curationCode'] ) ) {
 	
 	if( $_POST['type'] == "participant" ) {
 
-		$results = $validate->validateIdentifiers( $_POST['participants'], $_POST['role'], $_POST['participant_type'], $_POST['organism'], $_POST['id_type'], $curationCode, $_POST['id'], $required );
+		$results = $validate->validateIdentifiers( $_POST['participants'], $_POST['role'], $_POST['participant_type'], $_POST['organism'], $_POST['id_type'], $_POST['id'], $curationCode, $required );
 		
 		if( isset( $_POST['allele'] ) && sizeof( $_POST['allele'] ) > 0 ) {
-			$results = $validate->validateAlleles( $_POST['allele'], $results['COUNTS']['TOTAL'], $results, $curationCode, $_POST['id'] );
-		}
-
-		if( sizeof( $results['ERRORS'] ) > 0 ) {
-			$results['ERRORS'] = $validate->processErrors( $results['ERRORS'] );
-		} else {
-			$results['ERRORS'] = "";
+			$results = $validate->validateAlleles( $_POST['allele'], $results['COUNTS']['TOTAL'], $results, $_POST['id'], $curationCode );
 		}
 		
-		echo json_encode( $results );
-		
+	} else if( $_POST['type'] == "attribute" ) {
+		$results = $validate->validateAttribute( $_POST, $_POST['id'], $curationCode, $required );
 	}
+	
+	if( sizeof( $results['ERRORS'] ) > 0 ) {
+		$results['ERRORS'] = $validate->processErrors( $results['ERRORS'] );
+	} else {
+		$results['ERRORS'] = "";
+	}
+	
+	echo json_encode( $results );
 	
 } else {
 

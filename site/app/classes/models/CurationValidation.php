@@ -29,6 +29,22 @@ class CurationValidation {
 	}
 	
 	/**
+	 * Take an attribute and attribute type and validate it accordingly
+	 */
+	 
+	public function validateAttribute( $options, $block, $curationCode, $isRequired = false ) {
+	
+		switch( $options['typeid'] ) {
+			
+			case "22" : // NOTE
+				$results = $this->validateInteractionNotes( $options['notes'][0], $block, $curationCode, $isRequired );
+				return $results;
+			
+		}
+	
+	}
+	
+	/**
 	 * Take a set of notes and sanitize and validate them
 	 */
 	 
@@ -37,7 +53,7 @@ class CurationValidation {
 		$messages = array( );
 		$noteSet = array( );
 		
-		$notesList = explode( PHP_EOL, trim($notes) );
+		$notesList = explode( PHP_EOL, trim(urldecode($notes)) );
 		foreach( $notesList as $note ) {
 			$note = trim( filter_var( $note, FILTER_SANITIZE_STRING ) );
 			if( strlen( $note ) > 0 ) {
@@ -104,7 +120,7 @@ class CurationValidation {
 	 * attempt to map each one to a database identifier based on the string text
 	 */
 	
-	public function validateIdentifiers( $identifiers, $role, $type, $taxa, $idType, $curationCode, $block, $isRequired = false ) {
+	public function validateIdentifiers( $identifiers, $role, $type, $taxa, $idType, $block, $curationCode, $isRequired = false ) {
 		
 		$messages = array( );
 		$identifiers = trim( $identifiers );
