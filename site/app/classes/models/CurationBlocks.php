@@ -207,7 +207,8 @@ class CurationBlocks extends lib\Blocks {
 			"ERRORS" => "",
 			"REQUIRED" => $options['required'],
 			"SUBPANEL" => false,
-			"TYPE" => $options['block']
+			"TYPE" => $options['block'],
+			"TYPE_ID" => $options['type']
 		);
 		
 		$curationBlock = $this->processView( 'curation' . DS . 'blocks' . DS . 'Block.tpl', $params, false );
