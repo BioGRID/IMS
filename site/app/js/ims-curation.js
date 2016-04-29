@@ -195,7 +195,7 @@
 			base.data = { 
 				id: base.$el.attr( "id" ),
 				type: base.$el.data( "type" ),
-				typeid: base.$el.data( "typeid" ),
+				attribute: base.$el.data( "attribute" ),
 				name: base.$el.data( "name" ),
 				required: base.$el.data( "required" ),
 				baseURL: $("head base").attr( "href" )
@@ -267,7 +267,7 @@
 				ajaxData.push({name: 'curationCode', value: $("#curationCode").val( )});
 				ajaxData.push({name: 'id', value: base.data.id});
 				ajaxData.push({name: 'type', value: base.data.type});
-				ajaxData.push({name: 'typeid', value: base.data.typeid});
+				ajaxData.push({name: 'attribute', value: base.data.attribute});
 				ajaxData.push({name: 'name', value: base.data.name});
 				ajaxData.push({name: 'required', value: base.data.required});
 					

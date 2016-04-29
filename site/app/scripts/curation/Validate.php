@@ -24,6 +24,7 @@ $validate = new models\CurationValidation( $_POST['name'] );
 if( isset( $_POST['curationCode'] ) ) {
 	$curationCode = $_POST['curationCode'];
 	
+	$results = array( );
 	if( $_POST['type'] == "participant" ) {
 
 		$results = $validate->validateIdentifiers( $_POST['participants'], $_POST['role'], $_POST['participant_type'], $_POST['organism'], $_POST['id_type'], $_POST['id'], $curationCode, $required );

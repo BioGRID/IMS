@@ -34,7 +34,7 @@ class CurationValidation {
 	 
 	public function validateAttribute( $options, $block, $curationCode, $isRequired = false ) {
 	
-		switch( $options['typeid'] ) {
+		switch( $options['attribute'] ) {
 			
 			case "22" : // NOTE
 				$results = $this->validateInteractionNotes( $options['notes'][0], $block, $curationCode, $isRequired );
@@ -53,9 +53,9 @@ class CurationValidation {
 		$messages = array( );
 		$noteSet = array( );
 		
-		$notesList = explode( PHP_EOL, trim(urldecode($notes)) );
+		$notesList = explode( PHP_EOL, trim($notes) );
 		foreach( $notesList as $note ) {
-			$note = trim( filter_var( $note, FILTER_SANITIZE_STRING ) );
+			$note = $this->cleanText( $note );
 			if( strlen( $note ) > 0 ) {
 				$noteSet[] = $note;
 			}
@@ -147,7 +147,7 @@ class CurationValidation {
 			$toAnnotate = array( );
 			foreach( $uniqueIdentifiers as $identifier ) {
 				
-				$identifier = strtoupper( trim( filter_var( $identifier, FILTER_SANITIZE_STRING )));
+				$identifier = strtoupper( $this->cleanText( $identifier ) );
 				$splitIdentifier = explode( "|", $identifier );
 				
 				if( sizeof( $splitIdentifier ) > 1 ) {
@@ -192,7 +192,7 @@ class CurationValidation {
 			$errorList = array( );
 			$warningList = array( );
 			foreach( $identifiers as $identifier ) {
-				$identifier = strtoupper( trim( filter_var( $identifier, FILTER_SANITIZE_STRING )));
+				$identifier = strtoupper( $this->cleanText( $identifier ) );
 				
 				// If we have an identifier with a | in it
 				// then it's a BIOGRID ID | STRING ID type of
@@ -513,6 +513,20 @@ class CurationValidation {
 		}
 		
 		return implode( PHP_EOL, $participants );
+	}
+	
+	/**
+	 * Clean text to remove non-ascii characters
+	 * and return the rest unmodified
+	 */
+	 
+	public function cleanText( $str ) {
+		
+		//$str = preg_replace( '/[^(\x20-\x7F)]*/', '', $str );
+		$str = filter_var( $str, FILTER_DEFAULT, FILTER_FLAG_STRIP_HIGH | FILTER_FLAG_STRIP_LOW );
+		$str = trim( strip_tags( $str ) );
+		return $str;
+		
 	}
 	
 }
