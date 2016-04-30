@@ -29,11 +29,150 @@ class CurationValidation {
 	}
 	
 	/**
+	 * Take an attribute and attribute category and validate it accordingly
+	 */
+	 
+	public function validateAttribute( $options, $block, $curationCode, $isRequired = false ) {
+	
+		switch( $options['category'] ) {
+			
+			case "3" : // NOTE
+				$results = $this->validateInteractionNotes( $options['data'], $block, $curationCode, $isRequired );
+				return $results;
+				
+			case "2" : // Quantitative Score
+				$results = $this->validateQuantitiativeScores( $options['data'], $options['attribute'], $block, $curationCode, $isRequired );
+				return $results;
+			
+		}
+	
+	}
+	
+	/**
+	 * Take a set of quantitative scores and ensure they are numerical
+	 * values with a simple validation process
+	 */
+	 
+	private function validateQuantitiativeScores( $scores, $attributeID, $block, $curationCode, $isRequired = false ) {
+		
+		$messages = array( );
+		$scoreSet = array( );
+		
+		$scoreList = explode( PHP_EOL, trim($scores) );
+		$lineCount = 1;
+		foreach( $scoreList as $score ) {
+			$score = trim( str_replace( array( ",", " " ), "", $score ) );
+			
+			if( !is_numeric( $score ) && $score != "-" ) {
+				$messages[] = $this->generateError( "NON_NUMERIC", array( "score" => $score, "lines" => array( $lineCount ) ) );
+			}
+			
+			$scoreSet[] = $score;
+			$lineCount++;
+
+		}
+		
+		$status = "VALID";
+		if( sizeof( $messages ) > 0 ) {
+			$status = "ERROR";
+		} else {
+			if( $isRequired ) {
+				if( sizeof( $scoreSet ) <= 0 ) {
+					array_unshift( $messages, $this->generateError( "REQUIRED" ) );
+					$status = "ERROR";
+				}
+			} else {
+				if( sizeof( $scoreSet ) <= 0 ) {
+					$messages[] = $this->generateError( "BLANK" );
+					$status = "WARNING";
+				} 
+			}
+		}
+	
+		// INSERT/UPDATE IT IN THE DATABASE
+		$this->updateCurationEntries( $curationCode, $status, $block, $scoreSet, "attribute", $attributeID, $isRequired );
+		
+		return array( "STATUS" => $status, "ERRORS" => $messages );
+		
+	}
+	
+	/**
+	 * Take a set of notes and sanitize and validate them
+	 */
+	 
+	private function validateInteractionNotes( $notes, $block, $curationCode, $isRequired = false ) {
+		
+		$messages = array( );
+		$noteSet = array( );
+		
+		$notesList = explode( PHP_EOL, trim($notes) );
+		foreach( $notesList as $note ) {
+			$note = $this->cleanText( $note );
+			if( strlen( $note ) > 0 ) {
+				$noteSet[] = $note;
+			}
+		}
+		
+		$status = "VALID";
+		if( $isRequired ) {
+			if( sizeof( $noteSet ) <= 0 ) {
+				$messages[] = $this->generateError( "REQUIRED" );
+				$status = "ERROR";
+			}
+		} else {
+			if( sizeof( $noteSet ) <= 0 ) {
+				$messages[] = $this->generateError( "BLANK" );
+				$status = "WARNING";
+			}
+		}
+		
+		// INSERT/UPDATE IT IN THE DATABASE
+		$this->updateCurationEntries( $curationCode, $status, $block, $noteSet, "attribute", "22", $isRequired );
+		
+		return array( "STATUS" => $status, "ERRORS" => $messages );
+		
+	}
+	
+	/**
+	 * Take a set of alleles and validate them compared to a set of identifiers
+	 */
+	 
+	public function validateAlleles( $alleles, $participantCount, &$results, $block, $curationCode ) {
+		
+		$messages = array( );
+		$alleleSet = array( );
+		
+		foreach( $alleles as $alleleBoxNumber => $alleleList ) {
+			$alleleList = trim( $alleleList );
+			$alleleList = explode( PHP_EOL, $alleleList );
+			
+			if( sizeof( $alleleList ) != $participantCount ) {
+				$messages[] = $this->generateError( "ALLELE_MISMATCH", array( "alleleBoxNumber" => $alleleBoxNumber ) );
+			}
+			
+			// Remove Left Over NewLines
+			$alleleSet[] = array_map( 'trim', $alleleList );
+			
+		}
+		
+		if( sizeof( $messages ) > 0 ) {
+			$results["STATUS"] = "ERROR";
+			$results["ERRORS"] = array_merge( $results['ERRORS'], $messages );
+		} 
+		
+		// INSERT/UPDATE IT IN THE DATABASE
+		$this->updateCurationEntries( $curationCode, $results["STATUS"], $block, $alleleSet, "attribute", "36", false );
+		
+		return $results;
+		
+	}
+	
+	/**
 	 * Take a string of passed in identifiers and various search parameters, and
 	 * attempt to map each one to a database identifier based on the string text
 	 */
 	
-	public function validateIdentifiers( $identifiers, $role, $type, $taxa, $idType, $curationCode, $block, $isRequired = false ) {
+	public function validateIdentifiers( $identifiers, $role, $type, $taxa, $idType, $block, $curationCode, $isRequired = false ) {
 		
 		$messages = array( );
 		$identifiers = trim( $identifiers );
@@ -42,8 +181,8 @@ class CurationValidation {
 		// to help save time on lookups
 		
 		$mapping = array( );
-		$annotationSet = $this->fetchCurationEntry( $curationCode, $block, "participant_annotation", 0 );
-		$termMap = $this->fetchCurationEntry( $curationCode, $block, "participant_terms", 0 );
+		$annotationSet = $this->fetchCurationEntry( $curationCode, $block, "participant", "annotation" );
+		$termMap = $this->fetchCurationEntry( $curationCode, $block, "participant", "terms" );
 		
 		$counts = array( "VALID" => 0, "AMBIGUOUS" => 0, "UNKNOWN" => 0, "TOTAL" => 0 );
 		
@@ -60,7 +199,7 @@ class CurationValidation {
 			$toAnnotate = array( );
 			foreach( $uniqueIdentifiers as $identifier ) {
 				
-				$identifier = strtoupper( trim( filter_var( $identifier, FILTER_SANITIZE_STRING )));
+				$identifier = strtoupper( $this->cleanText( $identifier ) );
 				$splitIdentifier = explode( "|", $identifier );
 				
 				if( sizeof( $splitIdentifier ) > 1 ) {
@@ -105,7 +244,7 @@ class CurationValidation {
 			$errorList = array( );
 			$warningList = array( );
 			foreach( $identifiers as $identifier ) {
-				$identifier = strtoupper( trim( filter_var( $identifier, FILTER_SANITIZE_STRING )));
+				$identifier = strtoupper( $this->cleanText( $identifier ) );
 				
 				// If we have an identifier with a | in it
 				// then it's a BIOGRID ID | STRING ID type of
@@ -182,14 +321,12 @@ class CurationValidation {
 			
 		}
 		
-		$errors = $this->processErrors( $messages );
-		
 		// Update Curation Database Entries
-		$this->updateCurationEntries( $curationCode, $status, $block, $mapping, "participant", 0 );
-		$this->updateCurationEntries( $curationCode, "NEW", $block, $annotationSet, "participant_annotation", 0 );
-		$this->updateCurationEntries( $curationCode, "NEW", $block, $termMap, "participant_terms", 0 );
+		$this->updateCurationEntries( $curationCode, $status, $block, $mapping, "participant", "members", $isRequired );
+		$this->updateCurationEntries( $curationCode, "NEW", $block, $annotationSet, "participant", "annotation", $isRequired );
+		$this->updateCurationEntries( $curationCode, "NEW", $block, $termMap, "participant", "terms", $isRequired );
 		
-		return array( "STATUS" => $status, "ERRORS" => $errors, "COUNTS" => $counts );
+		return array( "STATUS" => $status, "ERRORS" => $messages, "COUNTS" => $counts );
 		
 	}
 	
@@ -198,19 +335,24 @@ class CurationValidation {
 	 * and the format of the table
 	 */
 	 
-	private function updateCurationEntries( $code, $status, $block, $data, $type, $index ) {
+	private function updateCurationEntries( $code, $status, $block, $data, $type, $subType, $isRequired ) {
 		
-		$stmt = $this->db->prepare( "SELECT curation_id FROM " . DB_IMS . ".curation WHERE curation_code=? AND curation_block=? AND curation_type=? AND curation_index=? LIMIT 1" );
+		$required = 0;
+		if( $isRequired ) {
+			$required = 1;
+		}
 		
-		$stmt->execute( array( $code, $block, $type, $index ) );
+		$stmt = $this->db->prepare( "SELECT curation_id FROM " . DB_IMS . ".curation WHERE curation_code=? AND curation_block=? AND curation_type=? AND curation_subtype=? LIMIT 1" );
+		
+		$stmt->execute( array( $code, $block, $type, $subType ) );
 		if( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
 			// PERFORM UPDATE INSTEAD OF INSERT
 			$stmt = $this->db->prepare( "UPDATE " . DB_IMS . ".curation SET curation_status=?, curation_data=? WHERE curation_id=?" );
 			$stmt->execute( array( $status, json_encode( $data ), $row->curation_id ) );
 		} else {
 			// PERFORM INSERT
-			$stmt = $this->db->prepare( "INSERT INTO " . DB_IMS . ".curation VALUES ( '0',?,?,?,?,?,?,NOW( ) )" );
-			$stmt->execute( array( $code, $status, $block, json_encode( $data ), $type, $index ) );
+			$stmt = $this->db->prepare( "INSERT INTO " . DB_IMS . ".curation VALUES ( '0',?,?,?,?,?,?,?,NOW( ) )" );
+			$stmt->execute( array( $code, $status, $block, json_encode( $data ), $type, $subType, $required ) );
 		}
 		
 	}
@@ -220,11 +362,11 @@ class CurationValidation {
 	 * if it exists, otherwise an empty array
 	 */
 	 
-	private function fetchCurationEntry( $code, $block, $type, $index ) {
+	private function fetchCurationEntry( $code, $block, $type, $subType ) {
 		
-		$stmt = $this->db->prepare( "SELECT curation_data FROM " . DB_IMS . ".curation WHERE curation_code=? AND curation_block=? AND curation_type=? AND curation_index=? LIMIT 1" );
+		$stmt = $this->db->prepare( "SELECT curation_data FROM " . DB_IMS . ".curation WHERE curation_code=? AND curation_block=? AND curation_type=? AND curation_subtype=? LIMIT 1" );
 		
-		$stmt->execute( array( $code, $block, $type, $index ) );
+		$stmt->execute( array( $code, $block, $type, $subType ) );
 		if( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
 			return json_decode( $row->curation_data, true );
 		} 
@@ -359,6 +501,12 @@ class CurationValidation {
 			case "REQUIRED" :
 				return array( "class" => "danger", "message" => $this->blockName . " is a required field. It will not validate while no data has been entered in the provided fields." );
 				
+			case "NON_NUMERIC" :
+				
+				$message = "The score value <strong>" . $details['score'] . "</strong> is NON NUMERIC on line <strong>" . implode( ", ", $details['lines'] ) . "</strong>. Please use a numerical value or use a hyphen (-) for no score on this line.";
+				
+				return array( "class" => "danger", "message" => $message );
+				
 			case "AMBIGUOUS" :
 			
 				$message = "The identifier <strong>" . $details['identifier'] . "</strong> is AMBIGUOUS on lines <strong>" . implode( ", ", $details['lines'] ) . "</strong>. <br />Ambiguities are: ";
@@ -380,8 +528,17 @@ class CurationValidation {
 				
 				return array( "class" => "warning", "message" => $message );
 				
+			case "ALLELE_MISMATCH" :
+				
+				$message = "The number of alleles in <strong>Allele Box #" . $details['alleleBoxNumber'] . "</strong> does not match the number of participants specified. You must enter an allele for every participant or use a hyphen (-) if wanting no allele. Please correct this and try validation again.";
+				
+				return array( "class" => "danger", "message" => $message );
+				
 			case "NOCODE" :
 				return array( "class" => "danger", "message" => "No curation code was passed to the validation script. Please try again!" );
+				
+			case "BLANK" :
+				return array( "class" => "warning", "message" => $this->blockName . " is currently blank but is not a required field. If you do not wish to use it, try removing it instead or simply leave it blank to ignore it." );
 
 			default:
 				return array( "class" => "danger", "message" => "An unknown error has occurred." );
@@ -419,6 +576,20 @@ class CurationValidation {
 		}
 		
 		return implode( PHP_EOL, $participants );
+	}
+	
+	/**
+	 * Clean text to remove non-ascii characters
+	 * and return the rest unmodified
+	 */
+	 
+	public function cleanText( $str ) {
+		
+		//$str = preg_replace( '/[^(\x20-\x7F)]*/', '', $str );
+		$str = filter_var( $str, FILTER_DEFAULT, FILTER_FLAG_STRIP_HIGH | FILTER_FLAG_STRIP_LOW );
+		$str = trim( strip_tags( $str ) );
+		return $str;
+		
 	}
 	
 }

@@ -179,6 +179,7 @@ class CurationBlocks extends lib\Blocks {
 	
 		$view = "";
 		$type = "";
+		$category = "";
 	
 		switch( strtolower($options['block']) ) {
 			
@@ -188,6 +189,8 @@ class CurationBlocks extends lib\Blocks {
 				
 			case "attribute" :
 				$view = $this->fetchAttributeCurationForm( $options['blockid'], $options, false );
+				$attributeInfo = $this->attributeTypes[$options['type']];
+				$category = $attributeInfo->attribute_type_category_id;
 				break;
 				
 			default:
@@ -200,6 +203,7 @@ class CurationBlocks extends lib\Blocks {
 				
 		}
 		
+		
 		$params = array( 
 			"ID" => $options['blockid'], 
 			"TITLE" => trim($options['blockName']), 
@@ -207,7 +211,9 @@ class CurationBlocks extends lib\Blocks {
 			"ERRORS" => "",
 			"REQUIRED" => $options['required'],
 			"SUBPANEL" => false,
-			"TYPE" => $options['block']
+			"TYPE" => $options['block'],
+			"ATTRIBUTE" => $options['type'],
+			"CATEGORY" => $category
 		);
 		
 		$curationBlock = $this->processView( 'curation' . DS . 'blocks' . DS . 'Block.tpl', $params, false );
@@ -320,6 +326,7 @@ class CurationBlocks extends lib\Blocks {
 			}
 			
 			$params = array( 
+				"ATTRIBUTE_ID" => $attributeID,
 				"BASE_NAME" => $id,
 				"PLACEHOLDER_MSG" => $msg
 			);
@@ -328,6 +335,19 @@ class CurationBlocks extends lib\Blocks {
 			
 		} else if( $attributeInfo->attribute_type_category_id == "2" ) { // Quantitiative Score
 			// Get Quantitiative Score View
+			
+			$msg = "Enter Numerical Quantitative Scores Here, Each distinct score on a New Line.";
+			if( $isPanel ) {
+				$msg = "Enter scores here! You must have one score for each interaction. Enter hyphen '-' if no score is present for a given interaction.";
+			}
+			
+			$params = array( 
+				"ATTRIBUTE_ID" => $attributeID,
+				"BASE_NAME" => $id,
+				"PLACEHOLDER_MSG" => $msg
+			);
+			
+			$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_Note.tpl', $params, false );
 		}
 		
 		return $view;
