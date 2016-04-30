@@ -326,6 +326,7 @@ class CurationBlocks extends lib\Blocks {
 			}
 			
 			$params = array( 
+				"ATTRIBUTE_ID" => $attributeID,
 				"BASE_NAME" => $id,
 				"PLACEHOLDER_MSG" => $msg
 			);
@@ -335,7 +336,18 @@ class CurationBlocks extends lib\Blocks {
 		} else if( $attributeInfo->attribute_type_category_id == "2" ) { // Quantitiative Score
 			// Get Quantitiative Score View
 			
+			$msg = "Enter Numerical Quantitative Scores Here, Each distinct score on a New Line.";
+			if( $isPanel ) {
+				$msg = "Enter scores here! You must have one score for each interaction. Enter hyphen '-' if no score is present for a given interaction.";
+			}
 			
+			$params = array( 
+				"ATTRIBUTE_ID" => $attributeID,
+				"BASE_NAME" => $id,
+				"PLACEHOLDER_MSG" => $msg
+			);
+			
+			$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_Note.tpl', $params, false );
 		}
 		
 		return $view;

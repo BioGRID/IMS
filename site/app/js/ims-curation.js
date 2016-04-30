@@ -196,6 +196,7 @@
 				id: base.$el.attr( "id" ),
 				type: base.$el.data( "type" ),
 				attribute: base.$el.data( "attribute" ),
+				category: base.$el.data( "category" ),
 				name: base.$el.data( "name" ),
 				required: base.$el.data( "required" ),
 				baseURL: $("head base").attr( "href" )
@@ -268,6 +269,7 @@
 				ajaxData.push({name: 'id', value: base.data.id});
 				ajaxData.push({name: 'type', value: base.data.type});
 				ajaxData.push({name: 'attribute', value: base.data.attribute});
+				ajaxData.push({name: 'category', value: base.data.category});
 				ajaxData.push({name: 'name', value: base.data.name});
 				ajaxData.push({name: 'required', value: base.data.required});
 					
