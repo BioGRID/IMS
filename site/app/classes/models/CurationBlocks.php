@@ -303,7 +303,9 @@ class CurationBlocks extends lib\Blocks {
 		$view = "";
 		
 		if( $attributeInfo->attribute_type_category_id == "1" && $attributeID != "36" ) { // Ontology Attributes
+			
 			// Get Ontology View
+			
 			
 		} else if( $attributeID == "36" ) { // Allele List View
 		
