@@ -5,8 +5,8 @@
 			<thead>
 			<tr>
 				<th colspan='2'>
-					<div class='col-lg-8 col-sm-8'>
-						<div class='pull-right marginTopSm marginLeftSm'> <h5>in Group:</h5> </div>
+					<div class='col-lg-8 col-sm-8 paddingLeftNone paddingRightSm'>
+						<div class='pull-right marginTopSm marginLeftSm'> <h5>in Group: </h5> </div>
 						<div class='input-group'>
 							<input type="text" name='ontologySearch' id='ontologySearch' class="form-control" placeholder="Enter Search Term or ID" value="" autofocus>
 							<span class='input-group-btn'>
@@ -15,7 +15,7 @@
 						</div>
 					</div>
 			
-					<div class='col-lg-4 col-sm-4'>
+					<div class='col-lg-4 col-sm-4 paddingLeftNone paddingRightNone'>
 						<select class='form-control ontologySelect' id='ontologySelect'>
 							
 						</select>
