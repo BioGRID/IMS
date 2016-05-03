@@ -15,6 +15,7 @@
 	$(function( ) {
 		initializeUI( );
 		initCurationBlock( );
+		initOntologySelector( );
 	});
 	
 	/**
@@ -170,6 +171,11 @@
 				$("#curationWorkflow").append(data);
 				$("#" + dataAttribs['blockid']).curationBlock( {} );
 				
+				var ontSelect = $("#" + dataAttribs['blockid'] + " .ontologySelector");
+				if( ontSelect.length ) {
+					ontSelect.ontologySelector( { } );
+				}
+				
 			});
 			
 		}
@@ -210,7 +216,7 @@
 			};
 			
 			base.components.activityIcons = base.components.checklistItem.find( ".activityIcons" );
-			base.components.errorList = base.components.errorBox.find( ".curationErrorList" )
+			base.components.errorList = base.components.errorBox.find( ".curationErrorList" );
 			
 			base.$el.data( "status", "NEW" );
 			base.$el.data( "curationBlock", base );
@@ -370,6 +376,70 @@
 		$.fn.curationBlock = function( options ) {
 			return this.each( function( ) {
 				(new $.curationBlock( this, options ));
+			});
+		};
+		
+	}
+	
+	/**
+	 * Ontology Selector is a plugin used to create a functional tool for searching and
+	 * selecting from an ontology in the database
+	 */
+	 
+	function initOntologySelector( ) {
+		
+		$.ontologySelector = function( el, options ) {
+			
+			var base = this;
+			base.$el = $(el);
+			base.el = el;
+			
+			base.data = { 
+				baseURL: $("head base").attr( "href" )
+			};
+			
+			base.components = {
+				searchTxt: base.$el.find( ".ontologySearchTxt" ),
+				searchBtn: base.$el.find( ".ontologySearchBtn" )
+			};
+			
+			base.$el.data( "ontologySelector", base );
+			
+			base.init = function( ) {
+				base.options = $.extend( {}, $.ontologySelector.defaultOptions, options );
+				base.initSearchFunctionality( );
+			};
+			
+			base.initSearchFunctionality = function( ) {
+				
+				// Search when search button is clicked
+				base.components.searchBtn.on( "click", function( ) {
+					base.search( );
+				});
+				
+				// Search if Enter is pressed while in Text Box
+				base.components.searchTxt.on( "keypress", function( e ) {
+					if( e.keyCode == 13 ) {
+						base.search( );
+					}
+				});
+				
+			};
+			
+			base.search = function( ) {
+				var searchTerm = base.components.searchTxt.val( );
+				console.log( searchTerm );
+			};
+			
+			base.init( );
+			
+		};
+		
+		$.ontologySelector.defaultOptions = { };
+		
+		$.fn.ontologySelector = function( options ) {
+			return this.each( function( ) {
+				(new $.ontologySelector( this, options ));
 			});
 		};
 		
