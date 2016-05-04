@@ -400,8 +400,14 @@
 			
 			base.components = {
 				searchTxt: base.$el.find( ".ontologySearchTxt" ),
-				searchBtn: base.$el.find( ".ontologySearchBtn" )
+				searchBtn: base.$el.find( ".ontologySearchBtn" ),
+				viewBtns: base.$el.find( ".ontologyViewBtns" ),
+				views: base.$el.find( ".ontologyViews" )
 			};
+			
+			base.components.popularViewBtn = base.components.viewBtns.find( ".ontologyViewPopularBtn" );
+			base.components.searchViewBtn = base.components.viewBtns.find( ".ontologyViewSearchBtn" );
+			base.components.treeViewBtn = base.components.viewBtns.find( ".ontologyViewTreeBtn" );
 			
 			base.$el.data( "ontologySelector", base );
 			
@@ -424,11 +430,25 @@
 					}
 				});
 				
+				base.$el.on( "click", ".ontologyViewBtn", function( ) {
+					base.changeView( $(this) );
+				});
+				
 			};
 			
 			base.search = function( ) {
 				var searchTerm = base.components.searchTxt.val( );
 				console.log( searchTerm );
+			};
+			
+			base.changeView = function( clickedBtn ) {
+				base.components.viewBtns.children( ).removeClass( "active" );
+				clickedBtn.addClass( "active" );
+				
+				var viewToShow = base.components.views.find( "." + clickedBtn.data( "show" ) );
+				base.components.views.find( ".ontologyView" ).not( viewToShow ).hide( );
+				viewToShow.show( );
+				
 			};
 			
 			base.init( );

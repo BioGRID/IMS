@@ -27,12 +27,17 @@
 				<tr>
 					<td class='ontologyLeft'>
 						<h5>Ontology View: 
-						<div class='btn-group' role='group'>
-							<button type='button' class='btn btn-default btn-sm active'>Popular</button>
-							<button type='button' class='btn btn-default btn-sm'>Search</button>
-							<button type='button' class='btn btn-default btn-sm'>Tree</button>
+						<div class='btn-group ontologyViewBtns' role='group'>
+							<button type='button' data-show='ontologyViewPopular' class='btn btn-default btn-sm ontologyViewBtn ontologyViewPopularBtn active'>Popular</button>
+							<button type='button' data-show='ontologyViewSearch' class='btn btn-default btn-sm ontologyViewBtn ontologyViewSearchBtn'>Search</button>
+							<button type='button' data-show='ontologyViewTree' class='btn btn-default btn-sm ontologyViewBtn ontologyViewTreeBtn'>Tree</button>
 						</div>
 						</h5>
+						<div class='ontologyViews'>
+							<div class='ontologyView ontologyViewPopular'>Popular</div>
+							<div class='ontologyView ontologyViewSearch' style='display:none'>Search</div>
+							<div class='ontologyView ontologyViewTree' style='display:none'>Tree</div>
+						</div>
 					</td>
 					<td class='ontologyRight'>
 						<h5>Selected Terms</h5>
