@@ -307,6 +307,8 @@ class CurationBlocks extends lib\Blocks {
 			// Get Ontology View
 			$params = array( );
 			
+			// Fill out the list of ontologies here
+			
 			$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_Ontology.tpl', $params, false );
 			
 		} else if( $attributeID == "36" ) { // Allele List View
