@@ -17,7 +17,20 @@
 			
 					<div class='col-lg-4 col-sm-4 paddingLeftNone paddingRightNone'>
 						<select class='form-control ontologySelect' id='ontologySelect'>
-							
+							{% if ONT_GROUPS %}
+								<optgroup label="Ontology Groups">
+								{% for ONT_NAME, ONT_ID in ONT_GROUPS %}
+									<option value='{{ ONT_ID }}' {% if ONT_ID == SELECTED_ONT %}selected{% endif %}>{{ ONT_NAME }}</option>
+								{% endfor %}
+								</optgroup>
+								<optgroup label="Ontologies">
+							{% endif %}
+							{% for ONT_NAME, ONT_ID in ONTOLOGIES %}
+								<option value='{{ ONT_ID }}' {% if ONT_ID == SELECTED_ONT %}selected{% endif %}>{{ ONT_NAME }}</option>
+							{% endfor %}
+							{% if ONT_GROUPS %}
+								</optgroup>
+							{% endif %}
 						</select>
 					</div>
 				</th>
