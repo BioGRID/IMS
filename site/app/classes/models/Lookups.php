@@ -91,6 +91,29 @@ class Lookups {
 	}
 	
 	/**
+	 * Build a list of ontology ids with an option to include grouped 
+	 * ontology ids as well
+	 */
+	 
+	public function buildOntologyIDHash( $includeGroups = false ) {
+		
+		$ontologies = array( );
+		$stmt = $this->db->prepare( "SELECT ontology_id, ontology_name FROM " . DB_IMS . ".ontologies WHERE ontology_status='active' ORDER BY ontology_name ASC" );
+		$stmt->execute( );
+		
+		while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			$ontologies[$row->ontology_id] = $row->ontology_name;
+		}
+		
+		if( $includeGroups ) {
+			$ontologies["expsys"] = "Experimental Systems";
+		}
+		
+		return $ontologies;
+		
+	}
+	
+	/**
 	 * Build a hash that maps organism ids to a organism name combo
 	 * so we can quickly get organisms in a list
 	 */
