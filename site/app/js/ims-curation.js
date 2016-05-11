@@ -402,7 +402,8 @@
 				searchTxt: base.$el.find( ".ontologySearchTxt" ),
 				searchBtn: base.$el.find( ".ontologySearchBtn" ),
 				viewBtns: base.$el.find( ".ontologyViewBtns" ),
-				views: base.$el.find( ".ontologyViews" )
+				views: base.$el.find( ".ontologyViews" ),
+				selectList: base.$el.find( ".ontologySelect" )
 			};
 			
 			base.components.popularViewBtn = base.components.viewBtns.find( ".ontologyViewPopularBtn" );
@@ -434,6 +435,10 @@
 					base.changeView( $(this) );
 				});
 				
+				base.$el.on( "change", "select.ontologySelect", function( ) {
+					console.log( "TEST" );
+				});
+				
 			};
 			
 			base.search = function( ) {
@@ -442,6 +447,7 @@
 			};
 			
 			base.changeView = function( clickedBtn ) {
+				
 				base.components.viewBtns.children( ).removeClass( "active" );
 				clickedBtn.addClass( "active" );
 				
