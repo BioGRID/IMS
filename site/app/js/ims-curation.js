@@ -410,6 +410,10 @@
 			base.components.searchViewBtn = base.components.viewBtns.find( ".ontologyViewSearchBtn" );
 			base.components.treeViewBtn = base.components.viewBtns.find( ".ontologyViewTreeBtn" );
 			
+			base.components.popularView = base.components.views.find( ".ontologyViewPopular" );
+			base.components.searchView = base.components.views.find( ".ontologyViewSearch" );
+			base.components.treeView = base.components.views.find( ".ontologyViewTree" );
+			
 			base.$el.data( "ontologySelector", base );
 			
 			base.init = function( ) {
@@ -436,7 +440,36 @@
 				});
 				
 				base.$el.on( "change", "select.ontologySelect", function( ) {
-					console.log( "TEST" );
+					base.changeView( base.components.popularViewBtn );
+					base.loadPopularView( );
+				});
+				
+			};
+			
+			base.loadPopularView = function( ) {
+				
+				var ajaxData = {
+					ontology_id: base.components.selectList.val( ),
+					script: "loadPopularOntologyTerms"
+				};
+					
+				$.ajax({
+					
+					url: base.data.baseURL + "/scripts/curation/Ontology.php",
+					method: "POST",
+					dataType: "json",
+					data: ajaxData,
+					beforeSend: function( ) {
+						base.components.popularView.html( '<i class="fa fa-spinner fa-pulse fa-2x fa-fw"></i>' );
+					}
+					
+				}).done( function(results) {
+					 
+					console.log( results );
+					base.components.popularView.html( results['VIEW'] );
+					
+				}).fail( function( jqXHR, textStatus ) {
+					console.log( textStatus );
 				});
 				
 			};

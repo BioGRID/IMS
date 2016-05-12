@@ -11,12 +11,15 @@ namespace IMS\app\classes\models;
  
 use IMS\app\lib;
 use IMS\app\classes\models;
+use \PDO;
 
 class OntologyBlocks extends lib\Blocks {
 	
 	private $db;
 	private $ontologies;
 	private $lookups;
+	
+	private $POPULAR_LIMIT = 20;
 	 
 	public function __construct( ) {
 		parent::__construct( );
@@ -29,14 +32,33 @@ class OntologyBlocks extends lib\Blocks {
 		
 	}
 	
+	/**
+	 * Return an array of terms that are commonly used
+	 * within an ontology or group of ontologies being searched
+	 */
+	 
 	public function fetchPopularOntologyTerms( $ontologyID ) {
 	
 		$terms = array( );
+		
+		// Need to generate ontology id part of the query here 
+		// in case ontology ID refers to a group instead of a 
+		// single ontology
 	
 		if( isset( $this->ontologies[$ontologyID] ) ) {
+			$stmt = $this->db->prepare( "SELECT ontology_term_id, ontology_term_official_id, ontology_term_name FROM " . DB_IMS . ".ontology_terms WHERE ontology_term_status='active' AND ontology_id=? LIMIT " . $this->POPULAR_LIMIT );
+			$stmt->execute( array( $ontologyID ) );
+		
+			while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+				$terms[strtolower($row->ontology_term_name)] = $row;
+			}
 			
-		}
+			$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyPopular.tpl', array( "TERMS" => $terms ), false );
+			
+			return $view;
 	
+		}
+		
 	}
 	
 }
