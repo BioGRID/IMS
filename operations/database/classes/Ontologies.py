@@ -55,6 +55,7 @@ class Ontologies( ) :
 				row['phenotype_status'],
 				0,
 				"-",
+				0,
 				0
 			])
 			

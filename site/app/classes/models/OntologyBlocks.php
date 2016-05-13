@@ -19,7 +19,7 @@ class OntologyBlocks extends lib\Blocks {
 	private $ontologies;
 	private $lookups;
 	
-	private $POPULAR_LIMIT = 20;
+	private $POPULAR_LIMIT = 60;
 	 
 	public function __construct( ) {
 		parent::__construct( );
@@ -46,15 +46,20 @@ class OntologyBlocks extends lib\Blocks {
 		// single ontology
 	
 		if( isset( $this->ontologies[$ontologyID] ) ) {
-			$stmt = $this->db->prepare( "SELECT ontology_term_id, ontology_term_official_id, ontology_term_name FROM " . DB_IMS . ".ontology_terms WHERE ontology_term_status='active' AND ontology_id=? LIMIT " . $this->POPULAR_LIMIT );
+			$stmt = $this->db->prepare( "SELECT ontology_term_id, ontology_term_official_id, ontology_term_name FROM " . DB_IMS . ".ontology_terms WHERE ontology_term_status='active' AND ontology_id=? AND ontology_term_count != '0' ORDER BY ontology_term_count DESC LIMIT " . $this->POPULAR_LIMIT );
 			$stmt->execute( array( $ontologyID ) );
 		
 			while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
 				$terms[strtolower($row->ontology_term_name)] = $row;
 			}
 			
-			$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyPopular.tpl', array( "TERMS" => $terms ), false );
+			if( sizeof( $terms ) > 0 ) {
+				ksort( $terms );
+				$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyPopular.tpl', array( "TERMS" => $terms ), false );
+				return $view;
+			}
 			
+			$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyNoPopular.tpl', array( ), false );
 			return $view;
 	
 		}

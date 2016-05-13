@@ -296,6 +296,28 @@ h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 { margin-top: 0px; margin-b
 								}
 							}
 						}
+						
+						.ontologySelector {
+						
+							.ontologyViews {
+							
+								max-height: 700px;
+								overflow-y: scroll;
+						
+								.popularOntologyTerm {
+									padding: 0px;
+									overflow: hidden;
+									.ontologyTermWrap {
+										background-color: #FFFFEF;
+										font-weight: bold;
+										padding: 5px;
+										margin: 2px;
+										min-height: 55px;
+									}
+								}
+							
+							}
+						}
 					}
 					
 					label {
@@ -321,6 +343,7 @@ h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 { margin-top: 0px; margin-b
 									padding-right: 10px;
 									width: 300px;
 									background-color: @gray-lighter;
+									vertical-align: top;
 								}
 							}
 						}

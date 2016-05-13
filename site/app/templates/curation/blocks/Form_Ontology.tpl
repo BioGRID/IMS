@@ -46,7 +46,7 @@
 							<button type='button' data-show='ontologyViewTree' class='btn btn-default btn-sm ontologyViewBtn ontologyViewTreeBtn'>Tree</button>
 						</div>
 						</h5>
-						<div class='ontologyViews'>
+						<div class='ontologyViews well well-sm clearfix marginTopSm marginRightSm'>
 							<div class='ontologyView ontologyViewPopular'>Popular</div>
 							<div class='ontologyView ontologyViewSearch' style='display:none'>Search</div>
 							<div class='ontologyView ontologyViewTree' style='display:none'>Tree</div>

@@ -440,13 +440,19 @@
 				});
 				
 				base.$el.on( "change", "select.ontologySelect", function( ) {
-					base.changeView( base.components.popularViewBtn );
 					base.loadPopularView( );
 				});
+				
+				base.loadPopularView( );
 				
 			};
 			
 			base.loadPopularView = function( ) {
+				base.changeView( base.components.popularViewBtn );
+				base.updatePopularView( );
+			};
+			
+			base.updatePopularView = function( ) {
 				
 				var ajaxData = {
 					ontology_id: base.components.selectList.val( ),
