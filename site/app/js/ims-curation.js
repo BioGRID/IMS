@@ -394,6 +394,8 @@
 			base.$el = $(el);
 			base.el = el;
 			
+			var timer;
+			
 			base.data = { 
 				baseURL: $("head base").attr( "href" )
 			};
@@ -441,6 +443,19 @@
 				
 				base.$el.on( "change", "select.ontologySelect", function( ) {
 					base.loadPopularView( );
+				});
+				
+				base.$el.on( "mouseenter", "button.ontologyTermButton", function( ) {
+					var button = $(this);
+					clearTimeout( timer );
+					timer = setTimeout( function( ) { 
+						var buttonText = button.data( "btntext" );
+						button.find( ".btnText" ).html( buttonText );
+					}, base.options.hoverDelay );
+				});
+				
+				base.$el.on( "mouseleave", "button.ontologyTermButton", function( ) {
+					$(this).find( ".btnText" ).html( "" );
 				});
 				
 				base.loadPopularView( );
@@ -500,7 +515,9 @@
 			
 		};
 		
-		$.ontologySelector.defaultOptions = { };
+		$.ontologySelector.defaultOptions = { 
+			hoverDelay: 1000
+		};
 		
 		$.fn.ontologySelector = function( options ) {
 			return this.each( function( ) {
