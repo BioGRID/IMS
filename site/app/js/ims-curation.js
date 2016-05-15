@@ -15,6 +15,7 @@
 	$(function( ) {
 		initializeUI( );
 		initCurationBlock( );
+		initOntologySelector( );
 	});
 	
 	/**
@@ -170,6 +171,11 @@
 				$("#curationWorkflow").append(data);
 				$("#" + dataAttribs['blockid']).curationBlock( {} );
 				
+				var ontSelect = $("#" + dataAttribs['blockid'] + " .ontologySelector");
+				if( ontSelect.length ) {
+					ontSelect.ontologySelector( { } );
+				}
+				
 			});
 			
 		}
@@ -210,7 +216,7 @@
 			};
 			
 			base.components.activityIcons = base.components.checklistItem.find( ".activityIcons" );
-			base.components.errorList = base.components.errorBox.find( ".curationErrorList" )
+			base.components.errorList = base.components.errorBox.find( ".curationErrorList" );
 			
 			base.$el.data( "status", "NEW" );
 			base.$el.data( "curationBlock", base );
@@ -370,6 +376,192 @@
 		$.fn.curationBlock = function( options ) {
 			return this.each( function( ) {
 				(new $.curationBlock( this, options ));
+			});
+		};
+		
+	}
+	
+	/**
+	 * Ontology Selector is a plugin used to create a functional tool for searching and
+	 * selecting from an ontology in the database
+	 */
+	 
+	function initOntologySelector( ) {
+		
+		$.ontologySelector = function( el, options ) {
+			
+			var base = this;
+			base.$el = $(el);
+			base.el = el;
+			
+			var timer;
+			
+			base.data = { 
+				baseURL: $("head base").attr( "href" )
+			};
+			
+			base.components = {
+				searchTxt: base.$el.find( ".ontologySearchTxt" ),
+				searchBtn: base.$el.find( ".ontologySearchBtn" ),
+				viewBtns: base.$el.find( ".ontologyViewBtns" ),
+				views: base.$el.find( ".ontologyViews" ),
+				selectList: base.$el.find( ".ontologySelect" ),
+				headerTxt: base.$el.find( ".ontologyHeaderText" )
+			};
+			
+			base.components.popularViewBtn = base.components.viewBtns.find( ".ontologyViewPopularBtn" );
+			base.components.searchViewBtn = base.components.viewBtns.find( ".ontologyViewSearchBtn" );
+			base.components.treeViewBtn = base.components.viewBtns.find( ".ontologyViewTreeBtn" );
+			
+			base.components.popularView = base.components.views.find( ".ontologyViewPopular" );
+			base.components.searchView = base.components.views.find( ".ontologyViewSearch" );
+			base.components.treeView = base.components.views.find( ".ontologyViewTree" );
+			
+			base.$el.data( "ontologySelector", base );
+			
+			base.init = function( ) {
+				base.options = $.extend( {}, $.ontologySelector.defaultOptions, options );
+				base.initSearchFunctionality( );
+			};
+			
+			base.initSearchFunctionality = function( ) {
+				
+				// Search when search button is clicked
+				base.components.searchBtn.on( "click", function( ) {
+					base.search( );
+				});
+				
+				// Search if Enter is pressed while in Text Box
+				base.components.searchTxt.on( "keypress", function( e ) {
+					if( e.keyCode == 13 ) {
+						base.search( );
+					}
+				});
+				
+				base.$el.on( "click", ".ontologyViewBtn", function( ) {
+					base.changeView( $(this) );
+				});
+				
+				base.$el.on( "change", "select.ontologySelect", function( ) {
+					var searchTerm = base.components.searchTxt.val( );
+					if( searchTerm.length > 0 ) {
+						base.search( );
+						base.updatePopularView( );
+					} else {
+						base.loadPopularView( );
+						base.components.searchView.html( "Search for terms above to populate this list..." );
+					}
+				});
+				
+				base.$el.on( "mouseenter", "button.ontologyTermButton", function( ) {
+					var button = $(this);
+					clearTimeout( timer );
+					timer = setTimeout( function( ) { 
+						var buttonText = button.data( "btntext" );
+						button.find( ".btnText" ).html( buttonText );
+					}, base.options.hoverDelay );
+				});
+				
+				base.$el.on( "mouseleave", "button.ontologyTermButton", function( ) {
+					$(this).find( ".btnText" ).html( "" );
+					clearTimeout( timer );
+				});
+				
+				base.loadPopularView( );
+				
+			};
+			
+			base.loadPopularView = function( ) {
+				base.changeView( base.components.popularViewBtn );
+				base.updatePopularView( );
+			};
+			
+			base.updatePopularView = function( ) {
+				
+				var ajaxData = {
+					ontology_id: base.components.selectList.val( ),
+					script: "loadPopularOntologyTerms"
+				};
+					
+				$.ajax({
+					
+					url: base.data.baseURL + "/scripts/curation/Ontology.php",
+					method: "POST",
+					dataType: "json",
+					data: ajaxData,
+					beforeSend: function( ) {
+						base.components.popularView.html( '<i class="fa fa-spinner fa-pulse fa-2x fa-fw"></i>' );
+					}
+					
+				}).done( function(results) {
+					 
+					console.log( results );
+					base.components.popularView.html( results['VIEW'] );
+					
+				}).fail( function( jqXHR, textStatus ) {
+					console.log( textStatus );
+				});
+				
+			};
+			
+			base.search = function( ) {
+				base.changeView( base.components.searchViewBtn );
+				base.updateSearchView( );
+			};
+			
+			base.updateSearchView = function( ) {
+				
+				var searchTerm = base.components.searchTxt.val( );
+				
+				var ajaxData = {
+					ontology_id: base.components.selectList.val( ),
+					search: searchTerm,
+					script: "loadSearchOntologyTerms"
+				};
+					
+				$.ajax({
+					
+					url: base.data.baseURL + "/scripts/curation/Ontology.php",
+					method: "POST",
+					dataType: "json",
+					data: ajaxData,
+					beforeSend: function( ) {
+						base.components.searchView.html( '<i class="fa fa-spinner fa-pulse fa-2x fa-fw"></i>' );
+					}
+					
+				}).done( function(results) {
+					 
+					console.log( results );
+					base.components.searchView.html( results['VIEW'] );
+					
+				}).fail( function( jqXHR, textStatus ) {
+					console.log( textStatus );
+				});
+				
+			};
+			
+			base.changeView = function( clickedBtn ) {
+				
+				base.components.viewBtns.children( ).removeClass( "active" );
+				clickedBtn.addClass( "active" );
+				
+				var viewToShow = base.components.views.find( "." + clickedBtn.data( "show" ) );
+				base.components.views.find( ".ontologyView" ).not( viewToShow ).hide( );
+				viewToShow.show( );
+				
+			};
+			
+			base.init( );
+			
+		};
+		
+		$.ontologySelector.defaultOptions = { 
+			hoverDelay: 1000
+		};
+		
+		$.fn.ontologySelector = function( options ) {
+			return this.each( function( ) {
+				(new $.ontologySelector( this, options ));
 			});
 		};
 		

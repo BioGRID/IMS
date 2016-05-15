@@ -38,6 +38,7 @@ class CurationBlocks extends lib\Blocks {
 		$this->orgNames = $this->lookups->buildOrganismNameHash( );
 		$this->idTypes = $this->lookups->buildIDTypeHash( );
 		$this->attributeTypes = $this->lookups->buildAttributeTypeHASH( );
+		$this->ontologyNames = $this->lookups->buildOntologyNamesHash( true );
 		$this->buildAttributeTypeSelectLists( );
 		
 		$this->blockCount = 1;
@@ -303,7 +304,17 @@ class CurationBlocks extends lib\Blocks {
 		$view = "";
 		
 		if( $attributeInfo->attribute_type_category_id == "1" && $attributeID != "36" ) { // Ontology Attributes
+			
 			// Get Ontology View
+			$params = array( 
+				"ONTOLOGIES" => $this->ontologyNames["NAMES"],
+				"ONT_GROUPS" => $this->ontologyNames["GROUPS"],
+				"SELECTED_ONT" => "1"
+			);
+			
+			// Fill out the list of ontologies here
+			
+			$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_Ontology.tpl', $params, false );
 			
 		} else if( $attributeID == "36" ) { // Allele List View
 		

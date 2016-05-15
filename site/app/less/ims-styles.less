@@ -296,11 +296,69 @@ h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 { margin-top: 0px; margin-b
 								}
 							}
 						}
+						
+						.ontologySelector {
+						
+							.ontologyViews {
+							
+								max-height: 700px;
+								overflow-y: scroll;
+						
+								.popularOntologyTerm {
+									padding: 0px;
+									overflow: hidden;
+									.ontologyTermWrap {
+										background-color: #FFFFEF;
+										border-radius: 10px;
+										-moz-border-radius: 10px;
+										-webkit-border-radius: 10px;
+										font-weight: bold;
+										font-size: 16px;
+										padding: 5px;
+										margin: 2px;
+										
+										.ontologyTermText {
+											padding-top: 3px;
+										}
+										
+										.btn-sm {
+											padding: 4px 6px;
+											font-size: 12px;
+										}
+									}
+								}
+							
+							}
+						}
 					}
 					
 					label {
 						margin-bottom: 0px;
 						margin-top: 3px;
+					}
+					
+					.ontologySearchTable {
+						width: 100%;
+						thead {
+							th { font-weight: normal; padding-bottom: 10px; }
+						}
+						
+						tbody {
+							//border: 3px solid @brand-primary;
+							td {
+								padding-top: 10px;
+								padding-bottom: 10px;
+								
+								&.ontologyLeft { }
+								&.ontologyRight { 
+									padding-left: 10px;
+									padding-right: 10px;
+									width: 300px;
+									background-color: @gray-lighter;
+									vertical-align: top;
+								}
+							}
+						}
 					}
 				}
 				
