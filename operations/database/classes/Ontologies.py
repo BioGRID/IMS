@@ -61,6 +61,16 @@ class Ontologies( ) :
 			
 		self.cursor.execute( "UPDATE " + Config.DB_IMS + ".ontology_terms SET ontology_term_isroot='1' WHERE ontology_term_id IN ( SELECT ontology_rootid FROM " + Config.DB_IMS + ".ontologies )" )
 		
+	def copyOntologyTermsToSearch( self ) :
+	
+		"""
+		Copy Operation
+			-> IMS4: ontology_terms
+			-> IMS4: ontology_term_search
+		"""
+		
+		self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".ontology_term_search SELECT ontology_term_id, ontology_term_official_id, ontology_term_name, ontology_id, ontology_term_childcount FROM " + Config.DB_IMS + ".ontology_terms WHERE ontology_term_status='active' AND ontology_term_isroot='0'" )
+		
 	def setupNewOntologies( self ) :
 		
 		"""Add new ontologies to the the end of the ontologies table"""

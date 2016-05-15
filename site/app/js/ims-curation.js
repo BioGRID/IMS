@@ -405,7 +405,8 @@
 				searchBtn: base.$el.find( ".ontologySearchBtn" ),
 				viewBtns: base.$el.find( ".ontologyViewBtns" ),
 				views: base.$el.find( ".ontologyViews" ),
-				selectList: base.$el.find( ".ontologySelect" )
+				selectList: base.$el.find( ".ontologySelect" ),
+				headerTxt: base.$el.find( ".ontologyHeaderText" )
 			};
 			
 			base.components.popularViewBtn = base.components.viewBtns.find( ".ontologyViewPopularBtn" );
@@ -442,7 +443,14 @@
 				});
 				
 				base.$el.on( "change", "select.ontologySelect", function( ) {
-					base.loadPopularView( );
+					var searchTerm = base.components.searchTxt.val( );
+					if( searchTerm.length > 0 ) {
+						base.search( );
+						base.updatePopularView( );
+					} else {
+						base.loadPopularView( );
+						base.components.searchView.html( "Search for terms above to populate this list..." );
+					}
 				});
 				
 				base.$el.on( "mouseenter", "button.ontologyTermButton", function( ) {
@@ -456,6 +464,7 @@
 				
 				base.$el.on( "mouseleave", "button.ontologyTermButton", function( ) {
 					$(this).find( ".btnText" ).html( "" );
+					clearTimeout( timer );
 				});
 				
 				base.loadPopularView( );
@@ -496,8 +505,39 @@
 			};
 			
 			base.search = function( ) {
+				base.changeView( base.components.searchViewBtn );
+				base.updateSearchView( );
+			};
+			
+			base.updateSearchView = function( ) {
+				
 				var searchTerm = base.components.searchTxt.val( );
-				console.log( searchTerm );
+				
+				var ajaxData = {
+					ontology_id: base.components.selectList.val( ),
+					search: searchTerm,
+					script: "loadSearchOntologyTerms"
+				};
+					
+				$.ajax({
+					
+					url: base.data.baseURL + "/scripts/curation/Ontology.php",
+					method: "POST",
+					dataType: "json",
+					data: ajaxData,
+					beforeSend: function( ) {
+						base.components.searchView.html( '<i class="fa fa-spinner fa-pulse fa-2x fa-fw"></i>' );
+					}
+					
+				}).done( function(results) {
+					 
+					console.log( results );
+					base.components.searchView.html( results['VIEW'] );
+					
+				}).fail( function( jqXHR, textStatus ) {
+					console.log( textStatus );
+				});
+				
 			};
 			
 			base.changeView = function( clickedBtn ) {

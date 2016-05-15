@@ -21,7 +21,13 @@ if( isset( $_POST['script'] ) ) {
 		// Load a list of popular ontology terms based on the ontology group selected
 		case 'loadPopularOntologyTerms' :
 			$output = $ontologyBlocks->fetchPopularOntologyTerms( $_POST['ontology_id'] );
-			echo json_encode( array( "VIEW" => $output ) );
+			echo json_encode( $output );
+			break;
+			
+		// Load a list of ontology terms that match a passed in full text search query
+		case 'loadSearchOntologyTerms' :
+			$output = $ontologyBlocks->fetchSearchOntologyTerms( $_POST['ontology_id'], $_POST['search'] );
+			echo json_encode( $output );
 			break;
 			
 	}

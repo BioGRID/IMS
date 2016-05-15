@@ -48,7 +48,7 @@
 						</h5>
 						<div class='ontologyViews well well-sm clearfix marginTopSm marginRightSm'>
 							<div class='ontologyView ontologyViewPopular'>Popular</div>
-							<div class='ontologyView ontologyViewSearch' style='display:none'>Search</div>
+							<div class='ontologyView ontologyViewSearch' style='display:none'>Search for terms above to populate this list...</div>
 							<div class='ontologyView ontologyViewTree' style='display:none'>Tree</div>
 						</div>
 					</td>

@@ -21,6 +21,7 @@ class SQL( ) :
 	
 		self.clean( "ontologies" )
 		self.clean( "ontology_terms" )
+		self.clean( "ontology_term_search" )
 		self.clean( "ontology_relationships" )
 		
 	def build_ontologies( self ) :
@@ -36,6 +37,9 @@ class SQL( ) :
 		
 		self.writeLine( "Migrating Ontology Terms" )
 		ontologies.migrateOntologyTerms( )
+		
+		self.writeLine( "Copying Ontology Terms to Search Table" )
+		ontologies.copyOntologyTermsToSearch( )
 		
 		self.writeLine( "Adding New Ontologies" )
 		ontologies.setupNewOntologies( )
