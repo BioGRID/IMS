@@ -14,6 +14,7 @@ CREATE TABLE `ontology_terms` (
   `ontology_term_status` enum('active','inactive') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'active',
   `ontology_term_childcount` bigint(10) NOT NULL,
   `ontology_term_parent` text COLLATE utf8mb4_unicode_ci,
+  `ontology_term_path` longtext COLLATE utf8mb4_unicode_ci,
   `ontology_term_isroot` tinyint(1) NOT NULL DEFAULT '0',
   `ontology_term_count` bigint(10) NOT NULL,
   PRIMARY KEY (`ontology_term_id`),
