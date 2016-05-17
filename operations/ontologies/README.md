@@ -7,3 +7,5 @@ Operations tools for maintenance of ontology records.
 + **python UpdateParents.py [ --verbose ] [ --ontology [id] [id] [id] ... [id] ]** - Updates the set of parents for each term in the **ontology_terms** table of the IMS database. If the --ontology parameter is not used, it will run all "active" ontologies at once.
 
 + **python UpdateChildCount.py [ --verbose ] [ --ontology [id] [id] [id] ... [id] ]** - Updates the child count for each term in the **ontology_terms** table of the IMS database. If the --ontology parameter is not used, it will run all "active" ontologies at once.
+
++ **python UpdateOntologyTermCount.py** - Updates the term_count column in **ontology_terms** to show the number of times that ontology term has been used within the system.
