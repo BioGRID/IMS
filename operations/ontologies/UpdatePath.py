@@ -35,19 +35,39 @@ with Database.db as cursor :
 			print "Building Parent Path => " + ontRow['ontology_name']
 			print "---------------------------------------------------"
 	
-		#cursor.execute( "SELECT ontology_term_id, ontology_id FROM " + Config.DB_IMS + ".ontology_terms WHERE ontology_term_status = 'active' AND ontology_id=%s", [ontRow['ontology_id']] )
+		cursor.execute( "SELECT ontology_term_id, ontology_id FROM " + Config.DB_IMS + ".ontology_terms WHERE ontology_term_status = 'active' AND ontology_id=%s", [ontRow['ontology_id']] )
 		
-		cursor.execute( "SELECT ontology_term_id, ontology_id FROM " + Config.DB_IMS + ".ontology_terms WHERE ontology_term_status = 'active' AND ontology_term_id=%s", [str(159312)] )
+		#cursor.execute( "SELECT ontology_term_id, ontology_id FROM " + Config.DB_IMS + ".ontology_terms WHERE ontology_term_status = 'active' AND ontology_term_id=%s", [str(159312)] )
 		
+		# 159312
+		
+		termCount = 0
 		for termRow in cursor.fetchall( ) :
 			
-			print termRow['ontology_term_id']
+			termCount = termCount + 1
+			
 			pathSet = []
 			path = parents.fetchParentPath( termRow['ontology_term_id'], [], pathSet )
-			print pathSet
+			
+			annotatedPaths = []
+			for path in pathSet :
+				annotatedPath = []
+				for milestone in path :
+					termInfo = termDetails[str(milestone)]
+					annotatedPath.append( termInfo )
+				annotatedPaths.append( list(annotatedPath) )
 				
-			# if len(relationships) > 0 :
-				# cursor.execute( "UPDATE " + Config.DB_IMS + ".ontology_terms SET ontology_term_parent=%s WHERE ontology_term_id=%s", [json.dumps( relationships ), termRow['ontology_term_id']] )
+			if inputArgs.verbose :
+				print "Built Path for " + str(termRow['ontology_term_id']) + " | # of Paths: " + str(len(annotatedPaths))
+				
+			# for annotatedPath in annotatedPaths :
+				# print annotatedPath
+				# print "\n\n\n"
+				
+			cursor.execute( "UPDATE " + Config.DB_IMS + ".ontology_terms SET ontology_term_path=%s WHERE ontology_term_id=%s", [json.dumps( annotatedPaths ), termRow['ontology_term_id']] )
+			
+			if (termCount % 10000) == 0 :
+				Database.db.commit( )
 				
 		Database.db.commit( )
 	Database.db.commit( )
