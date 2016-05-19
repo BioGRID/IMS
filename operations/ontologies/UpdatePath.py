@@ -47,7 +47,7 @@ with Database.db as cursor :
 			termCount = termCount + 1
 			
 			pathSet = []
-			path = parents.fetchParentPath( termRow['ontology_term_id'], [], pathSet )
+			path = parents.fetchParentPath( termRow['ontology_term_id'], [], pathSet, True )
 			
 			annotatedPaths = []
 			for path in pathSet :
