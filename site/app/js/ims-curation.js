@@ -467,6 +467,10 @@
 					clearTimeout( timer );
 				});
 				
+				base.$el.on( "mouseenter", "a.ontologyTermDetails", function( ) {
+					base.loadTermDetailsTooltip( $(this) );
+				});
+				
 				base.loadPopularView( );
 				
 			};
@@ -548,6 +552,62 @@
 				var viewToShow = base.components.views.find( "." + clickedBtn.data( "show" ) );
 				base.components.views.find( ".ontologyView" ).not( viewToShow ).hide( );
 				viewToShow.show( );
+				
+			};
+			
+			base.loadTermDetailsTooltip = function( clickedLink ) {
+				
+				clickedLink.qtip({
+					overwrite: false,
+					content: {
+						text: function( event, api ) {
+							
+							var ajaxData = {
+								ontology_term_id: clickedLink.data( "termid" ),
+								script: "fetchOntologyTermDetails"
+							};
+							
+							$.ajax({
+					
+								url: base.data.baseURL + "/scripts/curation/Ontology.php",
+								method: "POST",
+								dataType: "json",
+								data: ajaxData,
+								beforeSend: function( ) {
+									console.log( "SENDING" );
+								}
+					
+							}).done( function(results) {
+								
+								console.log( results );
+								api.set( 'content.text', results['VIEW'] );
+								
+							}).fail( function( jqXHR, textStatus ) {
+								console.log( textStatus );
+								api.set( 'content.text', "Unable to fetch ontology term details..." );
+							});
+							
+							return '<i class="fa fa-spinner fa-pulse fa-2x fa-fw"></i> Loading...';
+							
+						}
+					},
+					style: {
+						classes: 'qtip-bootstrap',
+						width: '600px'
+					},
+					position: {
+						my: 'left center',
+						at: 'right center'
+					},
+					show: {
+						ready: true,
+						solo: true
+					},
+					hide: {
+						fixed: true,
+						leave: false
+					}
+				}, event);
 				
 			};
 			

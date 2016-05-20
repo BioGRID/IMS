@@ -70,7 +70,7 @@ class Ontologies( ) :
 			-> IMS4: ontology_term_search
 		"""
 		
-		self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".ontology_term_search SELECT ontology_term_id, ontology_term_official_id, ontology_term_name, ontology_id, ontology_term_childcount FROM " + Config.DB_IMS + ".ontology_terms WHERE ontology_term_status='active' AND ontology_term_isroot='0'" )
+		self.cursor.execute( "INSERT INTO " + Config.DB_IMS + ".ontology_term_search SELECT ontology_term_id, ontology_term_official_id, ontology_term_name, ontology_term_synonyms, ontology_id, ontology_term_childcount FROM " + Config.DB_IMS + ".ontology_terms WHERE ontology_term_status='active' AND ontology_term_isroot='0'" )
 		
 	def setupNewOntologies( self ) :
 		
