@@ -30,6 +30,11 @@ if( isset( $_POST['script'] ) ) {
 			echo json_encode( $output );
 			break;
 			
+		case 'fetchOntologyTermDetails' :
+			$output = $ontologyBlocks->fetchOntologyTermDetails( $_POST['ontology_term_id'] );
+			echo json_encode( $output );
+			break;
+			
 	}
 		
 }

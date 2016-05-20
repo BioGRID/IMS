@@ -82,7 +82,7 @@ class OntologyBlocks extends lib\Blocks {
 		
 		if( isset( $this->ontologies[$ontologyID] ) ) {
 			
-			$stmt = $this->db->prepare( "SELECT ontology_term_id, ontology_term_official_id, ontology_term_name, ontology_term_childcount FROM " . DB_IMS . ".ontology_term_search WHERE (MATCH (ontology_term_name) AGAINST (? IN BOOLEAN MODE) OR ontology_term_official_id=?) AND ontology_id = ?" );
+			$stmt = $this->db->prepare( "SELECT ontology_term_id, ontology_term_official_id, ontology_term_name, ontology_term_childcount FROM " . DB_IMS . ".ontology_term_search WHERE (MATCH (ontology_term_name, ontology_term_synonyms) AGAINST (? IN BOOLEAN MODE) OR ontology_term_official_id=?) AND ontology_id = ?" );
 			$stmt->execute( array( $searchTerm, $searchTerm, $ontologyID ) );
 			
 			while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
@@ -100,6 +100,66 @@ class OntologyBlocks extends lib\Blocks {
 			
 		}
 		
+	}
+	
+	/**
+	 * Return a set of annotation for an ontology term id
+	 */
+	
+	private function fetchOntologyTermAnnotation( $ontologyTermID, $incRelations = false ) {
+		
+		$stmt = $this->db->prepare( "SELECT ontology_term_official_id, ontology_term_name, ontology_term_desc, ontology_term_synonyms FROM " . DB_IMS . ".ontology_terms WHERE ontology_term_id=? LIMIT 1" );
+		$stmt->execute( array( $ontologyTermID ) );
+		
+		$row = $stmt->fetch( PDO::FETCH_ASSOC );
+		
+		if( $incRelations ) {
+			$row['ontology_relations'] = $this->fetchOntologyTermRelationships( $ontologyTermID );
+		}
+		
+		return $row;
+		
+	}
+	
+	/**
+	 * Return a set of relationships for an ontology term
+	 */
+	 
+	private function fetchOntologyTermRelationships( $ontologyTermID ) {
+		
+		$stmt = $this->db->prepare( "SELECT o.ontology_parent_id, o.ontology_relationship_type, p.ontology_term_official_id, p.ontology_term_name  FROM " . DB_IMS . ".ontology_relationships o LEFT JOIN " . DB_IMS . ".ontology_terms p ON (o.ontology_parent_id=p.ontology_term_id) WHERE o.ontology_term_id=?" );
+		$stmt->execute( array( $ontologyTermID ) );
+		
+		$relations = array( );
+		while( $row = $stmt->fetch( PDO::FETCH_ASSOC ) ) {
+			$relations[] = $row;
+		}
+		
+		return $relations;
+		
+	}
+	
+	/**
+	 * Return a formatted set of annotation information for an
+	 * ontology term including all the relationships
+	 */
+	 
+	public function fetchOntologyTermDetails( $ontologyTermID ) {
+		
+		$annotation = $this->fetchOntologyTermAnnotation( $ontologyTermID, true );
+		
+		if( $annotation['ontology_term_synonyms'] != "-" ) {
+			$synonyms = explode( "|", $annotation['ontology_term_synonyms'] );
+			if( sizeof( $synonyms ) > 10 ) {
+				$synonyms = array_slice( $synonyms, 0, 10 );
+				$annotation['ontology_term_synonyms'] = implode( "|", $synonyms );
+			}
+		}
+		
+		$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Ontology_TermPopup.tpl', $annotation, false );
+		
+		return array( "VIEW" => $view );
+	
 	}
 	
 }
