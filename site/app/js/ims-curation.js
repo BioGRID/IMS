@@ -471,7 +471,12 @@
 					base.loadTermDetailsTooltip( $(this) );
 				});
 				
+				base.$el.on( "click", ".ontologyTermFolder", function( ) {
+					base.fetchChildren( $(this) );
+				});
+				
 				base.loadPopularView( );
+				base.updateTreeView( );
 				
 			};
 			
@@ -608,6 +613,70 @@
 						leave: false
 					}
 				}, event);
+				
+			};
+			
+			base.tree = function( ) {
+				base.changeView( base.components.treeViewBtn );
+				base.updateTreeView( );
+			};
+			
+			base.updateTreeView = function( ) {
+				
+				var ajaxData = {
+					ontology_id: base.components.selectList.val( ),
+					script: "loadTreeOntologyTerms"
+				};
+					
+				$.ajax({
+					
+					url: base.data.baseURL + "/scripts/curation/Ontology.php",
+					method: "POST",
+					dataType: "json",
+					data: ajaxData,
+					beforeSend: function( ) {
+						base.components.treeView.html( '<i class="fa fa-spinner fa-pulse fa-2x fa-fw"></i>' );
+					}
+					
+				}).done( function(results) {
+					 
+					console.log( results );
+					base.components.treeView.html( results['VIEW'] );
+					
+				}).fail( function( jqXHR, textStatus ) {
+					console.log( textStatus );
+				});
+				
+			};
+			
+			base.fetchChildren = function( treeBtn ) {
+				
+				var termID = treeBtn.data( "termid" );
+				var treeExpand = $("#ontologyTermExpand-" + termID);
+				
+				var ajaxData = {
+					ontology_term_id = termID,
+					script: "loadTreeOntologyChildren"
+				};
+				
+				$.ajax({
+					
+					url: base.data.baseURL + "/scripts/curation/Ontology.php",
+					method: "POST",
+					dataType: "json",
+					data: ajaxData,
+					beforeSend: function( ) {
+						treeBtn.html( '<i class="fa fa-spinner fa-pulse fa-2x fa-fw"></i>' );
+					}
+					
+				}).done( function(results) {
+					 
+					console.log( results );
+					treeExpand.html( results['VIEW'] );
+					
+				}).fail( function( jqXHR, textStatus ) {
+					console.log( textStatus );
+				});
 				
 			};
 			
