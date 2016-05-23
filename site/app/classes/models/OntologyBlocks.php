@@ -198,4 +198,13 @@ class OntologyBlocks extends lib\Blocks {
 		
 	}
 	
+	/**
+	 * Load in the children based on a passed in ontology term id
+	 *
+	 */
+	 
+	public function fetchChildOntologyTerms( $ontologyTermID ) {
+		
+	}
+	
 }
