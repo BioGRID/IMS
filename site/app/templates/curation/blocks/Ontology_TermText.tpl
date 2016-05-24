@@ -9,7 +9,11 @@
 		<div class='ontologyTermText'>
 		
 			{% if ALLOW_EXPAND %}
-				<span class='ontologyTermFolder' data-termid='{{ TERM_DETAILS.ontology_term_id }}'><i class='ontologyTreeIcon fa fa-plus'></i></span>
+				{% if TERM_DETAILS.ontology_term_childcount > 0 %}
+					<span class='ontologyTermFolder' data-termid='{{ TERM_DETAILS.ontology_term_id }}'><i class='ontologyTreeIcon fa fa-angle-double-right fa-lg'></i></span>
+				{% else %}
+					<span class='ontologyTermNoClick' data-termid='{{ TERM_DETAILS.ontology_term_id }}'><i class='ontologyTreeIcon fa fa-leaf text-success'></i></span>
+				{% endif %}
 			{% endif %}
 
 			<a class='ontologyTermDetails' data-termid='{{ TERM_DETAILS.ontology_term_id }}'>

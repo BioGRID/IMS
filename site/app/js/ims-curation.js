@@ -447,9 +447,11 @@
 					if( searchTerm.length > 0 ) {
 						base.search( );
 						base.updatePopularView( );
+						base.updateTreeView( );
 					} else {
 						base.loadPopularView( );
 						base.components.searchView.html( "Search for terms above to populate this list..." );
+						base.updateTreeView( );
 					}
 				});
 				
@@ -472,7 +474,7 @@
 				});
 				
 				base.$el.on( "click", ".ontologyTermFolder", function( ) {
-					base.fetchChildren( $(this) );
+					base.toggleChildren( $(this) );
 				});
 				
 				base.loadPopularView( );
@@ -649,13 +651,10 @@
 				
 			};
 			
-			base.fetchChildren = function( treeBtn ) {
-				
-				var termID = treeBtn.data( "termid" );
-				var treeExpand = $("#ontologyTermExpand-" + termID);
+			base.fetchChildren = function( treeBtn, termID, treeExpand ) {
 				
 				var ajaxData = {
-					ontology_term_id = termID,
+					ontology_term_id: termID,
 					script: "loadTreeOntologyChildren"
 				};
 				
@@ -666,7 +665,7 @@
 					dataType: "json",
 					data: ajaxData,
 					beforeSend: function( ) {
-						treeBtn.html( '<i class="fa fa-spinner fa-pulse fa-2x fa-fw"></i>' );
+						treeBtn.html( '<i class="fa fa-spinner fa-pulse fa-lg fa-fw"></i>' );
 					}
 					
 				}).done( function(results) {
@@ -677,6 +676,30 @@
 				}).fail( function( jqXHR, textStatus ) {
 					console.log( textStatus );
 				});
+				
+			};
+			
+			base.toggleChildren = function( treeBtn ) {
+				
+				var termID = treeBtn.data( "termid" );
+				var treeExpand = $("#ontologyTermExpand-" + termID);
+				
+				if( treeExpand.html( ) === "" ) {
+					console.log( "WAS EMPTY, FILLING!!" );
+					base.fetchChildren( treeBtn, termID, treeExpand );
+					treeBtn.html( '<i class="fa fa-angle-double-down fa-lg"></i>' );
+					treeExpand.show( );
+				} else {
+					console.log( "WAS ALREADY FILLED, SHOWING!!" );
+					if( treeExpand.is( ":visible" ) ) {
+						treeExpand.hide( );
+						treeBtn.html( '<i class="fa fa-angle-double-right fa-lg"></i>' );
+					} else {
+						treeExpand.show( );
+						treeBtn.html( '<i class="fa fa-angle-double-down fa-lg"></i>' );
+					}
+				}
+				
 				
 			};
 			

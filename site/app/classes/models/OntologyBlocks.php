@@ -205,6 +205,27 @@ class OntologyBlocks extends lib\Blocks {
 	 
 	public function fetchChildOntologyTerms( $ontologyTermID ) {
 		
+		$terms = array( );
+			
+		$stmt = $this->db->prepare( "SELECT o.ontology_term_id, p.ontology_term_official_id, p.ontology_term_name, p.ontology_term_childcount, p.ontology_term_status FROM " . DB_IMS . ".ontology_relationships o LEFT JOIN ontology_terms p ON (o.ontology_term_id=p.ontology_term_id) WHERE ontology_relationship_status='active' AND ontology_parent_id=? AND ontology_relationship_type='is_a'" );
+		$stmt->execute( array( $ontologyTermID ) );
+	
+		while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			if( $row->ontology_term_status == "active" ) {
+				$terms[strtolower($row->ontology_term_name)] = $row;
+			}
+		}
+		
+		$view = "";
+		if( sizeof( $terms ) > 0 ) {
+			ksort( $terms );
+			$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyTerms.tpl', array( "TERMS" => $terms, "COUNT" => sizeof( $terms ), "TYPE" => "Popular", "ALLOW_EXPAND" => true, "SHOW_HEADING" => false ), false );
+		} else {
+			$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyError.tpl', array( "MESSAGE" => "No Children Available for this Term" ), false );
+		}
+		
+		return array( "VIEW" => $view );
+		
 	}
 	
 }
