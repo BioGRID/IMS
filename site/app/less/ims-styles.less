@@ -299,14 +299,24 @@ h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 { margin-top: 0px; margin-b
 						
 						.ontologySelector {
 						
+							.ontologyViewOptions {
+								display: none;
+							}
+						
 							.ontologyViews {
 							
 								max-height: 700px;
 								overflow-y: scroll;
 						
-								.popularOntologyTerm {
+								.popularOntologyTerm, .treeOntologyTerm {
 									padding: 0px;
 									overflow: hidden;
+									
+									.ontologyTermExpand {
+										margin-left: 20px;
+										display: none;
+									}
+									
 									.ontologyTermWrap {
 										background-color: #FFFFEF;
 										border-radius: 10px;
@@ -320,6 +330,10 @@ h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 { margin-top: 0px; margin-b
 										.ontologyTermText {
 											padding-top: 3px;
 											a {
+												cursor: pointer;
+											}
+											
+											.ontologyTermFolder {
 												cursor: pointer;
 											}
 										}

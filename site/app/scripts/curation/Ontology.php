@@ -30,11 +30,23 @@ if( isset( $_POST['script'] ) ) {
 			echo json_encode( $output );
 			break;
 			
+		// Load term details into a popup
 		case 'fetchOntologyTermDetails' :
 			$output = $ontologyBlocks->fetchOntologyTermDetails( $_POST['ontology_term_id'] );
 			echo json_encode( $output );
 			break;
 			
+		// Load a list of ontology terms to start a browseable tree view
+		case 'loadTreeOntologyTerms' :
+			$output = $ontologyBlocks->fetchTreeOntologyTerms( $_POST['ontology_id'] );
+			echo json_encode( $output );
+			break;
+		
+		// Load a list of ontology terms to expand children of a browseable tree
+		case 'loadTreeOntologyChildren' :
+			$output = $ontologyBlocks->fetchChildOntologyTerms( $_POST['ontology_term_id'] );
+			echo json_encode( $output );
+			break;
 	}
 		
 }

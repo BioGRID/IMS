@@ -39,6 +39,11 @@
 			<tbody>
 				<tr>
 					<td class='ontologyLeft'>
+					
+						<div class='ontologyViewOptions pull-right marginRightSm'>
+							<button type='button' class='btn btn-warning btn-sm ontologyResetTree'>Reset Tree <i class='fa fa-lg fa-tree'></i></button>
+						</div>
+					
 						<h5>Ontology View: 
 						<div class='btn-group ontologyViewBtns' role='group'>
 							<button type='button' data-show='ontologyViewPopular' class='btn btn-default btn-sm ontologyViewBtn ontologyViewPopularBtn active'>Popular</button>
