@@ -4,6 +4,11 @@
 		<div class='ontologyTermButtons pull-right'>
 			<button type='button' class='btn btn-success btn-sm ontologyTermButton ontologyTermButtonAdd' data-btntext='Add Term'><i class='fa fa-plus fa-lg'></i> <span class='btnText'></span></button>
 			<button type='button' class='btn btn-primary btn-sm ontologyTermButton ontologyTermButtonQualifier' data-btntext='Add Qualifier'><i class='fa fa-clone fa-lg'></i> <span class='btnText'></span></button>
+			
+			{% if ALLOW_TREE %}
+				<button type='button' class='btn btn-warning btn-sm ontologyTermButton ontologyTermButtonTree' data-btntext='View Tree'><i class='fa fa-tree fa-lg'></i> <span class='btnText'></span></button>
+			{% endif %}
+			
 		</div>
 		
 		<div class='ontologyTermText'>
@@ -28,7 +33,7 @@
 	</div>
 	
 	{% if ALLOW_EXPAND %}
-		<div class='ontologyTermExpand' id='ontologyTermExpand-{{ TERM_DETAILS.ontology_term_id }}'></div>
+		<div class='ontologyTermExpand' id='ontologyTermExpand-{{ TERM_DETAILS.ontology_term_id }}'>{{ ONTOLOGY_EXPAND }}</div>
 	{% endif %}
 	
 </div>

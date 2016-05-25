@@ -56,7 +56,7 @@ class OntologyBlocks extends lib\Blocks {
 			$view = "";
 			if( sizeof( $terms ) > 0 ) {
 				ksort( $terms );
-				$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyTerms.tpl', array( "TERMS" => $terms, "COUNT" => sizeof( $terms ), "TYPE" => "Popular", "ALLOW_EXPAND" => false, "SHOW_HEADING" => true ), false );
+				$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyTerms.tpl', array( "TERMS" => $terms, "COUNT" => sizeof( $terms ), "TYPE" => "Popular", "ALLOW_EXPAND" => false, "SHOW_HEADING" => true, "ALLOW_TREE" => true ), false );
 			} else {
 				$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyError.tpl', array( "MESSAGE" => "Currently no terms have been used from this ontology previously..." ), false );
 			}
@@ -91,7 +91,7 @@ class OntologyBlocks extends lib\Blocks {
 			
 			$view = "";
 			if( sizeof( $terms ) > 0 ) {
-				$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyTerms.tpl', array( "TERMS" => $terms, "COUNT" => sizeof( $terms ), "TYPE" => "Matching Searched", "ALLOW_EXPAND" => false, "SHOW_HEADING" => true ), false );
+				$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyTerms.tpl', array( "TERMS" => $terms, "COUNT" => sizeof( $terms ), "TYPE" => "Matching Searched", "ALLOW_EXPAND" => false, "SHOW_HEADING" => true, "ALLOW_TREE" => true ), false );
 			} else {
 				$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyError.tpl', array( "MESSAGE" => "Your search query returned no results. Are you sure you selected the correct ontology to search via the dropdown list?" ), false );
 			}
@@ -187,7 +187,7 @@ class OntologyBlocks extends lib\Blocks {
 			$view = "";
 			if( sizeof( $terms ) > 0 ) {
 				ksort( $terms );
-				$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyTerms.tpl', array( "TERMS" => $terms, "COUNT" => sizeof( $terms ), "TYPE" => "Popular", "ALLOW_EXPAND" => true, "SHOW_HEADING" => false ), false );
+				$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyTerms.tpl', array( "TERMS" => $terms, "COUNT" => sizeof( $terms ), "TYPE" => "Popular", "ALLOW_EXPAND" => true, "SHOW_HEADING" => false, "ALLOW_TREE" => false ), false );
 			} else {
 				$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyError.tpl', array( "MESSAGE" => "Currently no terms exist for this ontology" ), false );
 			}
@@ -219,12 +219,50 @@ class OntologyBlocks extends lib\Blocks {
 		$view = "";
 		if( sizeof( $terms ) > 0 ) {
 			ksort( $terms );
-			$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyTerms.tpl', array( "TERMS" => $terms, "COUNT" => sizeof( $terms ), "TYPE" => "Popular", "ALLOW_EXPAND" => true, "SHOW_HEADING" => false ), false );
+			$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyTerms.tpl', array( "TERMS" => $terms, "COUNT" => sizeof( $terms ), "TYPE" => "Popular", "ALLOW_EXPAND" => true, "SHOW_HEADING" => false, "ALLOW_TREE" => false ), false );
 		} else {
 			$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyError.tpl', array( "MESSAGE" => "No Children Available for this Term" ), false );
 		}
 		
 		return array( "VIEW" => $view );
+		
+	}
+	
+	/**
+	 * Generate a tree view for browsing ontology terms based on the 
+	 * ontology ID being viewed and it's lineage up through multiple
+	 * parents.
+	 */
+	 
+	public function fetchLineageOntologyTerms( $ontologyTermID ) {
+		
+		// $terms = array( );
+			
+		// $stmt = $this->db->prepare( "SELECT ontology_term_path FROM " . DB_IMS . ".ontology_terms WHERE ontology_term_id=? LIMIT 1" );
+		// $stmt->execute( array( $ontologyTermID ) );
+		// $row = $stmt->fetch( PDO::FETCH_OBJ );
+		
+		// $paths = json_decode( $row->ontology_term_path );
+		// foreach( $paths as $path ) {
+			// foreach( $path as $branch ) {
+				
+			// }
+		// }
+		
+			// if( $row->ontology_term_status == "active" ) {
+				// $terms[strtolower($row->ontology_term_name)] = $row;
+			// }
+		// }
+		
+		// $view = "";
+		// if( sizeof( $terms ) > 0 ) {
+			// ksort( $terms );
+			// $view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyTerms.tpl', array( "TERMS" => $terms, "COUNT" => sizeof( $terms ), "TYPE" => "Popular", "ALLOW_EXPAND" => true, "SHOW_HEADING" => false, "ALLOW_TREE" => false ), false );
+		// } else {
+			// $view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyError.tpl', array( "MESSAGE" => "No Children Available for this Term" ), false );
+		// }
+		
+		// return array( "VIEW" => $view );
 		
 	}
 	
