@@ -199,7 +199,7 @@ class OntologyBlocks extends lib\Blocks {
 	}
 	
 	/**
-	 * Load in the children based on a passed in ontology term id
+	 * Load in a single ontology term
 	 *
 	 */
 	 
@@ -236,33 +236,18 @@ class OntologyBlocks extends lib\Blocks {
 	 
 	public function fetchLineageOntologyTerms( $ontologyTermID ) {
 		
-		// $terms = array( );
-			
-		// $stmt = $this->db->prepare( "SELECT ontology_term_path FROM " . DB_IMS . ".ontology_terms WHERE ontology_term_id=? LIMIT 1" );
-		// $stmt->execute( array( $ontologyTermID ) );
-		// $row = $stmt->fetch( PDO::FETCH_OBJ );
+		$terms = array( );
+		$stmt = $this->db->prepare( "SELECT ontology_term_path FROM " . DB_IMS . ".ontology_terms WHERE ontology_term_id=? LIMIT 1" );
+		$stmt->execute( array( $ontologyTermID ) );
 		
-		// $paths = json_decode( $row->ontology_term_path );
-		// foreach( $paths as $path ) {
-			// foreach( $path as $branch ) {
-				
-			// }
-		// }
+		$row = $stmt->fetch( PDO::FETCH_OBJ );
+		if( $row ) {
+			$pathSet = json_decode( $row->ontology_term_path );
+			$path = $pathSet[0];
+			return array( "VIEW" => print_r( $path, true ) );
+		}
 		
-			// if( $row->ontology_term_status == "active" ) {
-				// $terms[strtolower($row->ontology_term_name)] = $row;
-			// }
-		// }
-		
-		// $view = "";
-		// if( sizeof( $terms ) > 0 ) {
-			// ksort( $terms );
-			// $view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyTerms.tpl', array( "TERMS" => $terms, "COUNT" => sizeof( $terms ), "TYPE" => "Popular", "ALLOW_EXPAND" => true, "SHOW_HEADING" => false, "ALLOW_TREE" => false ), false );
-		// } else {
-			// $view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyError.tpl', array( "MESSAGE" => "No Children Available for this Term" ), false );
-		// }
-		
-		// return array( "VIEW" => $view );
+		return array( "VIEW" => "PROBLEM" );
 		
 	}
 	

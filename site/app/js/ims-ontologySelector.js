@@ -63,11 +63,6 @@
 			
 			base.$el.on( "click", ".ontologyViewBtn", function( ) {
 				base.changeView( $(this) );
-				if( $(this).data( "show" ) == "ontologyViewTree" ) {
-					base.components.viewOptions.show( );
-				} else {
-					base.components.viewOptions.hide( );
-				}
 			});
 			
 			base.$el.on( "change", "select.ontologySelect", function( ) {
@@ -97,6 +92,11 @@
 			base.$el.on( "mouseleave", "button.ontologyTermButton", function( ) {
 				$(this).find( ".btnText" ).html( "" );
 				clearTimeout( timer );
+			});
+			
+			base.$el.on( "click", "button.ontologyTermButtonTree", function( ) {
+				base.updateLineageView( $(this) );
+				base.changeView( base.components.treeViewBtn );
 			});
 			
 			base.$el.on( "mouseenter", "a.ontologyTermDetails", function( ) {
@@ -193,6 +193,12 @@
 			var viewToShow = base.components.views.find( "." + clickedBtn.data( "show" ) );
 			base.components.views.find( ".ontologyView" ).not( viewToShow ).hide( );
 			viewToShow.show( );
+			
+			if( clickedBtn.data( "show" ) == "ontologyViewTree" ) {
+				base.components.viewOptions.show( );
+			} else {
+				base.components.viewOptions.hide( );
+			}
 			
 		};
 		
@@ -319,12 +325,10 @@
 			var treeExpand = $("#ontologyTermExpand-" + termID);
 			
 			if( treeExpand.html( ) === "" ) {
-				console.log( "WAS EMPTY, FILLING!!" );
 				base.fetchChildren( treeBtn, termID, treeExpand );
 				treeBtn.html( '<i class="fa fa-angle-double-down fa-lg"></i>' );
 				treeExpand.show( );
 			} else {
-				console.log( "WAS ALREADY FILLED, SHOWING!!" );
 				if( treeExpand.is( ":visible" ) ) {
 					treeExpand.hide( );
 					treeBtn.html( '<i class="fa fa-angle-double-right fa-lg"></i>' );
@@ -334,6 +338,34 @@
 				}
 			}
 			
+			
+		};
+		
+		base.updateLineageView = function( lineageBtn ) {
+			
+			var ajaxData = {
+				ontology_term_id: lineageBtn.data( "termid" ),
+				script: "loadLineageOntologyTerms"
+			};
+				
+			$.ajax({
+				
+				url: base.data.baseURL + "/scripts/curation/Ontology.php",
+				method: "POST",
+				dataType: "json",
+				data: ajaxData,
+				beforeSend: function( ) {
+					base.components.treeView.html( '<i class="fa fa-spinner fa-pulse fa-2x fa-fw"></i>' );
+				}
+				
+			}).done( function(results) {
+				 
+				console.log( results );
+				base.components.treeView.html( results['VIEW'] );
+				
+			}).fail( function( jqXHR, textStatus ) {
+				console.log( textStatus );
+			});
 			
 		};
 		
