@@ -314,7 +314,6 @@ h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 { margin-top: 0px; margin-b
 									
 									.ontologyTermExpand {
 										margin-left: 20px;
-										display: none;
 									}
 									
 									.ontologyTermWrap {
@@ -326,6 +325,10 @@ h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 { margin-top: 0px; margin-b
 										font-size: 16px;
 										padding: 5px;
 										margin: 2px;
+										
+										&.highlightTerm {
+											border: 2px solid @brand-danger;
+										}
 										
 										.ontologyTermText {
 											padding-top: 3px;

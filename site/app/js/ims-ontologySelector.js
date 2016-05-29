@@ -323,11 +323,13 @@
 			
 			var termID = treeBtn.data( "termid" );
 			var treeExpand = $("#ontologyTermExpand-" + termID);
+			var notfull = treeExpand.data( "notfull" );
 			
-			if( treeExpand.html( ) === "" ) {
+			if( treeExpand.html( ) === "" || treeExpand.data( "notfull" ) == true ) {
 				base.fetchChildren( treeBtn, termID, treeExpand );
 				treeBtn.html( '<i class="fa fa-angle-double-down fa-lg"></i>' );
 				treeExpand.show( );
+				treeExpand.data( "notfull", "false" );
 			} else {
 				if( treeExpand.is( ":visible" ) ) {
 					treeExpand.hide( );
