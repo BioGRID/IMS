@@ -45,11 +45,11 @@ class OntologyHash( ) :
 		termHash = { }
 		
 		if ontologyID == "" :
-			self.cursor.execute( "SELECT ontology_term_id, ontology_term_official_id, ontology_term_name FROM " + Config.DB_IMS + ".ontology_terms" )
+			self.cursor.execute( "SELECT ontology_term_id, ontology_term_official_id, ontology_term_name, ontology_term_childcount FROM " + Config.DB_IMS + ".ontology_terms" )
 		else :
-			self.cursor.execute( "SELECT ontology_term_id, ontology_term_official_id, ontology_term_name FROM " + Config.DB_IMS + ".ontology_terms WHERE ontology_id=%s", [ontologyID] )
+			self.cursor.execute( "SELECT ontology_term_id, ontology_term_official_id, ontology_term_name, ontology_term_childcount FROM " + Config.DB_IMS + ".ontology_terms WHERE ontology_id=%s", [ontologyID] )
 
 		for row in self.cursor.fetchall( ) :
-			termHash[str(row['ontology_term_id'])] = { "ID" : str(row['ontology_term_id']), "NAME" : row['ontology_term_name'], "OFFICIAL_ID" : row['ontology_term_official_id'] }
+			termHash[str(row['ontology_term_id'])] = { "ID" : str(row['ontology_term_id']), "NAME" : row['ontology_term_name'], "OFFICIAL_ID" : row['ontology_term_official_id'], "COUNT" : str(row['ontology_term_childcount']) }
 			
 		return termHash
