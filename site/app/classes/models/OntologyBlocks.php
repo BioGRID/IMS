@@ -258,8 +258,11 @@ class OntologyBlocks extends lib\Blocks {
 		$view = "";
 		if( $row ) {
 			$pathSet = json_decode( $row->ontology_term_path, true );
+			$completedPaths = array( );
+			$lastBranch = "";
 			foreach( $pathSet as $path ) {
 				$branchCount = 0;
+				$lastBranch = array_pop( $path );
 				foreach( $path as $branch ) {
 					if( $branchCount == 0 ) {
 						if( $branch['COUNT'] != 0 ) {
@@ -276,8 +279,12 @@ class OntologyBlocks extends lib\Blocks {
 					
 					$branchCount++;
 				}
-				break;
+				
+				$completedPaths[] = $view;
 			}
+			
+			$view = $this->fetchSingleOntologyTerm( $lastBranch['ID'], $lastBranch['NAME'], $lastBranch['COUNT'], false, false, true, true, false, false, implode( "", $completedPaths ) );
+			
 		}
 		
 		return array( "VIEW" => $view );

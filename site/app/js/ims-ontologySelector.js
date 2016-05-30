@@ -322,7 +322,8 @@
 		base.toggleChildren = function( treeBtn ) {
 			
 			var termID = treeBtn.data( "termid" );
-			var treeExpand = $("#ontologyTermExpand-" + termID);
+			var treeExpand = treeBtn.closest( ".popularOntologyTerm" ).find( ".ontologyTermExpand" );
+			console.log( treeExpand.attr("class") );
 			var notfull = treeExpand.data( "notfull" );
 			
 			if( treeExpand.html( ) === "" || treeExpand.data( "notfull" ) == true ) {
