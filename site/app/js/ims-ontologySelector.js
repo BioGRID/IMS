@@ -29,7 +29,8 @@
 			views: base.$el.find( ".ontologyViews" ),
 			selectList: base.$el.find( ".ontologySelect" ),
 			headerTxt: base.$el.find( ".ontologyHeaderText" ),
-			viewOptions: base.$el.find( ".ontologyViewOptions" )
+			viewOptions: base.$el.find( ".ontologyViewOptions" ),
+			selectedTerms: base.$el.find( ".ontologySelectedTerms" )
 		};
 		
 		base.components.popularViewBtn = base.components.viewBtns.find( ".ontologyViewPopularBtn" );
@@ -63,11 +64,6 @@
 			
 			base.$el.on( "click", ".ontologyViewBtn", function( ) {
 				base.changeView( $(this) );
-				if( $(this).data( "show" ) == "ontologyViewTree" ) {
-					base.components.viewOptions.show( );
-				} else {
-					base.components.viewOptions.hide( );
-				}
 			});
 			
 			base.$el.on( "change", "select.ontologySelect", function( ) {
@@ -99,6 +95,11 @@
 				clearTimeout( timer );
 			});
 			
+			base.$el.on( "click", "button.ontologyTermButtonTree", function( ) {
+				base.updateLineageView( $(this) );
+				base.changeView( base.components.treeViewBtn );
+			});
+			
 			base.$el.on( "mouseenter", "a.ontologyTermDetails", function( ) {
 				base.loadTermDetailsTooltip( $(this) );
 			});
@@ -109,6 +110,14 @@
 			
 			base.$el.on( "click", ".ontologyResetTree", function( ) {
 				base.updateTreeView( );
+			});
+			
+			base.$el.on( "click", ".ontologyTermButtonAdd", function( ) {
+				base.addSelectedTerm( $(this) );
+			});
+			
+			base.$el.on( "click", ".ontologyRemoveSelectedTerm", function( ) {
+				$(this).parent( ).parent( ).remove( );
 			});
 			
 			base.loadPopularView( );
@@ -193,6 +202,12 @@
 			var viewToShow = base.components.views.find( "." + clickedBtn.data( "show" ) );
 			base.components.views.find( ".ontologyView" ).not( viewToShow ).hide( );
 			viewToShow.show( );
+			
+			if( clickedBtn.data( "show" ) == "ontologyViewTree" ) {
+				base.components.viewOptions.show( );
+			} else {
+				base.components.viewOptions.hide( );
+			}
 			
 		};
 		
@@ -316,15 +331,15 @@
 		base.toggleChildren = function( treeBtn ) {
 			
 			var termID = treeBtn.data( "termid" );
-			var treeExpand = $("#ontologyTermExpand-" + termID);
+			var treeExpand = treeBtn.closest( ".popularOntologyTerm" ).find( ".ontologyTermExpand" );
+			var notfull = treeExpand.data( "notfull" );
 			
-			if( treeExpand.html( ) === "" ) {
-				console.log( "WAS EMPTY, FILLING!!" );
+			if( treeExpand.html( ) === "" || treeExpand.data( "notfull" ) == true ) {
 				base.fetchChildren( treeBtn, termID, treeExpand );
 				treeBtn.html( '<i class="fa fa-angle-double-down fa-lg"></i>' );
 				treeExpand.show( );
+				treeExpand.data( "notfull", "false" );
 			} else {
-				console.log( "WAS ALREADY FILLED, SHOWING!!" );
 				if( treeExpand.is( ":visible" ) ) {
 					treeExpand.hide( );
 					treeBtn.html( '<i class="fa fa-angle-double-right fa-lg"></i>' );
@@ -337,12 +352,99 @@
 			
 		};
 		
+		base.updateLineageView = function( lineageBtn ) {
+			
+			var ajaxData = {
+				ontology_term_id: lineageBtn.data( "termid" ),
+				script: "loadLineageOntologyTerms"
+			};
+				
+			$.ajax({
+				
+				url: base.data.baseURL + "/scripts/curation/Ontology.php",
+				method: "POST",
+				dataType: "json",
+				data: ajaxData,
+				beforeSend: function( ) {
+					base.components.treeView.html( '<i class="fa fa-spinner fa-pulse fa-2x fa-fw"></i>' );
+				}
+				
+			}).done( function(results) {
+				 
+				console.log( results );
+				base.components.treeView.html( results['VIEW'] );
+				
+			}).fail( function( jqXHR, textStatus ) {
+				console.log( textStatus );
+			});
+			
+		};
+		
+		base.clearSelectedTerms = function( ) {
+			base.components.selectedTerms.html( "" );
+		};
+		
+		base.addSelectedTerm = function( addBtn ) {
+			
+			var overallTerm = addBtn.closest( ".popularOntologyTerm" )
+			var termID = overallTerm.data( "termid" );
+			var termName = overallTerm.data( "termname" );
+			var termOfficial = overallTerm.data( "termofficial" );
+			
+			var selectedTerms = base.components.selectedTerms.find( ".ontologySelectedCheck:checked" ).map( function( ) {
+				return this.value;
+			}).get( );
+			
+			var selectedList = "";
+			if( selectedTerms.length > 0 ) {
+				selectedList = selectedTerms.join( "|" );
+			}
+			
+			var ajaxData = {
+				ontology_term_id: termID,
+				ontology_term_name: termName,
+				ontology_term_official: termOfficial,
+				selected_terms: selectedList,
+				script: "addSelectedTerm"
+			};
+				
+			$.ajax({
+				
+				url: base.data.baseURL + "/scripts/curation/Ontology.php",
+				method: "POST",
+				dataType: "json",
+				data: ajaxData,
+				beforeSend: function( ) {
+					
+				}
+				
+			}).done( function(results) {
+				 
+				console.log( results );
+				
+				// If single select is true, you can only
+				// pick a single term, so it always overwrites
+				if( base.options.singleSelect ) {
+					if( results['VIEW'] != "" ) {
+						base.components.selectedTerms.html( results['VIEW'] );
+					}
+				} else {
+					base.components.selectedTerms.append( results['VIEW'] );
+				}
+				
+			}).fail( function( jqXHR, textStatus ) {
+				console.log( textStatus );
+			});
+			
+		};
+		
 		base.init( );
 		
 	};
 	
 	$.ontologySelector.defaultOptions = { 
-		hoverDelay: 1000
+		hoverDelay: 1000,
+		singleSelect: false
 	};
 	
 	$.fn.ontologySelector = function( options ) {

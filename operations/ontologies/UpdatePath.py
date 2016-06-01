@@ -51,6 +51,7 @@ with Database.db as cursor :
 			
 			annotatedPaths = []
 			for path in pathSet :
+				path.reverse( )
 				annotatedPath = []
 				for milestone in path :
 					termInfo = termDetails[str(milestone)]

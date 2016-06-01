@@ -59,6 +59,7 @@
 					</td>
 					<td class='ontologyRight'>
 						<h5>Selected Terms</h5>
+						<div class='ontologySelectedTerms'></div>
 					</td>
 				</tr>
 			</tbody>

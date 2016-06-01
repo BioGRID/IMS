@@ -47,6 +47,19 @@ if( isset( $_POST['script'] ) ) {
 			$output = $ontologyBlocks->fetchChildOntologyTerms( $_POST['ontology_term_id'] );
 			echo json_encode( $output );
 			break;
+			
+		// Load a list of ontology terms showing all lineage paths for a given term
+		case 'loadLineageOntologyTerms' :
+			$output = $ontologyBlocks->fetchLineageOntologyTerms( $_POST['ontology_term_id'] );
+			echo json_encode( $output );
+			break;
+			
+		// Create a formatted selected term based on the term that was clicked
+		case 'addSelectedTerm' :
+			$output = $ontologyBlocks->fetchFormattedSelectedTerm( $_POST['ontology_term_id'], $_POST['ontology_term_name'], $_POST['ontology_term_official'], $_POST['selected_terms'] );
+			echo json_encode( $output );
+			break;
+			
 	}
 		
 }

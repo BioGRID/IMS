@@ -56,7 +56,7 @@ class OntologyBlocks extends lib\Blocks {
 			$view = "";
 			if( sizeof( $terms ) > 0 ) {
 				ksort( $terms );
-				$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyTerms.tpl', array( "TERMS" => $terms, "COUNT" => sizeof( $terms ), "TYPE" => "Popular", "ALLOW_EXPAND" => false, "SHOW_HEADING" => true, "ALLOW_TREE" => true ), false );
+				$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyTerms.tpl', array( "TERMS" => $terms, "COUNT" => sizeof( $terms ), "TYPE" => "Popular", "ALLOW_EXPAND" => false, "SHOW_HEADING" => true, "ALLOW_TREE" => true, "NOTFULL" => false ), false );
 			} else {
 				$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyError.tpl', array( "MESSAGE" => "Currently no terms have been used from this ontology previously..." ), false );
 			}
@@ -91,7 +91,7 @@ class OntologyBlocks extends lib\Blocks {
 			
 			$view = "";
 			if( sizeof( $terms ) > 0 ) {
-				$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyTerms.tpl', array( "TERMS" => $terms, "COUNT" => sizeof( $terms ), "TYPE" => "Matching Searched", "ALLOW_EXPAND" => false, "SHOW_HEADING" => true, "ALLOW_TREE" => true ), false );
+				$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyTerms.tpl', array( "TERMS" => $terms, "COUNT" => sizeof( $terms ), "TYPE" => "Matching Searched", "ALLOW_EXPAND" => false, "SHOW_HEADING" => true, "ALLOW_TREE" => true, "NOTFULL" => false ), false );
 			} else {
 				$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyError.tpl', array( "MESSAGE" => "Your search query returned no results. Are you sure you selected the correct ontology to search via the dropdown list?" ), false );
 			}
@@ -187,7 +187,7 @@ class OntologyBlocks extends lib\Blocks {
 			$view = "";
 			if( sizeof( $terms ) > 0 ) {
 				ksort( $terms );
-				$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyTerms.tpl', array( "TERMS" => $terms, "COUNT" => sizeof( $terms ), "TYPE" => "Popular", "ALLOW_EXPAND" => true, "SHOW_HEADING" => false, "ALLOW_TREE" => false ), false );
+				$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyTerms.tpl', array( "TERMS" => $terms, "COUNT" => sizeof( $terms ), "TYPE" => "Popular", "ALLOW_EXPAND" => true, "SHOW_HEADING" => false, "ALLOW_TREE" => false, "NOTFULL" => false ), false );
 			} else {
 				$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyError.tpl', array( "MESSAGE" => "Currently no terms exist for this ontology" ), false );
 			}
@@ -199,7 +199,7 @@ class OntologyBlocks extends lib\Blocks {
 	}
 	
 	/**
-	 * Load in the children based on a passed in ontology term id
+	 * Load in a single ontology term
 	 *
 	 */
 	 
@@ -219,12 +219,26 @@ class OntologyBlocks extends lib\Blocks {
 		$view = "";
 		if( sizeof( $terms ) > 0 ) {
 			ksort( $terms );
-			$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyTerms.tpl', array( "TERMS" => $terms, "COUNT" => sizeof( $terms ), "TYPE" => "Popular", "ALLOW_EXPAND" => true, "SHOW_HEADING" => false, "ALLOW_TREE" => false ), false );
+			$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyTerms.tpl', array( "TERMS" => $terms, "COUNT" => sizeof( $terms ), "TYPE" => "Popular", "ALLOW_EXPAND" => true, "SHOW_HEADING" => false, "ALLOW_TREE" => false, "NOTFULL" => false ), false );
 		} else {
 			$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyError.tpl', array( "MESSAGE" => "No Children Available for this Term" ), false );
 		}
 		
 		return array( "VIEW" => $view );
+		
+	}
+	
+	/**
+	 * Load a single ontology term, where the fields are passed in
+	 * to build it out
+	 */
+	 
+	public function fetchSingleOntologyTerm( $ontologyTermID, $ontologyTermName, $ontologyTermChildCount, $showHeading = false, $allowTree = false, $allowExpand = false,$notFull = false, $expanded = false, $highlightTerm = false, $children = "" ) {
+		
+		$terms = array(array( "ontology_term_id" => $ontologyTermID, "ontology_term_name" => $ontologyTermName, "ontology_term_childcount" => $ontologyTermChildCount ));
+		$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyTerms.tpl', array( "TERMS" => $terms, "COUNT" => sizeof( $terms ), "TYPE" => "Popular", "ALLOW_EXPAND" => $allowExpand, "SHOW_HEADING" => $showHeading, "ALLOW_TREE" => $allowTree, "ONTOLOGY_EXPAND" => $children, "EXPANDED" => $expanded, "NOTFULL" => $notFull, "HIGHLIGHT" => $highlightTerm ), false );
+		
+		return $view;
 		
 	}
 	
@@ -236,34 +250,69 @@ class OntologyBlocks extends lib\Blocks {
 	 
 	public function fetchLineageOntologyTerms( $ontologyTermID ) {
 		
-		// $terms = array( );
-			
-		// $stmt = $this->db->prepare( "SELECT ontology_term_path FROM " . DB_IMS . ".ontology_terms WHERE ontology_term_id=? LIMIT 1" );
-		// $stmt->execute( array( $ontologyTermID ) );
-		// $row = $stmt->fetch( PDO::FETCH_OBJ );
+		$terms = array( );
+		$stmt = $this->db->prepare( "SELECT ontology_term_path FROM " . DB_IMS . ".ontology_terms WHERE ontology_term_id=? LIMIT 1" );
+		$stmt->execute( array( $ontologyTermID ) );
 		
-		// $paths = json_decode( $row->ontology_term_path );
-		// foreach( $paths as $path ) {
-			// foreach( $path as $branch ) {
+		$row = $stmt->fetch( PDO::FETCH_OBJ );
+		$view = "";
+		if( $row ) {
+			$pathSet = json_decode( $row->ontology_term_path, true );
+			$completedPaths = array( );
+			$lastBranch = "";
+			foreach( $pathSet as $path ) {
+				$branchCount = 0;
+				$lastBranch = array_pop( $path );
+				foreach( $path as $branch ) {
+					if( $branchCount == 0 ) {
+						if( $branch['COUNT'] != 0 ) {
+							$children = $this->fetchChildOntologyTerms( $branch['ID'] );
+							$view = $children["VIEW"];
+						} else {
+							$view = "";
+						}
+
+						$view = $this->fetchSingleOntologyTerm( $branch['ID'], $branch['NAME'], $branch['COUNT'], false, false, true, false, true, true, $view );
+					} else {
+						$view = $this->fetchSingleOntologyTerm( $branch['ID'], $branch['NAME'], $branch['COUNT'], false, false, true, true, false, false, $view );
+					}
+					
+					$branchCount++;
+				}
 				
-			// }
-		// }
+				$completedPaths[] = $view;
+			}
+			
+			$view = $this->fetchSingleOntologyTerm( $lastBranch['ID'], $lastBranch['NAME'], $lastBranch['COUNT'], false, false, true, true, false, false, implode( "", $completedPaths ) );
+			
+		}
 		
-			// if( $row->ontology_term_status == "active" ) {
-				// $terms[strtolower($row->ontology_term_name)] = $row;
-			// }
-		// }
+		return array( "VIEW" => $view );
 		
-		// $view = "";
-		// if( sizeof( $terms ) > 0 ) {
-			// ksort( $terms );
-			// $view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyTerms.tpl', array( "TERMS" => $terms, "COUNT" => sizeof( $terms ), "TYPE" => "Popular", "ALLOW_EXPAND" => true, "SHOW_HEADING" => false, "ALLOW_TREE" => false ), false );
-		// } else {
-			// $view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Form_OntologyError.tpl', array( "MESSAGE" => "No Children Available for this Term" ), false );
-		// }
+	}
+	
+	/**
+	 * Create a formatted selected term id to display in the selected terms column
+	 * of the ontology selector interface
+	 */
+	 
+	public function fetchFormattedSelectedTerm( $termID, $termName, $termOfficialID, $selectedTerms ) {
+	
+		$selectedTerms = array_flip( explode( "|", $selectedTerms ) );
 		
-		// return array( "VIEW" => $view );
+		if( isset( $selectedTerms[$termID] ) ) {
+			return array( "VIEW" => "" );
+		}
+	
+		$params = array(
+			"TERM_ID" => $termID,
+			"TERM_NAME" => $termName,
+			"TERM_OFFICIAL" => $termOfficialID
+		);
 		
+		$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Ontology_TermSelected.tpl', $params, false );
+		return array( "VIEW" => $view );
+	
 	}
 	
 }
