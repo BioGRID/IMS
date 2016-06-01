@@ -302,6 +302,36 @@ h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 { margin-top: 0px; margin-b
 							.ontologyViewOptions {
 								display: none;
 							}
+							
+							.ontologySelectedTerms {
+								margin-top: 5px;
+								.ontologySelectedTerm {
+									background-color: lighten( @brand-success, 35% );
+									border-radius: 10px;
+									-moz-border-radius: 10px;
+									-webkit-border-radius: 10px;
+									font-size: 14px;
+									padding: 5px;
+									margin: 2px;
+									
+									.ontologyRemoveSelectedTerm {
+										cursor: pointer;
+									}
+									
+									.checkboxLabel { 
+										display: block;
+										margin-left: 20px;
+									}
+									
+									input[type="checkbox"] {
+										float: left;
+										margin-left: -20px;
+										margin-right: 7px;
+										width: 15px;
+										height: 15px;
+									}
+								}
+							}
 						
 							.ontologyViews {
 							

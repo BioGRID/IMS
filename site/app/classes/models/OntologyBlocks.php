@@ -296,7 +296,13 @@ class OntologyBlocks extends lib\Blocks {
 	 * of the ontology selector interface
 	 */
 	 
-	public function fetchFormattedSelectedTerm( $termID, $termName, $termOfficialID ) {
+	public function fetchFormattedSelectedTerm( $termID, $termName, $termOfficialID, $selectedTerms ) {
+	
+		$selectedTerms = array_flip( explode( "|", $selectedTerms ) );
+		
+		if( isset( $selectedTerms[$termID] ) ) {
+			return array( "VIEW" => "" );
+		}
 	
 		$params = array(
 			"TERM_ID" => $termID,

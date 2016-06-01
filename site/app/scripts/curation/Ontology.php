@@ -56,7 +56,7 @@ if( isset( $_POST['script'] ) ) {
 			
 		// Create a formatted selected term based on the term that was clicked
 		case 'addSelectedTerm' :
-			$output = $ontologyBlocks->fetchFormattedSelectedTerm( $_POST['ontology_term_id'], $_POST['ontology_term_name'], $_POST['ontology_term_official_id'] );
+			$output = $ontologyBlocks->fetchFormattedSelectedTerm( $_POST['ontology_term_id'], $_POST['ontology_term_name'], $_POST['ontology_term_official'], $_POST['selected_terms'] );
 			echo json_encode( $output );
 			break;
 			

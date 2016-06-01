@@ -113,7 +113,11 @@
 			});
 			
 			base.$el.on( "click", ".ontologyTermButtonAdd", function( ) {
-				
+				base.addSelectedTerm( $(this) );
+			});
+			
+			base.$el.on( "click", ".ontologyRemoveSelectedTerm", function( ) {
+				$(this).parent( ).parent( ).remove( );
 			});
 			
 			base.loadPopularView( );
@@ -387,10 +391,20 @@
 			var termName = overallTerm.data( "termname" );
 			var termOfficial = overallTerm.data( "termofficial" );
 			
+			var selectedTerms = base.components.selectedTerms.find( ".ontologySelectedCheck:checked" ).map( function( ) {
+				return this.value;
+			}).get( );
+			
+			var selectedList = "";
+			if( selectedTerms.length > 0 ) {
+				selectedList = selectedTerms.join( "|" );
+			}
+			
 			var ajaxData = {
 				ontology_term_id: termID,
 				ontology_term_name: termName,
 				ontology_term_official: termOfficial,
+				selected_terms: selectedList,
 				script: "addSelectedTerm"
 			};
 				
@@ -411,7 +425,9 @@
 				// If single select is true, you can only
 				// pick a single term, so it always overwrites
 				if( base.options.singleSelect ) {
-					base.components.selectedTerms.html( results['VIEW'] );
+					if( results['VIEW'] != "" ) {
+						base.components.selectedTerms.html( results['VIEW'] );
+					}
 				} else {
 					base.components.selectedTerms.append( results['VIEW'] );
 				}
