@@ -1,4 +1,4 @@
-<div class='popularOntologyTerm col-lg-12' data-termid='{{ TERM_DETAILS.ontology_term_id }}' data-termname='{{ TERM_DETAILS.ontology_term_name }}'>
+<div class='popularOntologyTerm col-lg-12' data-termid='{{ TERM_DETAILS.ontology_term_id }}' data-termname='{{ TERM_DETAILS.ontology_term_name }}' data-termofficial='{{ TERM_DETAILS.ontology_term_official_id }}'>
 	<div class='ontologyTermWrap clearfix {% if HIGHLIGHT %}highlightTerm{% endif %}'>
 	
 		<div class='ontologyTermButtons pull-right'>

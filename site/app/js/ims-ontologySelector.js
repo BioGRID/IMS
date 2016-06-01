@@ -29,7 +29,8 @@
 			views: base.$el.find( ".ontologyViews" ),
 			selectList: base.$el.find( ".ontologySelect" ),
 			headerTxt: base.$el.find( ".ontologyHeaderText" ),
-			viewOptions: base.$el.find( ".ontologyViewOptions" )
+			viewOptions: base.$el.find( ".ontologyViewOptions" ),
+			selectedTerms: base.$el.find( ".ontologySelectedTerms" )
 		};
 		
 		base.components.popularViewBtn = base.components.viewBtns.find( ".ontologyViewPopularBtn" );
@@ -109,6 +110,10 @@
 			
 			base.$el.on( "click", ".ontologyResetTree", function( ) {
 				base.updateTreeView( );
+			});
+			
+			base.$el.on( "click", ".ontologyTermButtonAdd", function( ) {
+				
 			});
 			
 			base.loadPopularView( );
@@ -323,7 +328,6 @@
 			
 			var termID = treeBtn.data( "termid" );
 			var treeExpand = treeBtn.closest( ".popularOntologyTerm" ).find( ".ontologyTermExpand" );
-			console.log( treeExpand.attr("class") );
 			var notfull = treeExpand.data( "notfull" );
 			
 			if( treeExpand.html( ) === "" || treeExpand.data( "notfull" ) == true ) {
@@ -372,12 +376,59 @@
 			
 		};
 		
+		base.clearSelectedTerms = function( ) {
+			base.components.selectedTerms.html( "" );
+		};
+		
+		base.addSelectedTerm = function( addBtn ) {
+			
+			var overallTerm = addBtn.closest( ".popularOntologyTerm" )
+			var termID = overallTerm.data( "termid" );
+			var termName = overallTerm.data( "termname" );
+			var termOfficial = overallTerm.data( "termofficial" );
+			
+			var ajaxData = {
+				ontology_term_id: termID,
+				ontology_term_name: termName,
+				ontology_term_official: termOfficial,
+				script: "addSelectedTerm"
+			};
+				
+			$.ajax({
+				
+				url: base.data.baseURL + "/scripts/curation/Ontology.php",
+				method: "POST",
+				dataType: "json",
+				data: ajaxData,
+				beforeSend: function( ) {
+					
+				}
+				
+			}).done( function(results) {
+				 
+				console.log( results );
+				
+				// If single select is true, you can only
+				// pick a single term, so it always overwrites
+				if( base.options.singleSelect ) {
+					base.components.selectedTerms.html( results['VIEW'] );
+				} else {
+					base.components.selectedTerms.append( results['VIEW'] );
+				}
+				
+			}).fail( function( jqXHR, textStatus ) {
+				console.log( textStatus );
+			});
+			
+		};
+		
 		base.init( );
 		
 	};
 	
 	$.ontologySelector.defaultOptions = { 
-		hoverDelay: 1000
+		hoverDelay: 1000,
+		singleSelect: false
 	};
 	
 	$.fn.ontologySelector = function( options ) {

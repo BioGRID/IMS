@@ -291,4 +291,22 @@ class OntologyBlocks extends lib\Blocks {
 		
 	}
 	
+	/**
+	 * Create a formatted selected term id to display in the selected terms column
+	 * of the ontology selector interface
+	 */
+	 
+	public function fetchFormattedSelectedTerm( $termID, $termName, $termOfficialID ) {
+	
+		$params = array(
+			"TERM_ID" => $termID,
+			"TERM_NAME" => $termName,
+			"TERM_OFFICIAL" => $termOfficialID
+		);
+		
+		$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Ontology_TermSelected.tpl', $params, false );
+		return array( "VIEW" => $view );
+	
+	}
+	
 }
