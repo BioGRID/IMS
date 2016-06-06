@@ -116,6 +116,10 @@
 				base.addSelectedTerm( $(this) );
 			});
 			
+			base.$el.on( "click", ".ontologyTermButtonQualifier", function( ) {
+				base.addSelectedQualifier( $(this) );
+			});
+			
 			base.$el.on( "click", ".ontologyRemoveSelectedTerm", function( ) {
 				$(this).parent( ).parent( ).remove( );
 			});
@@ -438,13 +442,58 @@
 			
 		};
 		
+		base.addSelectedQualifier = function( addBtn ) {
+			
+			console.log( "HERE" );
+		
+			if( base.options.allowQualifiers ) {
+			
+				var overallTerm = addBtn.closest( ".popularOntologyTerm" )
+				var termID = overallTerm.data( "termid" );
+				var termName = overallTerm.data( "termname" );
+				var termOfficial = overallTerm.data( "termofficial" );
+				
+				var ajaxData = {
+					ontology_term_id: termID,
+					ontology_term_name: termName,
+					ontology_term_official: termOfficial,
+					script: "addSelectedQualifier"
+				};
+					
+				$.ajax({
+					
+					url: base.data.baseURL + "/scripts/curation/Ontology.php",
+					method: "POST",
+					dataType: "json",
+					data: ajaxData,
+					beforeSend: function( ) {
+						
+					}
+					
+				}).done( function(results) {
+					 
+					console.log( results );
+					
+					base.components.selectedTerms.find( ".ontologySelectedCheck:checked" ).each( function( index, element ) {
+						$(element).closest( ".ontologySelectedTerm" ).find( ".ontologySelectedQualifiers" ).append( results['VIEW'] );
+					});
+					
+				}).fail( function( jqXHR, textStatus ) {
+					console.log( textStatus );
+				});
+				
+			}
+			
+		};
+		
 		base.init( );
 		
 	};
 	
 	$.ontologySelector.defaultOptions = { 
 		hoverDelay: 1000,
-		singleSelect: false
+		singleSelect: false,
+		allowQualifiers: true
 	};
 	
 	$.fn.ontologySelector = function( options ) {

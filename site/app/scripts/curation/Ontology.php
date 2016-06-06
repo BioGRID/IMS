@@ -59,6 +59,12 @@ if( isset( $_POST['script'] ) ) {
 			$output = $ontologyBlocks->fetchFormattedSelectedTerm( $_POST['ontology_term_id'], $_POST['ontology_term_name'], $_POST['ontology_term_official'], $_POST['selected_terms'] );
 			echo json_encode( $output );
 			break;
+		
+		// Create a formatted qualifier term based on the term that was clicked
+		case 'addSelectedQualifier' :
+			$output = $ontologyBlocks->fetchFormattedQualifierTerm( $_POST['ontology_term_id'], $_POST['ontology_term_name'], $_POST['ontology_term_official'] );
+			echo json_encode( $output );
+			break;
 			
 	}
 		
