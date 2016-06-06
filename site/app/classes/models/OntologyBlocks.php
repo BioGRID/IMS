@@ -311,7 +311,7 @@ class OntologyBlocks extends lib\Blocks {
 		);
 		
 		$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Ontology_TermSelected.tpl', $params, false );
-		return array( "VIEW" => $view );
+		return array( "VIEW" => $view, "VALUE" => $termID );
 	
 	}
 	
@@ -330,7 +330,7 @@ class OntologyBlocks extends lib\Blocks {
 		);
 		
 		$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Ontology_TermQualifier.tpl', $params, false );
-		return array( "VIEW" => $view );
+		return array( "VIEW" => $view, "VALUE" => $termID );
 	
 	}
 	

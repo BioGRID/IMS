@@ -475,7 +475,10 @@
 					console.log( results );
 					
 					base.components.selectedTerms.find( ".ontologySelectedCheck:checked" ).each( function( index, element ) {
-						$(element).closest( ".ontologySelectedTerm" ).find( ".ontologySelectedQualifiers" ).append( results['VIEW'] );
+						var qualifierBox = $(element).closest( ".ontologySelectedTerm" ).find( ".ontologySelectedQualifiers" );
+						if( qualifierBox.find( "input[type=checkbox][value=" + results["VALUE"] + "]" ).length <= 0 ) {
+							qualifierBox.append( results['VIEW'] );
+						}
 					});
 					
 				}).fail( function( jqXHR, textStatus ) {
