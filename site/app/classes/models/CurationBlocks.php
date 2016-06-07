@@ -294,6 +294,98 @@ class CurationBlocks extends lib\Blocks {
 	}
 	
 	/**
+	 * Get option parameters for ontology forms based on passed in details
+	 */
+	 
+	private function fetchOntologyOptions( $attributeTypeID ) {
+		
+		$allowQualifiers = 1;
+		$singleSelect = 0;
+		$selectedOntology = 1;
+		
+		switch( $attributeTypeID ) {
+			
+			case "1" : 
+				$selectedOntology = 2;
+				break;
+			
+			case "2" :
+				$selectedOntology = 7;
+				break;
+				
+			case "3" :
+				$selectedOntology = 4;
+				break;
+				
+			case "4" :
+				$selectedOntology = 7;
+				break;
+				
+			case "5" :
+				$selectedOntology = 8;
+				break;
+			
+			case "6" :
+				$selectedOntology = 9;
+				break;
+				
+			case "7" :
+				$selectedOntology = 10;
+				break;
+				
+			case "8" :
+				$selectedOntology = 13;
+				break;
+				
+			case "9" :
+				$selectedOntology = 16;
+				break;
+				
+			case "10" :
+				$selectedOntology = 4;
+				break;
+				
+			case "11" :
+				$selectedOntology = 17;
+				$singleSelect = 1;
+				$allowQualifiers = 0;
+				break;
+				
+			case "12" :
+				$selectedOntology = 21;
+				$singleSelect = 1;
+				$allowQualifiers = 0;
+				break;
+				
+			case "13" :
+				$selectedOntology = 23;
+				$singleSelect = 1;
+				$allowQualifiers = 0;
+				break;
+				
+			case "14" :
+				$selectedOntology = 22;
+				$allowQualifiers = 0;
+				break;
+				
+			case "23" :
+				$selectedOntology = 20;
+				$allowQualifiers = 0;
+				break;
+				
+			case "32" :
+				$selectedOntology = 18;
+				$singleSelect = 1;
+				$allowQualifiers = 0;
+				break;
+				
+		}
+		
+		return array( "ALLOW_QUALIFIERS" => $allowQualifiers, "SINGLE_SELECT" => $singleSelect, "SELECTED_ONTOLOGY" => $selectedOntology );
+		
+	}
+	
+	/**
 	 * Process an ontology attribute form
 	 */
 	 
@@ -304,12 +396,16 @@ class CurationBlocks extends lib\Blocks {
 		$view = "";
 		
 		if( $attributeInfo->attribute_type_category_id == "1" && $attributeID != "36" ) { // Ontology Attributes
+		
+			$ontologyOptions = $this->fetchOntologyOptions( $attributeInfo->attribute_type_id );
 			
 			// Get Ontology View
 			$params = array( 
 				"ONTOLOGIES" => $this->ontologyNames["NAMES"],
 				"ONT_GROUPS" => $this->ontologyNames["GROUPS"],
-				"SELECTED_ONT" => "1"
+				"SINGLE_SELECT" => $ontologyOptions["SINGLE_SELECT"],
+				"ALLOW_QUALIFIERS" => $ontologyOptions["ALLOW_QUALIFIERS"],
+				"SELECTED_ONT" => $ontologyOptions["SELECTED_ONTOLOGY"]
 			);
 			
 			// Fill out the list of ontologies here

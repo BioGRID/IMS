@@ -87,7 +87,7 @@
 				timer = setTimeout( function( ) { 
 					var buttonText = button.data( "btntext" );
 					button.find( ".btnText" ).html( buttonText );
-				}, base.options.hoverDelay );
+				}, base.options.hoverdelay );
 			});
 			
 			base.$el.on( "mouseleave", "button.ontologyTermButton", function( ) {
@@ -428,7 +428,7 @@
 				
 				// If single select is true, you can only
 				// pick a single term, so it always overwrites
-				if( base.options.singleSelect ) {
+				if( base.options.singleselect ) {
 					if( results['VIEW'] != "" ) {
 						base.components.selectedTerms.html( results['VIEW'] );
 					}
@@ -443,10 +443,8 @@
 		};
 		
 		base.addSelectedQualifier = function( addBtn ) {
-			
-			console.log( "HERE" );
 		
-			if( base.options.allowQualifiers ) {
+			if( base.options.allowqualifiers ) {
 			
 				var overallTerm = addBtn.closest( ".popularOntologyTerm" )
 				var termID = overallTerm.data( "termid" );
@@ -494,9 +492,9 @@
 	};
 	
 	$.ontologySelector.defaultOptions = { 
-		hoverDelay: 1000,
-		singleSelect: false,
-		allowQualifiers: true
+		hoverdelay: 1000,
+		singleselect: false,
+		allowqualifiers: true
 	};
 	
 	$.fn.ontologySelector = function( options ) {
