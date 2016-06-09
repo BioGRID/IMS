@@ -303,6 +303,8 @@ class OntologyBlocks extends lib\Blocks {
 		if( isset( $selectedTerms[$termID] ) ) {
 			return array( "VIEW" => "" );
 		}
+		
+		$termReq = $this->fetchSelectedTermRequirements( $termID );
 	
 		$params = array(
 			"TERM_ID" => $termID,
@@ -310,9 +312,36 @@ class OntologyBlocks extends lib\Blocks {
 			"TERM_OFFICIAL" => $termOfficialID
 		);
 		
+		$switchID = 0;
+		if( $termReq ) {
+			$params["QUALIFIER_MSG"] = $termReq["MESSAGE"];
+			$switchID = $termReq["SWITCH"];
+		}
+		
 		$view = $this->processView( 'curation' . DS . 'blocks' . DS . 'Ontology_TermSelected.tpl', $params, false );
-		return array( "VIEW" => $view, "VALUE" => $termID );
+		return array( "VIEW" => $view, "VALUE" => $termID, "SWITCH" => $switchID );
 	
+	}
+	
+	/**
+	 * Check for a term id, and assign it a specific output based on whether or not
+	 * it is a term with further qualification style rules.
+	 */
+	 
+	private function fetchSelectedTermRequirements( $termID ) {
+		
+		switch( $termID ) {
+			
+			// Biochemical Activity Experimental System
+			// Requires a selection from Post Translational Modifications Ontology
+			// as a qualifier
+			case "194590" : 
+				return array( "MESSAGE" => "This term requires a post translational modification qualifier", "SWITCH" => 21 );
+			
+		}
+		
+		return false;
+		
 	}
 	
 	/**

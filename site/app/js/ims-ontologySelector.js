@@ -67,18 +67,7 @@
 			});
 			
 			base.$el.on( "change", "select.ontologySelect", function( ) {
-				
-				var searchTerm = base.components.searchTxt.val( );
-				
-				base.updatePopularView( );
-				base.updateTreeView( );
-				
-				if( searchTerm.length > 0 ) {
-					base.updateSearchView( );
-				} else {
-					base.components.searchView.html( "Search for terms above to populate this list..." );
-				}
-				
+				base.changeSelect( );
 			});
 			
 			base.$el.on( "mouseenter", "button.ontologyTermButton", function( ) {
@@ -127,6 +116,19 @@
 			base.loadPopularView( );
 			base.updateTreeView( );
 			
+		};
+		
+		base.changeSelect = function( ) {
+			var searchTerm = base.components.searchTxt.val( );
+				
+			base.updatePopularView( );
+			base.updateTreeView( );
+			
+			if( searchTerm.length > 0 ) {
+				base.updateSearchView( );
+			} else {
+				base.components.searchView.html( "Search for terms above to populate this list..." );
+			}
 		};
 		
 		base.loadPopularView = function( ) {
@@ -439,6 +441,11 @@
 					}
 				} else {
 					base.components.selectedTerms.append( results['VIEW'] );
+				}
+				
+				if( results['SWITCH'] != 0 ) {
+					base.components.selectList.val( results['SWITCH'] );
+					base.changeSelect( );
 				}
 				
 			}).fail( function( jqXHR, textStatus ) {
