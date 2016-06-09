@@ -138,6 +138,7 @@
 			
 			var ajaxData = {
 				ontology_id: base.components.selectList.val( ),
+				allow_qualifiers: base.options.allowqualifiers,
 				script: "loadPopularOntologyTerms"
 			};
 				
@@ -174,6 +175,7 @@
 			var ajaxData = {
 				ontology_id: base.components.selectList.val( ),
 				search: searchTerm,
+				allow_qualifiers: base.options.allowqualifiers,
 				script: "loadSearchOntologyTerms"
 			};
 				
@@ -280,6 +282,7 @@
 			
 			var ajaxData = {
 				ontology_id: base.components.selectList.val( ),
+				allow_qualifiers: base.options.allowqualifiers,
 				script: "loadTreeOntologyTerms"
 			};
 				
@@ -308,6 +311,7 @@
 			
 			var ajaxData = {
 				ontology_term_id: termID,
+				allow_qualifiers: base.options.allowqualifiers,
 				script: "loadTreeOntologyChildren"
 			};
 			
@@ -360,6 +364,7 @@
 			
 			var ajaxData = {
 				ontology_term_id: lineageBtn.data( "termid" ),
+				allow_qualifiers: base.options.allowqualifiers,
 				script: "loadLineageOntologyTerms"
 			};
 				
