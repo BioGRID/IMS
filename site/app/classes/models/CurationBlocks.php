@@ -28,17 +28,22 @@ class CurationBlocks extends lib\Blocks {
 	private $blockCount = 1;
 	private $participantCount = 1;
 	private $lastParticipant = "";
+	
+	private $ignoreAttributes = array( "31" => "", "35" => "", "36" => "", "32" => "", "23" => "" );
+	
+	private $ontologies;
 	 
 	public function __construct( ) {
 		parent::__construct( );
 		
 		$this->lookups = new models\Lookups( );
+		$this->ontologies = new models\OntologyBlocks( );
+		
 		$this->partTypes = $this->lookups->buildParticipantTypesHash( false );
 		$this->partRoles = $this->lookups->buildParticipantRoleHash( );
 		$this->orgNames = $this->lookups->buildOrganismNameHash( );
 		$this->idTypes = $this->lookups->buildIDTypeHash( );
 		$this->attributeTypes = $this->lookups->buildAttributeTypeHASH( );
-		$this->ontologyNames = $this->lookups->buildOntologyNamesHash( true );
 		$this->buildAttributeTypeSelectLists( );
 		
 		$this->blockCount = 1;
@@ -304,12 +309,16 @@ class CurationBlocks extends lib\Blocks {
 		$view = "";
 		
 		if( $attributeInfo->attribute_type_category_id == "1" && $attributeID != "36" ) { // Ontology Attributes
+		
+			// NEED TO WORK IN ORGANISM INFO INSTEAD OF BLANK ARRAY
+			$ontologyOptions = $this->ontologies->fetchOntologyOptions( $attributeInfo->attribute_type_id, array( ) );
 			
 			// Get Ontology View
 			$params = array( 
-				"ONTOLOGIES" => $this->ontologyNames["NAMES"],
-				"ONT_GROUPS" => $this->ontologyNames["GROUPS"],
-				"SELECTED_ONT" => "1"
+				"TERMS" => $ontologyOptions["TERMS"],
+				"QUALIFIERS" => $ontologyOptions["QUALIFIERS"],
+				"SINGLE_SELECT" => $ontologyOptions["SINGLE_SELECT"],
+				"SELECTED_ONT" => $ontologyOptions["SELECTED_ONTOLOGY"]
 			);
 			
 			// Fill out the list of ontologies here
@@ -422,7 +431,7 @@ class CurationBlocks extends lib\Blocks {
 		foreach( $this->attributeTypes as $attributeID => $attributeInfo ) {
 			$catID = $attributeInfo->attribute_type_category_id;
 			if( $catID == "1" ) {
-				if( $attributeInfo->attribute_type_id != "31" && $attributeInfo->attribute_type_id != "35" && $attributeInfo->attribute_type_id != '36' ) {
+				if( !isset( $this->ignoreAttributes[$attributeInfo->attribute_type_id] ) ) {
 					$this->checklistAttributes[$attributeInfo->attribute_type_id] = $attributeInfo->attribute_type_name;
 				} 
 			} else if( $catID == "2" ) {

@@ -67,18 +67,7 @@
 			});
 			
 			base.$el.on( "change", "select.ontologySelect", function( ) {
-				
-				var searchTerm = base.components.searchTxt.val( );
-				
-				base.updatePopularView( );
-				base.updateTreeView( );
-				
-				if( searchTerm.length > 0 ) {
-					base.updateSearchView( );
-				} else {
-					base.components.searchView.html( "Search for terms above to populate this list..." );
-				}
-				
+				base.changeSelect( );
 			});
 			
 			base.$el.on( "mouseenter", "button.ontologyTermButton", function( ) {
@@ -87,7 +76,7 @@
 				timer = setTimeout( function( ) { 
 					var buttonText = button.data( "btntext" );
 					button.find( ".btnText" ).html( buttonText );
-				}, base.options.hoverDelay );
+				}, base.options.hoverdelay );
 			});
 			
 			base.$el.on( "mouseleave", "button.ontologyTermButton", function( ) {
@@ -116,6 +105,10 @@
 				base.addSelectedTerm( $(this) );
 			});
 			
+			base.$el.on( "click", ".ontologyTermButtonQualifier", function( ) {
+				base.addSelectedQualifier( $(this) );
+			});
+			
 			base.$el.on( "click", ".ontologyRemoveSelectedTerm", function( ) {
 				$(this).parent( ).parent( ).remove( );
 			});
@@ -125,15 +118,38 @@
 			
 		};
 		
+		base.changeSelect = function( ) {
+			var searchTerm = base.components.searchTxt.val( );
+				
+			base.updatePopularView( );
+			base.updateTreeView( );
+			
+			if( searchTerm.length > 0 ) {
+				base.updateSearchView( );
+			} else {
+				base.components.searchView.html( "Search for terms above to populate this list..." );
+			}
+		};
+		
 		base.loadPopularView = function( ) {
 			base.changeView( base.components.popularViewBtn );
 			base.updatePopularView( );
 		};
 		
+		base.fetchOntologyDetails = function( ) {
+			var ontologyDetails = base.components.selectList.val( );
+			ontologyDetails = ontologyDetails.split( "|" );
+			return ontologyDetails;
+		};
+		
 		base.updatePopularView = function( ) {
 			
+			var ontologyDetails = base.fetchOntologyDetails( );
+			
 			var ajaxData = {
-				ontology_id: base.components.selectList.val( ),
+				ontology_id: ontologyDetails[0],
+				allow_qualifiers: ontologyDetails[2],
+				allow_terms: ontologyDetails[1],
 				script: "loadPopularOntologyTerms"
 			};
 				
@@ -166,10 +182,13 @@
 		base.updateSearchView = function( ) {
 			
 			var searchTerm = base.components.searchTxt.val( );
+			var ontologyDetails = base.fetchOntologyDetails( );
 			
 			var ajaxData = {
-				ontology_id: base.components.selectList.val( ),
+				ontology_id: ontologyDetails[0],
 				search: searchTerm,
+				allow_qualifiers: ontologyDetails[2],
+				allow_terms: ontologyDetails[1],
 				script: "loadSearchOntologyTerms"
 			};
 				
@@ -274,8 +293,12 @@
 		
 		base.updateTreeView = function( ) {
 			
+			var ontologyDetails = base.fetchOntologyDetails( );
+			
 			var ajaxData = {
-				ontology_id: base.components.selectList.val( ),
+				ontology_id: ontologyDetails[0],
+				allow_qualifiers: ontologyDetails[2],
+				allow_terms: ontologyDetails[1],
 				script: "loadTreeOntologyTerms"
 			};
 				
@@ -302,8 +325,12 @@
 		
 		base.fetchChildren = function( treeBtn, termID, treeExpand ) {
 			
+			var ontologyDetails = base.fetchOntologyDetails( );
+			
 			var ajaxData = {
 				ontology_term_id: termID,
+				allow_qualifiers: ontologyDetails[2],
+				allow_terms: ontologyDetails[1],
 				script: "loadTreeOntologyChildren"
 			};
 			
@@ -354,8 +381,12 @@
 		
 		base.updateLineageView = function( lineageBtn ) {
 			
+			var ontologyDetails = base.fetchOntologyDetails( );
+			
 			var ajaxData = {
 				ontology_term_id: lineageBtn.data( "termid" ),
+				allow_qualifiers: ontologyDetails[2],
+				allow_terms: ontologyDetails[1],
 				script: "loadLineageOntologyTerms"
 			};
 				
@@ -424,12 +455,17 @@
 				
 				// If single select is true, you can only
 				// pick a single term, so it always overwrites
-				if( base.options.singleSelect ) {
+				if( base.options.singleselect ) {
 					if( results['VIEW'] != "" ) {
 						base.components.selectedTerms.html( results['VIEW'] );
 					}
 				} else {
 					base.components.selectedTerms.append( results['VIEW'] );
+				}
+				
+				if( results['SWITCH'] != 0 ) {
+					base.components.selectList.val( results['SWITCH'] );
+					base.changeSelect( );
 				}
 				
 			}).fail( function( jqXHR, textStatus ) {
@@ -438,13 +474,59 @@
 			
 		};
 		
+		base.addSelectedQualifier = function( addBtn ) {
+		
+			if( base.options.allowqualifiers ) {
+			
+				var overallTerm = addBtn.closest( ".popularOntologyTerm" )
+				var termID = overallTerm.data( "termid" );
+				var termName = overallTerm.data( "termname" );
+				var termOfficial = overallTerm.data( "termofficial" );
+				
+				var ajaxData = {
+					ontology_term_id: termID,
+					ontology_term_name: termName,
+					ontology_term_official: termOfficial,
+					script: "addSelectedQualifier"
+				};
+					
+				$.ajax({
+					
+					url: base.data.baseURL + "/scripts/curation/Ontology.php",
+					method: "POST",
+					dataType: "json",
+					data: ajaxData,
+					beforeSend: function( ) {
+						
+					}
+					
+				}).done( function(results) {
+					 
+					console.log( results );
+					
+					base.components.selectedTerms.find( ".ontologySelectedCheck:checked" ).each( function( index, element ) {
+						var qualifierBox = $(element).closest( ".ontologySelectedTerm" ).find( ".ontologySelectedQualifiers" );
+						if( qualifierBox.find( "input[type=checkbox][value=" + results["VALUE"] + "]" ).length <= 0 ) {
+							qualifierBox.append( results['VIEW'] );
+						}
+					});
+					
+				}).fail( function( jqXHR, textStatus ) {
+					console.log( textStatus );
+				});
+				
+			}
+			
+		};
+		
 		base.init( );
 		
 	};
 	
 	$.ontologySelector.defaultOptions = { 
-		hoverDelay: 1000,
-		singleSelect: false
+		hoverdelay: 1000,
+		singleselect: false,
+		allowqualifiers: true
 	};
 	
 	$.fn.ontologySelector = function( options ) {

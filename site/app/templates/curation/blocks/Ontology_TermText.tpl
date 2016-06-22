@@ -2,8 +2,14 @@
 	<div class='ontologyTermWrap clearfix {% if HIGHLIGHT %}highlightTerm{% endif %}'>
 	
 		<div class='ontologyTermButtons pull-right'>
-			<button type='button' class='btn btn-success btn-sm ontologyTermButton ontologyTermButtonAdd' data-btntext='Add Term'><i class='fa fa-plus fa-lg'></i> <span class='btnText'></span></button>
-			<button type='button' class='btn btn-primary btn-sm ontologyTermButton ontologyTermButtonQualifier' data-btntext='Add Qualifier'><i class='fa fa-clone fa-lg'></i> <span class='btnText'></span></button>
+		
+			{% if ALLOW_TERMS %}
+				<button type='button' class='btn btn-success btn-sm ontologyTermButton ontologyTermButtonAdd' data-btntext='Add Term'><i class='fa fa-plus fa-lg'></i> <span class='btnText'></span></button>
+			{% endif %}
+			
+			{% if ALLOW_QUALIFIERS %}
+				<button type='button' class='btn btn-primary btn-sm ontologyTermButton ontologyTermButtonQualifier' data-btntext='Add Qualifier'><i class='fa fa-clone fa-lg'></i> <span class='btnText'></span></button>
+			{% endif %}
 			
 			{% if ALLOW_TREE %}
 				<button type='button' data-termid='{{ TERM_DETAILS.ontology_term_id }}' class='btn btn-warning btn-sm ontologyTermButton ontologyTermButtonTree' data-btntext='View Tree'><i class='fa fa-tree fa-lg'></i> <span class='btnText'></span></button>

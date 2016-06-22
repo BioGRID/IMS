@@ -171,7 +171,9 @@
 				
 				var ontSelect = $("#" + dataAttribs['blockid'] + " .ontologySelector");
 				if( ontSelect.length ) {
-					ontSelect.ontologySelector( { } );
+					
+					var options = ontSelect.data( );
+					ontSelect.ontologySelector( options );
 				}
 				
 			});
