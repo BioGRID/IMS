@@ -135,12 +135,16 @@ class SQL( ) :
 		self.clean( "attributes" )
 		self.clean( "attribute_types" )
 		self.clean( "attribute_type_categories" )
+		self.clean( "attribute_type_ontologies" )
 		
 		self.writeLine( "Loading Attribute Types" )
 		self.processSQL( "attribute_types-data.sql" )
 		
 		self.writeLine( "Loading Attribute Type Categories" )
 		self.processSQL( "attribute_type_categories-data.sql" )
+		
+		self.writeLine( "Loading Attribute Type Ontologies" )
+		self.processSQL( "attribute_type_ontologies-data.sql" )
 		
 	def build_attributes( self ) :
 	
