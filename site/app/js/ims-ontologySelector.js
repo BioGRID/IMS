@@ -136,11 +136,20 @@
 			base.updatePopularView( );
 		};
 		
+		base.fetchOntologyDetails = function( ) {
+			var ontologyDetails = base.components.selectList.val( );
+			ontologyDetails = ontologyDetails.split( "|" );
+			return ontologyDetails;
+		};
+		
 		base.updatePopularView = function( ) {
 			
+			var ontologyDetails = base.fetchOntologyDetails( );
+			
 			var ajaxData = {
-				ontology_id: base.components.selectList.val( ),
-				allow_qualifiers: base.options.allowqualifiers,
+				ontology_id: ontologyDetails[0],
+				allow_qualifiers: ontologyDetails[2],
+				allow_terms: ontologyDetails[1],
 				script: "loadPopularOntologyTerms"
 			};
 				
@@ -173,11 +182,13 @@
 		base.updateSearchView = function( ) {
 			
 			var searchTerm = base.components.searchTxt.val( );
+			var ontologyDetails = base.fetchOntologyDetails( );
 			
 			var ajaxData = {
-				ontology_id: base.components.selectList.val( ),
+				ontology_id: ontologyDetails[0],
 				search: searchTerm,
-				allow_qualifiers: base.options.allowqualifiers,
+				allow_qualifiers: ontologyDetails[2],
+				allow_terms: ontologyDetails[1],
 				script: "loadSearchOntologyTerms"
 			};
 				
@@ -282,9 +293,12 @@
 		
 		base.updateTreeView = function( ) {
 			
+			var ontologyDetails = base.fetchOntologyDetails( );
+			
 			var ajaxData = {
-				ontology_id: base.components.selectList.val( ),
-				allow_qualifiers: base.options.allowqualifiers,
+				ontology_id: ontologyDetails[0],
+				allow_qualifiers: ontologyDetails[2],
+				allow_terms: ontologyDetails[1],
 				script: "loadTreeOntologyTerms"
 			};
 				
@@ -311,9 +325,12 @@
 		
 		base.fetchChildren = function( treeBtn, termID, treeExpand ) {
 			
+			var ontologyDetails = base.fetchOntologyDetails( );
+			
 			var ajaxData = {
 				ontology_term_id: termID,
-				allow_qualifiers: base.options.allowqualifiers,
+				allow_qualifiers: ontologyDetails[2],
+				allow_terms: ontologyDetails[1],
 				script: "loadTreeOntologyChildren"
 			};
 			
@@ -364,9 +381,12 @@
 		
 		base.updateLineageView = function( lineageBtn ) {
 			
+			var ontologyDetails = base.fetchOntologyDetails( );
+			
 			var ajaxData = {
 				ontology_term_id: lineageBtn.data( "termid" ),
-				allow_qualifiers: base.options.allowqualifiers,
+				allow_qualifiers: ontologyDetails[2],
+				allow_terms: ontologyDetails[1],
 				script: "loadLineageOntologyTerms"
 			};
 				
