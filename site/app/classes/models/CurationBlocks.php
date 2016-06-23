@@ -29,12 +29,13 @@ class CurationBlocks extends lib\Blocks {
 	private $participantCount = 1;
 	private $lastParticipant = "";
 	
-	private $ignoreAttributes = array( "31" => "", "35" => "", "36" => "", "32" => "", "23" => "" );
-	
+	private $ignoreAttributes;
 	private $ontologies;
 	 
 	public function __construct( ) {
 		parent::__construct( );
+		
+		global $siteOps;
 		
 		$this->lookups = new models\Lookups( );
 		$this->ontologies = new models\OntologyBlocks( );
@@ -44,6 +45,7 @@ class CurationBlocks extends lib\Blocks {
 		$this->orgNames = $this->lookups->buildOrganismNameHash( );
 		$this->idTypes = $this->lookups->buildIDTypeHash( );
 		$this->attributeTypes = $this->lookups->buildAttributeTypeHASH( );
+		$this->ignoreAttributes = array_flip( $siteOps["IGNORE_ATTRIBUTES"] );
 		$this->buildAttributeTypeSelectLists( );
 		
 		$this->blockCount = 1;
@@ -430,6 +432,7 @@ class CurationBlocks extends lib\Blocks {
 		
 		foreach( $this->attributeTypes as $attributeID => $attributeInfo ) {
 			$catID = $attributeInfo->attribute_type_category_id;
+			
 			if( $catID == "1" ) {
 				if( !isset( $this->ignoreAttributes[$attributeInfo->attribute_type_id] ) ) {
 					$this->checklistAttributes[$attributeInfo->attribute_type_id] = $attributeInfo->attribute_type_name;

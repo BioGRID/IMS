@@ -18,11 +18,12 @@ class DatasetController extends lib\Controller {
 		
 		$addonJS = array( );
 		$addonJS[] = "jquery.qtip.min.js";
-		$addonJS[] = "jquery.dataTables.js";
-		$addonJS[] = "dataTables.bootstrap.js";
+		$addonJS[] = "ims-curationWorkflow.js";
 		$addonJS[] = "ims-curationBlock.js";
 		$addonJS[] = "ims-ontologySelector.js";
 		$addonJS[] = "ims-curation.js";
+		$addonJS[] = "jquery.dataTables.js";
+		$addonJS[] = "dataTables.bootstrap.js";
 		$addonJS[] = "ims-datasets.js";
 		
 		$addonCSS = array( );

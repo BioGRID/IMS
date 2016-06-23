@@ -18,18 +18,21 @@ class OntologyBlocks extends lib\Blocks {
 	private $db;
 	private $ontologies;
 	private $lookups;
-	private $defaultQualifierOntologies = array( 1,2,3,4,5,6,7,8,9,10,11,13,14,15,16 ); // GET THIS FROM ADMIN OPTION LATER
+	private $defaultQualifierOntologies;
 	
 	private $POPULAR_LIMIT = 60;
 	 
 	public function __construct( ) {
 		parent::__construct( );
 		
+		global $siteOps;
+		
 		$this->db = new PDO( DB_CONNECT, DB_USER, DB_PASS );
 		$this->db->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
 		
 		$this->lookups = new models\Lookups( );
 		$this->ontologies = $this->lookups->buildOntologyIDHash( true );
+		$this->defaultQualifierOntologies = $siteOps["DEFAULT_QUALIFIERS"];
 		
 	}
 	
@@ -412,7 +415,6 @@ class OntologyBlocks extends lib\Blocks {
 		}
 		
 		if( $hasDefaultQualifiers ) {
-			$qualifiers = array( );
 			$ontologies = $this->fetchDefaultQualifierOntologies( $ontologyIDs );
 			
 			foreach( $ontologies as $ontologyID ) {

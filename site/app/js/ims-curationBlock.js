@@ -11,7 +11,7 @@
 
 } (function( $, window, document ) {
 		
-	$.curationBlock = function( el, options ) {
+	$.curationBlock = function( el, options, curationWorkflow ) {
 	
 		var base = this;
 		base.$el = $(el);
@@ -75,7 +75,7 @@
 		
 		base.clickRemoveBtn = function( ) {
 			var prevItem = base.components.checklistItem.prev( ).find( ".workflowLink" );
-			clickWorkflowLink( prevItem );
+			curationWorkflow.clickWorkflowLink( prevItem );
 			base.components.checklistItem.remove( );
 			base.el.remove( );
 		};
@@ -194,9 +194,9 @@
 		validateDelay: 1200
 	};
 
-	$.fn.curationBlock = function( options ) {
+	$.fn.curationBlock = function( options, curationWorkflow ) {
 		return this.each( function( ) {
-			(new $.curationBlock( this, options ));
+			(new $.curationBlock( this, options, curationWorkflow ));
 		});
 	};
 		
