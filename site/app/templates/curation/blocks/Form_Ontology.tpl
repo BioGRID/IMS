@@ -1,4 +1,4 @@
-<div class='ontologySelector' data-singleselect='{{SINGLE_SELECT}}' data-allowqualifiers='{{ALLOW_QUALIFIERS}}'>
+<div class='ontologySelector' data-singleselect='{{SINGLE_SELECT}}' data-singlequal='{{SINGLE_QUAL}}' data-allowqual='{{ALLOW_QUAL}}'>
 	<div class='col-lg-12 col-md-12 col-sm-12 col-xs-12'>
 		<h4 class='marginBotSm'>Ontology Search</h4>
 		<table class='ontologySearchTable'>

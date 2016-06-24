@@ -300,7 +300,7 @@ class OntologyBlocks extends lib\Blocks {
 	 * of the ontology selector interface
 	 */
 	 
-	public function fetchFormattedSelectedTerm( $termID, $termName, $termOfficialID, $selectedTerms ) {
+	public function fetchFormattedSelectedTerm( $termID, $termName, $termOfficialID, $selectedTerms, $attributeTypeID ) {
 	
 		$selectedTerms = array_flip( explode( "|", $selectedTerms ) );
 		
@@ -308,7 +308,7 @@ class OntologyBlocks extends lib\Blocks {
 			return array( "VIEW" => "" );
 		}
 		
-		$termReq = $this->fetchSelectedTermRequirements( $termID );
+		$termReq = $this->fetchSelectedTermRequirements( $termID, $attributeTypeID );
 	
 		$params = array(
 			"TERM_ID" => $termID,
@@ -332,16 +332,13 @@ class OntologyBlocks extends lib\Blocks {
 	 * it is a term with further qualification style rules.
 	 */
 	 
-	private function fetchSelectedTermRequirements( $termID ) {
-		
-		switch( $termID ) {
+	private function fetchSelectedTermRequirements( $termID, $attributeTypeID ) {
 			
-			// Biochemical Activity Experimental System
-			// Requires a selection from Post Translational Modifications Ontology
-			// as a qualifier
-			case "194590" : 
-				return array( "MESSAGE" => "This term requires a post translational modification qualifier", "SWITCH" => 21 );
-			
+		// Biochemical Activity Experimental System
+		// Requires a selection from Post Translational Modifications Ontology
+		// as a qualifier
+		if( $termID == "194590" && $attributeTypeID == "11" ) {	 
+			return array( "MESSAGE" => "This term requires a post translational modification qualifier", "SWITCH" => "21|0|1" );
 		}
 		
 		return false;
@@ -429,9 +426,9 @@ class OntologyBlocks extends lib\Blocks {
 		ksort( $terms );
 		ksort( $qualifiers );
 		
-		$singleSelect = $this->fetchSelectability( $attributeTypeID );
+		$ontologyAttributes = $this->fetchOntologyAttributes( $attributeTypeID );
 		
-		return array( "SINGLE_SELECT" => $singleSelect, "SELECTED_ONTOLOGY" => $selectedOntology, "TERMS" => $terms, "QUALIFIERS" => $qualifiers );
+		return array( "SINGLE_SELECT" => $ontologyAttributes["SINGLE_SELECT"], "SELECTED_ONTOLOGY" => $selectedOntology, "TERMS" => $terms, "QUALIFIERS" => $qualifiers, "SINGLE_QUAL" => $ontologyAttributes["SINGLE_QUAL"], "ALLOW_QUAL" => $ontologyAttributes["ALLOW_QUAL"] );
 		
 	}
 	
@@ -466,27 +463,49 @@ class OntologyBlocks extends lib\Blocks {
 	
 	/**
 	 * Return whether or not an ontology allows multiple terms to be selected or
-	 * only a single term that is overridden
+	 * only a single term that is overridden, whether it allows for qualifiers, and
+	 * whether or not it allows for qualifiers on non-specific terms
 	 */
 	 
-	private function fetchSelectability( $attributeTypeID ) {
+	private function fetchOntologyAttributes( $attributeTypeID ) {
 		
 		// Make some ontologies only single selectable
 		// where a pick of a second term overrides the first one
 		
+		// Default Values
 		$singleSelect = 0;
+		$singleQual = 0;
+		$allowQual = 1;
+		
 		switch( $attributeTypeID ) {
 				
 			case "11" :
+				$singleSelect = 1;
+				$singleQual = 1;
+				$allowQual = 0;
+				break; 
+				
 			case "12" :
+				$singleSelect = 1;
+				$singleQual = 0;
+				$allowQual = 0;
+				break;
+			
 			case "13" :
+				$singleSelect = 1;
+				$singleQual = 0;
+				$allowQual = 0;
+				break;
+			
 			case "32" :
 				$singleSelect = 1;
+				$singleQual = 1;
+				$allowQual = 0;
 				break;
 				
 		}
 		
-		return $singleSelect;
+		return array( "SINGLE_SELECT" => $singleSelect, "SINGLE_QUAL" => $singleQual, "ALLOW_QUAL" => $allowQual );
 	}
 	
 }

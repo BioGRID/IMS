@@ -320,7 +320,9 @@ class CurationBlocks extends lib\Blocks {
 				"TERMS" => $ontologyOptions["TERMS"],
 				"QUALIFIERS" => $ontologyOptions["QUALIFIERS"],
 				"SINGLE_SELECT" => $ontologyOptions["SINGLE_SELECT"],
-				"SELECTED_ONT" => $ontologyOptions["SELECTED_ONTOLOGY"]
+				"SELECTED_ONT" => $ontologyOptions["SELECTED_ONTOLOGY"],
+				"SINGLE_QUAL" => $ontologyOptions["SINGLE_QUAL"],
+				"ALLOW_QUAL" => $ontologyOptions["ALLOW_QUAL"]
 			);
 			
 			// Fill out the list of ontologies here
