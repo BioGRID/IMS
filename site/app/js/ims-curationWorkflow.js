@@ -102,13 +102,13 @@
 				}).done( function(data) {
 					
 					$("#curationWorkflow").append(data);
-					$("#" + dataAttribs['blockid']).curationBlock( {}, base );
+					var curationBlock = $("#" + dataAttribs['blockid']).curationBlock( {}, base );
 					base.setupAddChecklistSubItemButton( );
 					
 					var ontSelect = $("#" + dataAttribs['blockid'] + " .ontologySelector");
 					if( ontSelect.length ) {
 						var options = ontSelect.data( );
-						ontSelect.ontologySelector( options );
+						ontSelect.ontologySelector( options, curationBlock.data('curationBlock') );
 					}
 					
 				});

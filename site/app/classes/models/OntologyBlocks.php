@@ -305,7 +305,7 @@ class OntologyBlocks extends lib\Blocks {
 		$selectedTerms = array_flip( explode( "|", $selectedTerms ) );
 		
 		if( isset( $selectedTerms[$termID] ) ) {
-			return array( "VIEW" => "" );
+			return array( "VIEW" => "", "VALUE" => $termID, "SWITCH" => 0 );
 		}
 		
 		$termReq = $this->fetchSelectedTermRequirements( $termID, $attributeTypeID );

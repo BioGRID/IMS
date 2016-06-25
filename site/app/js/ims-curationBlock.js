@@ -47,7 +47,7 @@
 			base.initRemoveBtn( );
 			base.initValidateBtn( );
 			
-			base.$el.on( "change", "select.changeField", function( ) {
+			base.$el.on( "change", "select.changeField, input.changeCheck", function( ) {
 				base.setStatus( "NEW" );
 			});
 			
@@ -89,9 +89,31 @@
 		
 		base.clickValidateBtn = function( ) {
 			
+			base.components.validateBtn.prop( "disabled", true );
 			base.setStatus( "PROCESSING" );
 			
-			var ajaxData = $("#" + base.data.id + " :input").serializeArray( );
+			// Get input fields
+			var ajaxData = $("#" + base.data.id + " .dataField:input").serializeArray( );
+			
+			// Get checkbox values from Ontology Selector
+			var ontologyTerms = { };
+			var termCount = 0;
+			$("#" + base.data.id + " .ontologySelectedTerm").each( function( ) {
+				
+				var ontologyTerm = $(this).find( ".ontologySelectedCheck" ).val( );
+				ontologyTerms[ontologyTerm] = []
+				$(this).find( ".ontologySelectedQualifierCheck" ).each( function( ) {
+					ontologyTerms[ontologyTerm].push( $(this).val( ) );
+					termCount++;
+				});
+				
+			});
+
+			if( termCount > 0 ) {
+				ajaxData.push({name: 'ontologyTerms', value: JSON.stringify( ontologyTerms )});
+			}
+			
+			// Core curation details
 			ajaxData.push({name: 'curationCode', value: $("#curationCode").val( )});
 			ajaxData.push({name: 'id', value: base.data.id});
 			ajaxData.push({name: 'type', value: base.data.type});
@@ -134,8 +156,11 @@
 					base.setCounts( results['COUNTS'] );
 				}
 				
+				base.components.validateBtn.prop( "disabled", false );
+				
 			}).fail( function( jqXHR, textStatus ) {
 				console.log( textStatus );
+				base.components.validateBtn.prop( "disabled", false );
 			});
 			
 		};
@@ -185,7 +210,6 @@
 			} 
 		};
 
-		
 		base.init( );
 	
 	};
