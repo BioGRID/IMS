@@ -104,8 +104,9 @@
 				ontologyTerms[ontologyTerm] = []
 				$(this).find( ".ontologySelectedQualifierCheck" ).each( function( ) {
 					ontologyTerms[ontologyTerm].push( $(this).val( ) );
-					termCount++;
 				});
+				
+				termCount++;
 				
 			});
 
@@ -126,7 +127,7 @@
 				
 				url: base.data.baseURL + "/scripts/curation/Validate.php",
 				method: "POST",
-				dataType: "json",
+				dataType: "html",
 				data: ajaxData,
 				beforeSend: function( ) {
 					base.components.errorList.html( "" );

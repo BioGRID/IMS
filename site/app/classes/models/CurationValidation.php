@@ -17,6 +17,8 @@ class CurationValidation {
 	
 	private $db;
 	private $blockName;
+	private $lookups;
+	private $attributeTypeInfo;
 	
 	public function __construct( $blockName ) {
 		$this->db = new PDO( DB_CONNECT, DB_USER, DB_PASS );
@@ -26,6 +28,8 @@ class CurationValidation {
 		$this->twig = new \Twig_Environment( $loader );
 		
 		$this->blockName = $blockName;
+		$this->lookups = models\Lookups( );
+		$this->attributeTypeInfo = $this->lookups->buildAttributeTypeHASH( );
 	}
 	
 	/**
@@ -35,6 +39,10 @@ class CurationValidation {
 	public function validateAttribute( $options, $block, $curationCode, $isRequired = false ) {
 	
 		switch( $options['category'] ) {
+			
+			case "1" : // Ontology Terms
+				$results = $this->validateOntologyTerms( $options['ontologyTerms'], $options['attribute'], $block, $curationCode, $isRequired );
+				return $results;
 			
 			case "3" : // NOTE
 				$results = $this->validateInteractionNotes( $options['data'], $block, $curationCode, $isRequired );
@@ -46,6 +54,54 @@ class CurationValidation {
 			
 		}
 	
+	}
+	
+	/**
+	 * Take a set of ontology terms and ensure they are valid
+	 * and that they are not missing any required info
+	 */
+	 
+	private function validateOntologyTerms( $ontologyTerms, $attributeID, $block, $curationCode, $isRequired = false ) {
+		
+		$messages = array( );
+		$status = "VALID";
+		
+		$ontologyTerms = json_decode( $ontologyTerms, true );
+		$ontologyTermSet = array( );
+		foreach( $ontologyTerms as $termID => $qualifiers ) {
+			
+			// Convert IDs to Actual Terms
+			// Check to see if the term is an attribute, if not, add it
+			// Get details about attribute from attributeTypeInfo lookup
+			// Check validity of selected terms based on which attribute ID is being validated
+			// Example: Biochemical Activity must have qualifier
+			// Ensure no terms have warning when they should have a qualifier? Maybe do this in JS...
+			// Add completed terms and their qualifiers to the ontologyTermSet
+			
+			foreach( $qualifiers as $qualifier ) {
+				
+			}
+			
+		}
+		
+		
+		if( $isRequired ) {
+			if( sizeof( $ontologyTerms ) <= 0 ) {
+				$messages[] = $this->generateError( "REQUIRED" );
+				$status = "ERROR";
+			}
+		} else {
+			if( sizeof( $ontologyTerms ) <= 0 ) {
+				$messages[] = $this->generateError( "BLANK" );
+				$status = "WARNING";
+			} 
+		}
+		
+		// INSERT/UPDATE IT IN THE DATABASE
+		$this->updateCurationEntries( $curationCode, $status, $block, $ontologyTermSet, "attribute", $attributeID, $isRequired );
+		
+		return array( "STATUS" => $status, "ERRORS" => $messages );
+		
 	}
 	
 	/**
