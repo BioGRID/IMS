@@ -57,44 +57,173 @@ class CurationValidation {
 	}
 	
 	/**
+	 * Get ontology term details by ontology id
+	 */
+	 
+	private function fetchOntologyTermDetails( $ontologyTermID ) {
+		
+		$stmt = $this->db->prepare( "SELECT ontology_term_id, ontology_term_official_id, ontology_term_name FROM " . DB_IMS . ".ontology_terms WHERE ontology_term_id=?  LIMIT 1" );
+		
+		$stmt->execute( array( $ontologyTermID ) );
+		if( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			return $row;
+		} 
+		
+		return false;
+		
+	}
+	
+	/**
+	 * Process an ontology attribute and either return the existing
+	 * attribute id, or add it and return the newly created attribute
+	 * id
+	 */
+	 
+	private function processOntologyAttribute( $termID, $attributeTypeID ) {
+		
+		$stmt = $this->db->prepare( "SELECT attribute_id FROM " . DB_IMS . ".attributes WHERE attribute_value=? AND attribute_type_id=? AND attribute_status='active'  LIMIT 1" );
+		$stmt->execute( array( $termID, $attributeTypeID ) );
+		
+		if( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			return $row->attribute_id;
+		} 
+		
+		$stmt = $this->db->prepare( "INSERT INTO " . DB_IMS . ".attributes VALUES ( '0',?,?,NOW( ),'active' )" );
+		$stmt->execute( array( $termID, $attributeTypeID ) );
+		$this->db->commit( );
+		
+		$attributeID = $this->db->lastInsertId( );
+		
+		return $attributeID;
+		
+	}
+	
+	/** 
+	 * Get an ontology term annotated with relevant details
+	 * to prepare it for easy insertion into the database
+	 */
+	 
+	private function processOntologyTerm( $termID, $termOfficialID, $attributeTypeID ) {
+		
+		$ontologyTerm = array( );
+		$ontologyTerm["ontology_term_id"] = $termID;
+		$ontologyTerm["ontology_term_official_id"] = $termOfficialID;
+	
+		// Check to see if the term is an attribute, if not, add it
+		$attributeID = $this->processOntologyAttribute( $termID, $attributeTypeID );
+		$ontologyTerm["attribute_id"] = $attributeID;
+		$ontologyTerm["attribute_value"] = $termID;
+		$ontologyTerm["attribute_type_id"] = $attributeTypeID;
+	
+		// Get details about attribute type from attributeTypeInfo lookup
+		$attributeTypeInfo = $this->attributeTypeInfo[$attributeTypeID];
+		$ontologyTerm["attribute_type_name"] = $attributeTypeInfo->attribute_type_name;
+		$ontologyTerm["attribute_type_shortcode"] = $attributeTypeInfo->attribute_type_shortcode;
+		$ontologyTerm["attribute_type_category_id"] = $attributeTypeInfo->attribute_type_category_id;
+		$ontologyTerm["attribute_type_category_name"] = $attributeTypeInfo->attribute_type_category_name;
+		
+		return $ontologyTerm;
+		
+	}
+	
+	/** 
+	 * Test a term ID and attribute Type ID combo to see if there are 
+	 * any special circumstances in which extra scrutiny must be applied
+	 */
+	 
+	private function validateTermsWithQualifierRequirements( $termID, $termName, $qualifiers, $attributeTypeID ) {
+			
+		// Biochemical Activity Experimental System
+		// Requires a single selection from Post Translational Modifications Ontology
+		// as a qualifier
+		
+		if( $termID == "194590" && $attributeTypeID == "11" ) {	
+			if( sizeof( $qualifiers ) <= 0 || sizeof( $qualifiers ) > 1 ) {
+				return array( "STATUS" => false, "MESSAGE" => $this->generateError( "BIOCHEMICAL_ACTIVITY_NO_QUALIFIER", array( "term" => $termName ) ) );
+			} else {
+				
+				// Verify that the qualifier is from the PTM Ontology
+				$stmt = $this->db->prepare( "SELECT ontology_term_id FROM " . DB_IMS . ".ontology_terms WHERE ontology_term_id=? AND ontology_id='21' LIMIT 1" );
+				$stmt->execute( array( $qualifiers[0] ) );
+				
+				if( !$row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+					return array( "STATUS" => false, "MESSAGE" => $this->generateError( "BIOCHEMICAL_ACTIVITY_WRONG_QUALIFIER", array( "term" => $termName ) );
+				} 
+		
+			}
+		}
+		
+		return array( "STATUS" => true );
+		
+	}
+	
+	/**
 	 * Take a set of ontology terms and ensure they are valid
 	 * and that they are not missing any required info
 	 */
 	 
-	private function validateOntologyTerms( $ontologyTerms, $attributeID, $block, $curationCode, $isRequired = false ) {
+	private function validateOntologyTerms( $ontologyTerms, $attributeTypeID, $block, $curationCode, $isRequired = false ) {
 		
 		$messages = array( );
 		$status = "VALID";
-		
-		$ontologyTerms = json_decode( $ontologyTerms, true );
 		$ontologyTermSet = array( );
-		foreach( $ontologyTerms as $termID => $qualifiers ) {
-			
-			// Convert IDs to Actual Terms
-			// Check to see if the term is an attribute, if not, add it
-			// Get details about attribute from attributeTypeInfo lookup
-			// Check validity of selected terms based on which attribute ID is being validated
-			// Example: Biochemical Activity must have qualifier
-			// Ensure no terms have warning when they should have a qualifier? Maybe do this in JS...
-			// Add completed terms and their qualifiers to the ontologyTermSet
-			
-			foreach( $qualifiers as $qualifier ) {
-				
-			}
-			
-		}
 		
-		
-		if( $isRequired ) {
-			if( sizeof( $ontologyTerms ) <= 0 ) {
+		if( sizeof( $ontologyTerms ) <= 0 ) {
+			
+			if( $isRequired ) {
 				$messages[] = $this->generateError( "REQUIRED" );
 				$status = "ERROR";
-			}
-		} else {
-			if( sizeof( $ontologyTerms ) <= 0 ) {
+			} else {
 				$messages[] = $this->generateError( "BLANK" );
 				$status = "WARNING";
-			} 
+			}
+			
+		} else {
+		
+			$ontologyTerms = json_decode( $ontologyTerms, true );
+			
+			foreach( $ontologyTerms as $termID => $qualifiers ) {
+				
+				// Convert IDs to Actual Terms
+				$termDetails = $this->fetchOntologyTermDetails( $termID );
+				if( !$termDetails ) {
+					$status = "ERROR";
+					$messages[] = $this->generateError( "INVALID_ONTOLOGY_TERM" );
+				} else {
+					
+					// Check validity of selected terms based on which attribute ID is being validated
+					// Example: Biochemical Activity must have qualifier
+					$validateTerms = $this->validateTermsWithQualifierRequirements( $termID, $termDetails->ontology_term_name, $qualifiers, $attributeTypeID );
+					if( !$validateTerms["STATUS"] ) {
+						
+						$status = "ERROR";
+						$messages[] = $validateTerms["MESSAGE"];
+						
+					} else {
+						
+						// Process ontology Term
+						$ontologyTerm = $this->processOntologyTerm( $termDetails->ontology_term_id, $termDetails->ontology_term_official_id, $attributeTypeID );
+						
+						// Ensure no terms have warning when they should have a qualifier? Maybe do this in JS... May not be needed?!?!
+					
+						// Process through the list of qualifiers
+						foreach( $qualifiers as $qualifier ) {
+							$qualifierTerm = $this->processOntologyTerm( $termDetails->ontology_term_id, $termDetails->ontology_term_official_id, "31" );
+							if( !isset( $ontologyTerm["qualifiers"] ) ) {
+								$ontologyTerm["qualifiers"] = array( );
+							}
+							$ontologyTerm["qualifiers"][] = $qualifierTerm;
+						}
+					
+						// Add completed terms and their qualifiers to the ontologyTermSet
+						$ontologyTerms[$termID] = $ontologyTerm;
+						
+					}
+					
+				}
+				
+			}	
+			
 		}
 		
 		// INSERT/UPDATE IT IN THE DATABASE
@@ -595,6 +724,15 @@ class CurationValidation {
 				
 			case "BLANK" :
 				return array( "class" => "warning", "message" => $this->blockName . " is currently blank but is not a required field. If you do not wish to use it, try removing it instead or simply leave it blank to ignore it." );
+				
+			case "INVALID_ONTOLOGY_TERM" :
+				return array( "class" => "danger", "message" => "One of the ontology terms you selected is not a valid ontology term id, try re-searching for your ontology term mappings and adding them again!" );
+				
+			case "BIOCHEMICAL_ACTIVITY_WRONG_QUALIFIER" :
+				return array( "class" => "danger", "message" => "Your selected ontology term: " . $details['term'] . " must have a qualifier appended from the BioGRID Post-Translational modification ontology, but you selected a qualifier from a different ontology. Please correct this mistake and re-attempt validation." );
+				
+			case "BIOCHEMICAL_ACTIVITY_NO_QUALIFIER" :
+				return array( "class" => "danger", "message" => "Your selected ontology term: " . $details['term'] . " must have a qualifier appended from the BioGRID Post-Translational modification ontology, but you selected none or too many. Please correct this mistake and re-attempt validation." );
 
 			default:
 				return array( "class" => "danger", "message" => "An unknown error has occurred." );
