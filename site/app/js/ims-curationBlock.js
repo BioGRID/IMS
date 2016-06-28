@@ -127,7 +127,7 @@
 				
 				url: base.data.baseURL + "/scripts/curation/Validate.php",
 				method: "POST",
-				dataType: "html",
+				dataType: "json",
 				data: ajaxData,
 				beforeSend: function( ) {
 					base.components.errorList.html( "" );

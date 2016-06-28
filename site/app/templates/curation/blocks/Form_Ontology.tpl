@@ -58,7 +58,26 @@
 						</div>
 					</td>
 					<td class='ontologyRight'>
-						<h5>Selected Terms</h5>
+						<div class='clearfix rightHeader'>
+							<div class='ontologySelectedTools pull-right'>
+								<div class='btn-group'>
+									<button type='button' class='btn btn-success btn-sm dropdown-toggle' data-toggle='dropdown' aria-haspopup='true' aria-has-expanded='false'><i class='fa fa-cog'></i> Tools <span class='caret'></span></button>
+									<ul class='dropdown-menu'>
+										<li><a class='selectedToolLink ontologyClearAllLink'>Clear All</a></li>
+										<li><a class='selectedToolLink ontologyClearChecked'>Clear Checked Terms</a></li>
+										<li><a class='selectedToolLink ontologyClearAllQualifiers'>Clear All Qualifiers</a></li>
+										<li><a class='selectedToolLink ontologyClearCheckedQualifiers'>Clear Checked Qualifiers</a></li>
+										<li role="separator" class="divider"></li>
+										<li><a class='selectedToolLink ontologyTermCheck'>Check All Terms</a></li>
+										<li><a class='selectedToolLink ontologyTermUncheck'>UnCheck All Terms</a></li>
+										<li role="separator" class="divider"></li>
+										<li><a class='selectedToolLink ontologyQualifierCheck'>Check All Qualifiers</a></li>
+										<li><a class='selectedToolLink ontologyQualifierUncheck'>UnCheck All Qualifiers</a></li>
+									</ul>
+								</div>
+							</div>
+							<h5>Selected Terms</h5>
+						</div>
 						<div class='ontologySelectedTerms'></div>
 					</td>
 				</tr>

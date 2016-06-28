@@ -30,7 +30,8 @@
 			selectList: base.$el.find( ".ontologySelect" ),
 			headerTxt: base.$el.find( ".ontologyHeaderText" ),
 			viewOptions: base.$el.find( ".ontologyViewOptions" ),
-			selectedTerms: base.$el.find( ".ontologySelectedTerms" )
+			selectedTerms: base.$el.find( ".ontologySelectedTerms" ),
+
 		};
 		
 		base.components.popularViewBtn = base.components.viewBtns.find( ".ontologyViewPopularBtn" );
@@ -112,24 +113,63 @@
 			});
 			
 			base.$el.on( "click", ".ontologyRemoveSelectedTerm", function( ) {
-				
-				// Reshow the warning in the case that it was previously
-				// there and then removed to show a qualifier instead
-				var termWrap = $(this).closest( ".ontologySelectedTermWrap" );
-				var qualifiers = termWrap.find( ".ontologySelectedQualifiers" ).val( );
-				var qualWarning = termWrap.find( ".ontologyTermQualifierWarning" );
-				if( qualWarning.length && qualifiers == "" ) {
-					qualWarning.show( );
-				}
-				
+				base.resetTermWarning( $(this) );
 				curationBlock.setStatus( "NEW" );
 				$(this).parent( ).parent( ).remove( );
-				
+			});
+			
+			base.$el.on( "click", ".ontologyClearAllLink", function( ) {
+				curationBlock.setStatus( "NEW" );
+				base.clearSelectedTerms( );
+			});
+			
+			base.$el.on( "click", ".ontologyClearChecked", function( ) {
+				curationBlock.setStatus( "NEW" );
+				base.clearCheckedTerms( );
+			});
+			
+			base.$el.on( "click", ".ontologyClearAllQualifiers", function( ) {
+				curationBlock.setStatus( "NEW" );
+				base.clearQualifiers( );
+			});
+			
+			base.$el.on( "click", ".ontologyClearCheckedQualifiers", function( ) {
+				curationBlock.setStatus( "NEW" );
+				base.clearCheckedQualifiers( );
+			});
+			
+			base.$el.on( "click", ".ontologyTermCheck", function( ) { 
+				base.toggleTermChecked( true );
+			});
+			
+			base.$el.on( "click", ".ontologyTermUncheck", function( ) { 
+				base.toggleTermChecked( false );
+			});
+			
+			base.$el.on( "click", ".ontologyQualifierCheck", function( ) { 
+				base.toggleQualifierChecked( true );
+			});
+			
+			base.$el.on( "click", ".ontologyQualifierUncheck", function( ) { 
+				base.toggleQualifierChecked( false );
 			});
 			
 			base.loadPopularView( );
 			base.updateTreeView( );
 			
+		};
+		
+		base.resetTermWarning = function( term ) {
+	
+			// Reshow the warning in the case that it was previously
+			// there and then removed to show a qualifier instead
+			var termWrap = term.closest( ".ontologySelectedTermWrap" );
+			var qualifiers = termWrap.find( ".ontologySelectedQualifiers" ).val( );
+			var qualWarning = termWrap.find( ".ontologyTermQualifierWarning" );
+			if( qualWarning.length && qualifiers == "" ) {
+				qualWarning.show( );
+			}
+	
 		};
 		
 		base.changeSelect = function( ) {
@@ -414,6 +454,42 @@
 		
 		base.clearSelectedTerms = function( ) {
 			base.components.selectedTerms.html( "" );
+		};
+		
+		base.clearCheckedTerms = function( ) {
+			base.components.selectedTerms.find( ".ontologySelectedCheck:checked" ).each( function( index, element ) {
+				$(this).parent( ).parent( ).remove( );
+			});
+		};
+		
+		base.clearCheckedQualifiers = function( ) {
+			base.components.selectedTerms.find( ".ontologySelectedQualifierCheck:checked" ).each( function( index, element ) {
+				base.resetTermWarning( $(this) );
+				$(this).parent( ).parent( ).remove( );
+			});
+		};
+		
+		base.clearQualifiers = function( ) {
+			base.components.selectedTerms.find( ".ontologySelectedQualifiers" ).each( function( index, element ) {
+				base.resetTermWarning( $(this) );
+				$(this).html( "" );
+			});
+		};
+		
+		base.toggleTermChecked = function( checkAll ) {
+			if( checkAll ) {
+				base.components.selectedTerms.find( ".ontologySelectedCheck" ).prop( "checked", true );
+			} else {
+				base.components.selectedTerms.find( ".ontologySelectedCheck:checked" ).prop( "checked", false );
+			}
+		};
+		
+		base.toggleQualifierChecked = function( checkAll ) {
+			if( checkAll ) {
+				base.components.selectedTerms.find( ".ontologySelectedQualifierCheck" ).prop( "checked", true );
+			} else {
+				base.components.selectedTerms.find( ".ontologySelectedQualifierCheck:checked" ).prop( "checked", false );
+			}
 		};
 		
 		base.addSelectedTerm = function( addBtn ) {

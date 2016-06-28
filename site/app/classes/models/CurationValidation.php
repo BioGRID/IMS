@@ -28,7 +28,7 @@ class CurationValidation {
 		$this->twig = new \Twig_Environment( $loader );
 		
 		$this->blockName = $blockName;
-		$this->lookups = models\Lookups( );
+		$this->lookups = new models\Lookups( );
 		$this->attributeTypeInfo = $this->lookups->buildAttributeTypeHASH( );
 	}
 	
@@ -41,7 +41,12 @@ class CurationValidation {
 		switch( $options['category'] ) {
 			
 			case "1" : // Ontology Terms
-				$results = $this->validateOntologyTerms( $options['ontologyTerms'], $options['attribute'], $block, $curationCode, $isRequired );
+				$ontologyTerms = array( );
+				if( isset( $options['ontologyTerms'] ) ) {
+					$ontologyTerms = $options['ontologyTerms'];
+				}
+				
+				$results = $this->validateOntologyTerms( $ontologyTerms, $options['attribute'], $block, $curationCode, $isRequired );
 				return $results;
 			
 			case "3" : // NOTE
@@ -90,7 +95,6 @@ class CurationValidation {
 		
 		$stmt = $this->db->prepare( "INSERT INTO " . DB_IMS . ".attributes VALUES ( '0',?,?,NOW( ),'active' )" );
 		$stmt->execute( array( $termID, $attributeTypeID ) );
-		$this->db->commit( );
 		
 		$attributeID = $this->db->lastInsertId( );
 		
@@ -147,7 +151,7 @@ class CurationValidation {
 				$stmt->execute( array( $qualifiers[0] ) );
 				
 				if( !$row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
-					return array( "STATUS" => false, "MESSAGE" => $this->generateError( "BIOCHEMICAL_ACTIVITY_WRONG_QUALIFIER", array( "term" => $termName ) );
+					return array( "STATUS" => false, "MESSAGE" => $this->generateError( "BIOCHEMICAL_ACTIVITY_WRONG_QUALIFIER", array( "term" => $termName ) ) );
 				} 
 		
 			}
@@ -216,7 +220,7 @@ class CurationValidation {
 						}
 					
 						// Add completed terms and their qualifiers to the ontologyTermSet
-						$ontologyTerms[$termID] = $ontologyTerm;
+						$ontologyTermSet[$termID] = $ontologyTerm;
 						
 					}
 					
@@ -227,7 +231,7 @@ class CurationValidation {
 		}
 		
 		// INSERT/UPDATE IT IN THE DATABASE
-		$this->updateCurationEntries( $curationCode, $status, $block, $ontologyTermSet, "attribute", $attributeID, $isRequired );
+		$this->updateCurationEntries( $curationCode, $status, $block, $ontologyTermSet, "attribute", $attributeTypeID, $isRequired );
 		
 		return array( "STATUS" => $status, "ERRORS" => $messages );
 		

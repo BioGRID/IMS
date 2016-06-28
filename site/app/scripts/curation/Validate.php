@@ -34,7 +34,6 @@ if( isset( $_POST['curationCode'] ) ) {
 		}
 		
 	} else if( $_POST['type'] == "attribute" ) {
-		print_r( $_POST );
 		$results = $validate->validateAttribute( $_POST, $_POST['id'], $curationCode, $required );
 	}
 	
