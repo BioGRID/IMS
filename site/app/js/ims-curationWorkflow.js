@@ -26,7 +26,9 @@
 			curationTypeSelect: $("#curationType"),
 			curationInterface: $("#curationInterface"),
 			addSubAttributePopup: "",
-			addChecklistItemPopup: ""
+			addChecklistItemPopup: "",
+			submitWorkflowBtn: $("#submitCurationWorkflowBtn"),
+			curationWorkflow: $("#curationWorkflow")
 		};
 		
 		base.init = function( ) {
@@ -37,7 +39,28 @@
 			base.$el.on( "click", ".workflowLink", function( ) {
 				base.clickWorkflowLink( $(this) );
 			});
+			
+			base.$el.on( "click", "#submitCurationWorkflowBtn", function( ) {
+				base.clickSubmitBtn( );
+			});
 
+		};
+		
+		base.clickSubmitBtn = function( ) {
+			var isValidated = false;
+			$("#curationChecklist").find( ".activityIcons" ).each( function( index, element ) {
+				var blockStatus = $(element).data( "status" );
+				console.log( blockStatus );
+				if( blockStatus == "VALID" || blockStatus == "WARNING" ) {
+					isValidated = true;
+				}
+			});
+			
+			if( isValidated ) {
+				console.log( "ALL ARE VALIDATED" );
+			} else {
+				console.log( "SOME ARE INVALID" );
+			}
 		};
 		
 		// Process functionality of clicking on a workflow link
