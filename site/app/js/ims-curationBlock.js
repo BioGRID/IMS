@@ -89,7 +89,7 @@
 		
 		base.clickValidateBtn = function( ) {
 			
-			base.components.validateBtn.prop( "disabled", true );
+			base.components.validateBtn.prop( "disabled", true );	
 			base.setStatus( "PROCESSING" );
 			
 			// Get input fields
@@ -123,7 +123,7 @@
 			ajaxData.push({name: 'name', value: base.data.name});
 			ajaxData.push({name: 'required', value: base.data.required});
 				
-			$.ajax({
+			return $.ajax({
 				
 				url: base.data.baseURL + "/scripts/curation/Validate.php",
 				method: "POST",
@@ -210,7 +210,7 @@
 				base.clickValidateBtn( );
 			} 
 		};
-
+	
 		base.init( );
 	
 	};

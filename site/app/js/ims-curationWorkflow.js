@@ -19,7 +19,8 @@
 		
 		base.data = { 
 			id: base.$el.attr( "id" ),
-			baseURL: $("head base").attr( "href" )
+			baseURL: $("head base").attr( "href" ),
+			curationBlocks: []
 		};
 		
 		base.components = {
@@ -27,7 +28,6 @@
 			curationInterface: $("#curationInterface"),
 			addSubAttributePopup: "",
 			addChecklistItemPopup: "",
-			submitWorkflowBtn: $("#submitCurationWorkflowBtn"),
 			curationWorkflow: $("#curationWorkflow")
 		};
 		
@@ -46,21 +46,69 @@
 
 		};
 		
+		base.toggleSubmitBtn = function( enableBtn ) {
+			var submitBtn = $("#submitCurationWorkflowBtn");
+			
+			if( enableBtn ) {
+				submitBtn.prop( "disabled", false );
+				submitBtn.find( ".submitCheck" ).show( );
+				submitBtn.find( ".submitProgress" ).hide( );
+			} else {
+				submitBtn.prop( "disabled", true );
+				submitBtn.find( ".submitCheck" ).hide( );
+				submitBtn.find( ".submitProgress" ).show( );
+			}
+			
+			
+		};
+		
 		base.clickSubmitBtn = function( ) {
-			var isValidated = false;
-			$("#curationChecklist").find( ".activityIcons" ).each( function( index, element ) {
-				var blockStatus = $(element).data( "status" );
-				console.log( blockStatus );
-				if( blockStatus == "VALID" || blockStatus == "WARNING" ) {
-					isValidated = true;
+			
+			base.toggleSubmitBtn( false );
+			
+			var allValidated = true;
+			var curationBlockCount = base.data.curationBlocks.length;
+			var invalidBlocks = [];
+			var promises = [];
+			
+			for( var i = 0; i < curationBlockCount; i++ ) {
+				var blockStatus = base.data.curationBlocks[i].data( "status" );
+				
+				// If blocks are new, run the validate process on them and
+				// create a promise to wait until that validation completes
+				if( blockStatus == "NEW" ) {
+					var blockStatus = base.data.curationBlocks[i].data( "status" );
+					promises.push( base.data.curationBlocks[i].data( "curationBlock" ).clickValidateBtn( ) );
+				} 
+				
+			}
+			
+			$.when.apply( $, promises ).done( function( ) {
+			
+				for( var i = 0; i < curationBlockCount; i++ ) {
+					var blockStatus = base.data.curationBlocks[i].data( "status" );
+					
+					// Block is not validated
+					if( blockStatus == "ERROR" || blockStatus == "NEW" ) {
+						invalidBlocks.push( base.data.curationBlocks[i].data( "name" ) );
+						allValidated = false;
+					}
 				}
+				
+				if( allValidated ) {
+					console.log( "ALL ARE VALIDATED" );
+				} else {
+					console.log( "SOME ARE INVALID" );
+					console.log( invalidBlocks );
+				}
+				
+				base.toggleSubmitBtn( true );
+				
+			}).fail( function( ) {
+				console.log( "SUBMIT FAILED" );
+				base.toggleSubmitBtn( true );
 			});
 			
-			if( isValidated ) {
-				console.log( "ALL ARE VALIDATED" );
-			} else {
-				console.log( "SOME ARE INVALID" );
-			}
 		};
 		
 		// Process functionality of clicking on a workflow link
@@ -86,7 +134,20 @@
 					
 			}
 			
-			base.loadCurationBlock( link );
+			// Hide currently showing curation panel
+			var closingBlock = $(".curationBlock:visible").hide( ).attr( "id" );
+			if( closingBlock != undefined ) {
+				$("#" + closingBlock).data( 'curationBlock' ).hideBlock( );
+			}
+			
+			var blockID = link.data( "blockid" );
+			if( $("#" + blockID).length ) {
+				$("#" + blockID).show( );
+			} else {
+				$.when( base.loadCurationBlock(link) ).done( function( ) {
+					$("#" + blockID).show( );
+				});
+			}
 		};
 		
 		// Load a curation block into the curation workflow
@@ -96,55 +157,46 @@
 			dataAttribs['curationType'] = base.components.curationTypeSelect.val( );
 			dataAttribs['blockName'] = link.html( );
 			dataAttribs['script'] = 'loadCurationBlock';
-			
-			// Hide currently showing curation panel
-			var closingBlock = $(".curationBlock:visible").hide( ).attr( "id" );
-			if( closingBlock != undefined ) {
-				$("#" + closingBlock).data( 'curationBlock' ).hideBlock( );
-			}
-			
-			if( $("#" + dataAttribs['blockid']).length ) {
 				
-				// Show the one we clicked instead of reloading
-				// the code
+			return $.ajax({
 				
-				$("#" + dataAttribs['blockid']).show( );
+				url: base.data.baseURL + "/scripts/curation/Workflow.php",
+				method: "POST",
+				dataType: "html",
+				data: dataAttribs
 				
-			} else {
+			}).done( function(data) {
 				
-				// Haven't loaded this one yet, load it via
-				// ajax into the form
+				$("#curationWorkflow").append(data);
+				var curationBlock = $("#" + dataAttribs['blockid']).curationBlock( {}, base );
+				base.setupAddChecklistSubItemButton( );
 				
-				$.ajax({
-					
-					url: base.data.baseURL + "/scripts/curation/Workflow.php",
-					method: "POST",
-					dataType: "html",
-					data: dataAttribs
-					
-				}).done( function(data) {
-					
-					$("#curationWorkflow").append(data);
-					var curationBlock = $("#" + dataAttribs['blockid']).curationBlock( {}, base );
-					base.setupAddChecklistSubItemButton( );
-					
-					var ontSelect = $("#" + dataAttribs['blockid'] + " .ontologySelector");
-					if( ontSelect.length ) {
-						var options = ontSelect.data( );
-						ontSelect.ontologySelector( options, curationBlock.data('curationBlock') );
-					}
-					
-				});
+				var ontSelect = $("#" + dataAttribs['blockid'] + " .ontologySelector");
+				if( ontSelect.length ) {
+					var options = ontSelect.data( );
+					ontSelect.ontologySelector( options, curationBlock.data('curationBlock') );
+				}
 				
-			}
+				base.data.curationBlocks.push( curationBlock );
+				
+			});
 			
 		};
 		
 		// Setup the curation checklist functionality
 		// so it can be correctly interacted with
 		base.setupCurationChecklist = function( ) {
-			var firstChecklistItem = $(".workflowLink:first");
-			base.clickWorkflowLink( firstChecklistItem );
+			
+			var promises = [];
+			$(".workflowLink").each( function( index, element ) {
+				promises.push( base.loadCurationBlock( $(element) ));
+			});
+			
+			$.when.apply( $, promises ).done( function( ) {
+				var firstChecklistItem = $(".workflowLink:first");
+				base.clickWorkflowLink( firstChecklistItem );
+			});
+			
 		};
 		
 		// Initialize the basic structure of a curation workflow and populate
@@ -153,6 +205,7 @@
 		
 			$("#curationMenu > .list-group").affix( );
 			
+			// THIS NEEDS TO BE REMOVED, DOES NOTHING
 			$(".curationBlock").each( function( i, val ) {
 				var cp = $(this).curationBlock({});
 				cp.data('curationBlock').clickMe( );

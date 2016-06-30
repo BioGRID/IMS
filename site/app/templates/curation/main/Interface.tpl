@@ -10,7 +10,7 @@
 			{% endfor %}
 		
 		</ul>
-		<button id='submitCurationWorkflowBtn' class='btn btn-sm btn-success'>Submit <i class='fa fa-check fa-lg'></i></button>
+		<button id='submitCurationWorkflowBtn' class='btn btn-sm btn-success'>Submit <i class='submitCheck fa fa-check fa-lg'></i><i class='submitProgress fa fa-pulse fa-refresh fa-lg' style='display: none;'></i></button>
 		<button class='btn btn-sm btn-primary' id='addNewChecklistItem'>Add Item <i class='fa fa-plus-square-o fa-lg'></i></button>
 		<input type='hidden' id='checklistBlockCount' name='checklistBlockCount' value='{{ CHECKLIST_BLOCK_COUNT }}' />
 		<input type='hidden' id='checklistPartCount' name='checklistPartCount' value='{{ CHECKLIST_PART_COUNT }}' />

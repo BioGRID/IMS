@@ -1,4 +1,4 @@
-<div class='curationBlock' id='{{ ID }}' data-type='{{ TYPE }}' data-name='{{ TITLE }}' data-required='{{ REQUIRED }}' data-attribute='{{ ATTRIBUTE }}' data-category='{{ CATEGORY }}'>
+<div class='curationBlock' id='{{ ID }}' data-type='{{ TYPE }}' data-name='{{ TITLE }}' data-required='{{ REQUIRED }}' data-attribute='{{ ATTRIBUTE }}' data-category='{{ CATEGORY }}' style='display: none;'>
 
 	{% include 'curation/blocks/Panel.tpl' %}
 	
