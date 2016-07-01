@@ -43,10 +43,28 @@
 			base.$el.on( "click", "#submitCurationWorkflowBtn", function( ) {
 				base.clickSubmitBtn( );
 			});
+			
+			base.$el.on( "click", "#curationWorkflowErrorBtn", function( ) {
+				base.showWorkflowErrors( );
+			});
 
 		};
 		
+		base.showWorkflowErrors = function( ) {
+			$(".workflowLink").parent( ).removeClass( "active" ).find( ".curationSubmenu" ).slideUp( 'fast' );
+			
+			// Hide currently showing curation panel
+			var closingBlock = $(".curationBlock:visible").hide( ).attr( "id" );
+			if( closingBlock != undefined ) {
+				$("#" + closingBlock).data( 'curationBlock' ).hideBlock( );
+			}
+			
+			// Show Workflow Errors
+			$("#curationWorkflowErrors").show( );
+		};
+		
 		base.toggleSubmitBtn = function( enableBtn ) {
+			
 			var submitBtn = $("#submitCurationWorkflowBtn");
 			
 			if( enableBtn ) {
@@ -65,6 +83,7 @@
 		base.clickSubmitBtn = function( ) {
 			
 			base.toggleSubmitBtn( false );
+			$("#curationSubmitNotifications").hide( );
 			
 			var allValidated = true;
 			var curationBlockCount = base.data.curationBlocks.length;
@@ -89,7 +108,7 @@
 					var blockStatus = base.data.curationBlocks[i].data( "status" );
 					
 					// Block is not validated
-					if( blockStatus == "ERROR" || blockStatus == "NEW" ) {
+					if( blockStatus == "ERROR" || blockStatus == "NEW" || blockStatus == "PROCESSING" ) {
 						invalidBlocks.push( base.data.curationBlocks[i].data( "name" ) );
 						allValidated = false;
 					}
@@ -100,6 +119,7 @@
 				} else {
 					console.log( "SOME ARE INVALID" );
 					console.log( invalidBlocks );
+					$("#curationSubmitNotifications").show( );
 				}
 				
 				base.toggleSubmitBtn( true );
@@ -115,6 +135,7 @@
 		base.clickWorkflowLink = function( link ) {
 			
 			$(".workflowLink").not(link).parent( ).removeClass( "active" ).find( ".curationSubmenu" ).slideUp( 'fast' );
+			$("#curationWorkflowErrors").hide( );
 			
 			// Only Participants have Submenus
 			
