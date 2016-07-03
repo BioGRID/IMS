@@ -102,15 +102,19 @@ class CurationBlocks extends lib\Blocks {
 			$orgID = $_SESSION[SESSION_NAME]['GROUPS'][$_SESSION[SESSION_NAME]['GROUP']]['ORGANISM_ID'];
 		}
 		
+		// VALIDATE OPTIONS
+		// Type: list_match: must match the list passed in as block, can match to many
+		// Type: list_align: must match the list passed in as block, can match to 1 or many
+		
 		switch( strtolower($type) ) {
 			
 			case "1" : // Protein-Protein Binary Interaction
 			
-				$links[] = array( "BLOCK" => "participant", "DATA" => array( "role" => "2", "type" => "1", "organism" => $orgID, "required" => 1 ) );
-				$links[] = array( "BLOCK" => "participant", "DATA" => array( "role" => "3", "type" => "1", "organism" => $orgID, "required" => 1 ) );
-				$links[] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "11", "required" => 1 ) );
-				$links[] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "13", "required" => 1 ) );
-				$links[] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "22", "required" => 0 ) );
+				$links[0] = array( "BLOCK" => "participant", "DATA" => array( "role" => "2", "type" => "1", "organism" => $orgID, "required" => 1 ), "VALIDATE" => array( "type" => "list_match", "block" => 1 ) );
+				$links[1] = array( "BLOCK" => "participant", "DATA" => array( "role" => "3", "type" => "1", "organism" => $orgID, "required" => 1 ), "VALIDATE" => array( "type" => "list_align", "block" => 0 ) );
+				$links[2] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "11", "required" => 1 ) );
+				$links[3] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "13", "required" => 1 ) );
+				$links[4] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "22", "required" => 0 ) );
 				
 				$links = $this->processCurationLinks( $links, 1 );
 			
