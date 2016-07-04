@@ -25,12 +25,13 @@ class CurationBlocks extends lib\Blocks {
 	private $checklistParticipants;
 	private $checklistSubAttributes;
 	
-	private $blockCount = 1;
+	private $blockCount = 0;
 	private $participantCount = 1;
 	private $lastParticipant = "";
 	
 	private $ignoreAttributes;
 	private $ontologies;
+	private $curationOps;
 	 
 	public function __construct( ) {
 		parent::__construct( );
@@ -39,6 +40,7 @@ class CurationBlocks extends lib\Blocks {
 		
 		$this->lookups = new models\Lookups( );
 		$this->ontologies = new models\OntologyBlocks( );
+		$this->curationOps = new models\CurationOperations( );
 		
 		$this->partTypes = $this->lookups->buildParticipantTypesHash( false );
 		$this->partRoles = $this->lookups->buildParticipantRoleHash( );
@@ -94,35 +96,9 @@ class CurationBlocks extends lib\Blocks {
 		$blocks = array( );
 		$links = array( );
 		
-		// Get organism ID from the session for their currently selected group
-		// Use it as the default when showing a participant block
-		
-		$orgID = "559292";
-		if( isset( $_SESSION[SESSION_NAME]['GROUP'] ) ) {
-			$orgID = $_SESSION[SESSION_NAME]['GROUPS'][$_SESSION[SESSION_NAME]['GROUP']]['ORGANISM_ID'];
-		}
-		
-		// VALIDATE OPTIONS
-		// Type: list_match: must match the list passed in as block, can match to many
-		// Type: list_align: must match the list passed in as block, can match to 1 or many
-		
-		switch( strtolower($type) ) {
-			
-			case "1" : // Protein-Protein Binary Interaction
-			
-				$links[0] = array( "BLOCK" => "participant", "DATA" => array( "role" => "2", "type" => "1", "organism" => $orgID, "required" => 1 ), "VALIDATE" => array( "type" => "list_match", "block" => 1 ) );
-				$links[1] = array( "BLOCK" => "participant", "DATA" => array( "role" => "3", "type" => "1", "organism" => $orgID, "required" => 1 ), "VALIDATE" => array( "type" => "list_align", "block" => 0 ) );
-				$links[2] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "11", "required" => 1 ) );
-				$links[3] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "13", "required" => 1 ) );
-				$links[4] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "22", "required" => 0 ) );
-				
-				$links = $this->processCurationLinks( $links, 1 );
-			
-				break;
-				
-			
-		}
-		
+		$curationChecklist = $this->curationOps->fetchCurationWorkflowSettings( $type );
+		$links = $this->processCurationLinks( $curationChecklist );
+
 		return $this->generateView( $blocks, $links );
 		
 	}
@@ -155,7 +131,8 @@ class CurationBlocks extends lib\Blocks {
 		}
 		
 		if( sizeof( $link ) > 0 ) {
-			$links = array( $link );
+			$links = array( );
+			$links[$this->blockCount] = $link;
 			$links = $this->processCurationLinks( $links );
 			return $links[0];
 		} 
@@ -274,9 +251,10 @@ class CurationBlocks extends lib\Blocks {
 		
 		$updatedLinks = array( );
 		
-		foreach( $links as $link ) {
+		$lastLinkID = $this->blockCount;
+		foreach( $links as $linkID => $link ) {
 			
-			$link['ID'] = "block-" . $this->blockCount;
+			$link['ID'] = "block-" . $linkID; 
 			
 			if( $link['BLOCK'] == "participant" ) {
 				
@@ -296,10 +274,11 @@ class CurationBlocks extends lib\Blocks {
 			}
 			
 			
-			$this->blockCount++;
+			$lastLinkID = $linkID;
 			$updatedLinks[] = $this->processView( 'curation' . DS . 'checklist' . DS . 'ListItem.tpl', $link, false );
 		}
 		
+		$this->blockCount = $lastLinkID + 1;
 		return $updatedLinks;
 		
 	}

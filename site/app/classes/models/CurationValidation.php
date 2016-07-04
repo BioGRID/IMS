@@ -20,6 +20,8 @@ class CurationValidation {
 	private $lookups;
 	private $attributeTypeInfo;
 	
+	private $curationOps;
+	
 	public function __construct( $blockName ) {
 		$this->db = new PDO( DB_CONNECT, DB_USER, DB_PASS );
 		$this->db->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
@@ -30,6 +32,8 @@ class CurationValidation {
 		$this->blockName = $blockName;
 		$this->lookups = new models\Lookups( );
 		$this->attributeTypeInfo = $this->lookups->buildAttributeTypeHASH( );
+		
+		$this->curationOps = new models\CurationOperations( );
 	}
 	
 	/**
@@ -143,7 +147,7 @@ class CurationValidation {
 		
 		if( $termID == "194590" && $attributeTypeID == "11" ) {	
 			if( sizeof( $qualifiers ) <= 0 || sizeof( $qualifiers ) > 1 ) {
-				return array( "STATUS" => false, "MESSAGE" => $this->generateError( "BIOCHEMICAL_ACTIVITY_NO_QUALIFIER", array( "term" => $termName ) ) );
+				return array( "STATUS" => false, "MESSAGE" => $this->curationOps->generateError( "BIOCHEMICAL_ACTIVITY_NO_QUALIFIER", array( "term" => $termName ) ) );
 			} else {
 				
 				// Verify that the qualifier is from the PTM Ontology
@@ -151,7 +155,7 @@ class CurationValidation {
 				$stmt->execute( array( $qualifiers[0] ) );
 				
 				if( !$row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
-					return array( "STATUS" => false, "MESSAGE" => $this->generateError( "BIOCHEMICAL_ACTIVITY_WRONG_QUALIFIER", array( "term" => $termName ) ) );
+					return array( "STATUS" => false, "MESSAGE" => $this->curationOps->generateError( "BIOCHEMICAL_ACTIVITY_WRONG_QUALIFIER", array( "term" => $termName ) ) );
 				} 
 		
 			}
@@ -175,10 +179,10 @@ class CurationValidation {
 		if( sizeof( $ontologyTerms ) <= 0 ) {
 			
 			if( $isRequired ) {
-				$messages[] = $this->generateError( "REQUIRED" );
+				$messages[] = $this->curationOps->generateError( "REQUIRED", array( "blockName" => $this->blockName ) );
 				$status = "ERROR";
 			} else {
-				$messages[] = $this->generateError( "BLANK" );
+				$messages[] = $this->curationOps->generateError( "BLANK", array( "blockName" => $this->blockName ) );
 				$status = "WARNING";
 			}
 			
@@ -192,7 +196,7 @@ class CurationValidation {
 				$termDetails = $this->fetchOntologyTermDetails( $termID );
 				if( !$termDetails ) {
 					$status = "ERROR";
-					$messages[] = $this->generateError( "INVALID_ONTOLOGY_TERM" );
+					$messages[] = $this->curationOps->generateError( "INVALID_ONTOLOGY_TERM" );
 				} else {
 					
 					// Check validity of selected terms based on which attribute ID is being validated
@@ -253,7 +257,7 @@ class CurationValidation {
 			$score = trim( str_replace( array( ",", " " ), "", $score ) );
 			
 			if( !is_numeric( $score ) && $score != "-" ) {
-				$messages[] = $this->generateError( "NON_NUMERIC", array( "score" => $score, "lines" => array( $lineCount ) ) );
+				$messages[] = $this->curationOps->generateError( "NON_NUMERIC", array( "score" => $score, "lines" => array( $lineCount ) ) );
 			}
 			
 			$scoreSet[] = $score;
@@ -267,12 +271,12 @@ class CurationValidation {
 		} else {
 			if( $isRequired ) {
 				if( sizeof( $scoreSet ) <= 0 ) {
-					array_unshift( $messages, $this->generateError( "REQUIRED" ) );
+					array_unshift( $messages, $this->curationOps->generateError( "REQUIRED", array( "blockName" => $this->blockName ) ) );
 					$status = "ERROR";
 				}
 			} else {
 				if( sizeof( $scoreSet ) <= 0 ) {
-					$messages[] = $this->generateError( "BLANK" );
+					$messages[] = $this->curationOps->generateError( "BLANK", array( "blockName" => $this->blockName ) );
 					$status = "WARNING";
 				} 
 			}
@@ -305,12 +309,12 @@ class CurationValidation {
 		$status = "VALID";
 		if( $isRequired ) {
 			if( sizeof( $noteSet ) <= 0 ) {
-				$messages[] = $this->generateError( "REQUIRED" );
+				$messages[] = $this->curationOps->generateError( "REQUIRED", array( "blockName" => $this->blockName ) );
 				$status = "ERROR";
 			}
 		} else {
 			if( sizeof( $noteSet ) <= 0 ) {
-				$messages[] = $this->generateError( "BLANK" );
+				$messages[] = $this->curationOps->generateError( "BLANK", array( "blockName" => $this->blockName ) );
 				$status = "WARNING";
 			}
 		}
@@ -336,7 +340,7 @@ class CurationValidation {
 			$alleleList = explode( PHP_EOL, $alleleList );
 			
 			if( sizeof( $alleleList ) != $participantCount ) {
-				$messages[] = $this->generateError( "ALLELE_MISMATCH", array( "alleleBoxNumber" => $alleleBoxNumber ) );
+				$messages[] = $this->curationOps->generateError( "ALLELE_MISMATCH", array( "alleleBoxNumber" => $alleleBoxNumber ) );
 			}
 			
 			// Remove Left Over NewLines
@@ -377,7 +381,7 @@ class CurationValidation {
 		
 		if( $isRequired && strlen( $identifiers ) <= 0 ) {
 			$status = "ERROR";
-			$messages[] = $this->generateError( "REQUIRED" );
+			$messages[] = $this->curationOps->generateError( "REQUIRED", array( "blockName" => $this->blockName ) );
 		} else if( !$isRequired && strlen( $identifiers ) <= 0 ) {
 			$status = "VALID";
 		} else {
@@ -493,11 +497,11 @@ class CurationValidation {
 				foreach( $termSet as $termID => $termDetails ) {
 					$options[$termID] = $annotationSet[$termID];
 				}
-				$messages[] = $this->generateError( "AMBIGUOUS", array( "identifier" => $identifier, "lines" => $lines, "options" => $options ) );
+				$messages[] = $this->curationOps->generateError( "AMBIGUOUS", array( "identifier" => $identifier, "lines" => $lines, "options" => $options ) );
 			}
 			
 			foreach( $warningList as $identifier => $lines ) {
-				$messages[] = $this->generateError( "UNKNOWN", array( "identifier" => $identifier, "lines" => $lines ) );
+				$messages[] = $this->curationOps->generateError( "UNKNOWN", array( "identifier" => $identifier, "lines" => $lines ) );
 			}
 			
 			if( sizeof( $errorList ) > 0 ) {
@@ -667,82 +671,6 @@ class CurationValidation {
 			
 		}
 		
-	}
-	
-	/**
-	 * Process messages to create errors
-	 */
-	 
-	public function processErrors( $messages ) {
-		$errors = $this->twig->render( 'curation' . DS . 'error' . DS . 'CurationError.tpl', array( "ERRORS" => $messages ) );
-		return $errors;
-	}
-	
-	/**
-	 * Generate text for validation error messages
-	 * based on the type of error
-	 */
-	 
-	public function generateError( $errorType, $details = array( ) ) {
-	
-		switch( strtoupper( $errorType ) ) {
-			
-			case "REQUIRED" :
-				return array( "class" => "danger", "message" => $this->blockName . " is a required field. It will not validate while no data has been entered in the provided fields." );
-				
-			case "NON_NUMERIC" :
-				
-				$message = "The score value <strong>" . $details['score'] . "</strong> is NON NUMERIC on line <strong>" . implode( ", ", $details['lines'] ) . "</strong>. Please use a numerical value or use a hyphen (-) for no score on this line.";
-				
-				return array( "class" => "danger", "message" => $message );
-				
-			case "AMBIGUOUS" :
-			
-				$message = "The identifier <strong>" . $details['identifier'] . "</strong> is AMBIGUOUS on lines <strong>" . implode( ", ", $details['lines'] ) . "</strong>. <br />Ambiguities are: ";
-				
-				foreach( $details['options'] as $geneID => $annotation ) {
-					$options[] = "<a href='http://thebiogrid.org/" . $annotation['gene_id'] . "' target='_blank'>" . $annotation['primary_name'] . "</a> (<a class='lineReplace' data-lines='" . implode( "|", $details['lines'] ) . "' data-value='BG_" . $annotation['gene_id'] . "'>" . "<i class='fa fa-lg fa-exchange'></i>" . "</a>)</a>";
-				}
-				
-				$message .= implode( ", ", $options ) . "<div class='text-success statusMsg'></div>";
-				return array( "class" => "danger", "message" => $message );
-				
-			case "UNKNOWN" :
-			
-				$message = "The identifier <strong>" . $details['identifier'] . "</strong> is UNKNOWN on lines <strong>" . implode( ", ", $details['lines'] ) . "</strong>. If you believe it to be valid, you can add it as an unknown participant. Alternatively, you can correct it, by entering an alternative identifier below. To enter a BioGRID ID, preface term with BG_ (example: BG_123456). Otherwise, any other term will be assumed to be the same ID Type as the others listed above...";
-				
-				$message .= "<div class='clearfix'><div class='input-group col-lg-6 col-md-6 col-sm-12 col-xs-12 marginTopSm'><input type='text' class=' form-control unknownReplaceField' placeholder='Enter Replacement Term' value='' /><span class='input-group-btn'><button data-lines='" . implode( "|", $details['lines'] ) . "' class='btn btn-success unknownReplaceSubmit' type='button'>Replace</button></span></div></div>";
-				
-				$message .= "<div class='text-success statusMsg'></div>";
-				
-				return array( "class" => "warning", "message" => $message );
-				
-			case "ALLELE_MISMATCH" :
-				
-				$message = "The number of alleles in <strong>Allele Box #" . $details['alleleBoxNumber'] . "</strong> does not match the number of participants specified. You must enter an allele for every participant or use a hyphen (-) if wanting no allele. Please correct this and try validation again.";
-				
-				return array( "class" => "danger", "message" => $message );
-				
-			case "NOCODE" :
-				return array( "class" => "danger", "message" => "No curation code was passed to the validation script. Please try again!" );
-				
-			case "BLANK" :
-				return array( "class" => "warning", "message" => $this->blockName . " is currently blank but is not a required field. If you do not wish to use it, try removing it instead or simply leave it blank to ignore it." );
-				
-			case "INVALID_ONTOLOGY_TERM" :
-				return array( "class" => "danger", "message" => "One of the ontology terms you selected is not a valid ontology term id, try re-searching for your ontology term mappings and adding them again!" );
-				
-			case "BIOCHEMICAL_ACTIVITY_WRONG_QUALIFIER" :
-				return array( "class" => "danger", "message" => "Your selected ontology term: " . $details['term'] . " must have a qualifier appended from the BioGRID Post-Translational modification ontology, but you selected a qualifier from a different ontology. Please correct this mistake and re-attempt validation." );
-				
-			case "BIOCHEMICAL_ACTIVITY_NO_QUALIFIER" :
-				return array( "class" => "danger", "message" => "Your selected ontology term: " . $details['term'] . " must have a qualifier appended from the BioGRID Post-Translational modification ontology, but you selected none or too many. Please correct this mistake and re-attempt validation." );
-
-			default:
-				return array( "class" => "danger", "message" => "An unknown error has occurred." );
-			
-		}
-	
 	}
 	
 	/**

@@ -114,18 +114,41 @@
 					}
 				}
 				
-				if( allValidated ) {
-					console.log( "ALL ARE VALIDATED" );
-				} else {
-					console.log( "SOME ARE INVALID" );
-					console.log( invalidBlocks );
-					$("#curationSubmitNotifications").show( );
-				}
+				var ajaxData = {
+					"validationStatus" : allValidated,
+					"invalidBlocks" : JSON.stringify( invalidBlocks ),
+					"script" : 'submitCuratedDataset'
+				};
+
 				
-				base.toggleSubmitBtn( true );
+				$.ajax({
+					
+					url: base.data.baseURL + "/scripts/curation/Workflow.php",
+					method: "POST",
+					dataType: "json",
+					data: ajaxData,
+					beforeSend: function( ) {
+						$(".curationWorkflowErrorList").html( "" );
+					}
+					
+				}).done( function(data) {
+					
+					base.toggleSubmitBtn( true );
+					if( data["STATUS"] == "SUCCESS" ) {
+						console.log( "Submitted Successfully!" );
+					} else {
+						$(".curationWorkflowErrorList").html( data["ERRORS"] );
+						$("#curationSubmitNotifications").show( );
+						base.showWorkflowErrors( );
+					}
+					
+				}).fail( function( jqXHR, textStatus ) {
+					console.log( textStatus );
+					base.toggleSubmitBtn( true );
+				});
 				
-			}).fail( function( ) {
-				console.log( "SUBMIT FAILED" );
+			}).fail( function( jqXHR, textStatus ) {
+				console.log( textStatus );
 				base.toggleSubmitBtn( true );
 			});
 			
