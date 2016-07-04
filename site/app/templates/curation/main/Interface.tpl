@@ -1,4 +1,9 @@
-<div id='curationWorkflow' class=''></div>
+<div id='curationWorkflow' class=''>
+	<div id='curationWorkflowErrors' class='col-lg-12 marginTopSm'>
+		<h3 class='marginBotSm'>Submission Errors/Warnings</h3>
+		<div class="curationWorkflowErrorList"></div>
+	</div>
+</div>
 
 <div id='curationRightSidebar' class='clearfix'>
 	<div id='curationMenu'>
@@ -10,8 +15,13 @@
 			{% endfor %}
 		
 		</ul>
-		<button class='btn btn-sm btn-success' disabled>Submit <i class='fa fa-check fa-lg'></i></button>
+		<button id='submitCurationWorkflowBtn' class='btn btn-sm btn-success'>Submit <i class='submitCheck fa fa-check fa-lg'></i><i class='submitProgress fa fa-pulse fa-refresh fa-lg' style='display: none;'></i></button>
 		<button class='btn btn-sm btn-primary' id='addNewChecklistItem'>Add Item <i class='fa fa-plus-square-o fa-lg'></i></button>
+		
+		<div id='curationSubmitNotifications'>
+			<div class='text-danger'><strong>Submit Failed. Errors Reported...</strong><br /> <button class='btn btn-danger btn-sm marginTopSm' id='curationWorkflowErrorBtn'>View Errors <i class='fa fa-warning fa-lg'></i></button></div>
+		</div>
+		
 		<input type='hidden' id='checklistBlockCount' name='checklistBlockCount' value='{{ CHECKLIST_BLOCK_COUNT }}' />
 		<input type='hidden' id='checklistPartCount' name='checklistPartCount' value='{{ CHECKLIST_PART_COUNT }}' />
 		<input type='hidden' id='lastParticipant' name='lastParticipant' value='workflowLink-{{ LAST_PARTICIPANT }}' />

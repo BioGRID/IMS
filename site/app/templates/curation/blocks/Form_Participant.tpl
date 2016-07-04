@@ -1,12 +1,12 @@
 <div>
 	<div class='col-lg-6 col-md-5 col-sm-6 col-xs-6'>
-		<textarea class="form-control changeField participants" spellcheck="false" placeholder='{{ PLACEHOLDER_MSG }}' name='participants' id='{{BASE_NAME}}-participants' rows="12"></textarea>
+		<textarea class="form-control changeField participants dataField" spellcheck="false" placeholder='{{ PLACEHOLDER_MSG }}' name='participants' id='{{BASE_NAME}}-participants' rows="12"></textarea>
 	</div>
 	<div class='col-lg-6 col-md-7 col-sm-6 col-xs-6'>
 		<div class='form-group'>
 			<label class='col-sm-12 control-label paddingTopSm'>Role:</label>
 			<div class='col-sm-12'>
-				<select class="form-control input-sm changeField" name='role'>
+				<select class="form-control input-sm changeField dataField" name='role'>
 					{% for ROLEID, ROLENAME in ROLES %}
 						<option value='{{ ROLEID }}' {% if ROLEID == SELECTED_ROLE %}selected{% endif %}>{{ ROLENAME }}</option>
 					{% endfor %}
@@ -16,7 +16,7 @@
 		<div class='form-group'>
 			<label class='col-sm-12 control-label paddingTopSm'>Type:</label>
 			<div class='col-sm-12'>
-				<select class="form-control input-sm changeField" name='participant_type'>
+				<select class="form-control input-sm changeField dataField" name='participant_type'>
 					{% for TYPEID, TYPENAME in PARTICIPANT_TYPES %}
 						<option value='{{ TYPEID }}' {% if ROLEID == SELECTED_PTYPE %}selected{% endif %}>{{ TYPENAME }}</option>
 					{% endfor %}
@@ -26,7 +26,7 @@
 		<div class='form-group'>
 			<label class='col-sm-12 control-label paddingTopSm'>Taxa:</label>
 			<div class='col-sm-12'>
-				<select class='form-control partOrgSelect input-sm changeField' name='organism'>
+				<select class='form-control partOrgSelect input-sm changeField dataField' name='organism'>
 					{% for ORGID, ORGNAME in ORGANISMS %}
 						<option value='{{ ORGID }}' {% if ORGID == SELECTED_ORG %}selected{% endif %}>{{ ORGNAME }}</option>
 					{% endfor %}
@@ -36,7 +36,7 @@
 		<div class='form-group'>
 			<label class='col-sm-12 control-label paddingTopSm'>IDs:</label>
 			<div class='col-sm-12'>
-				<select class="form-control input-sm changeField" name='id_type'>
+				<select class="form-control input-sm changeField dataField" name='id_type'>
 					{% for TYPEID, TYPENAME in ID_TYPES %}
 						<option value='{{ TYPEID }}' {% if TYPEID == SELECTED_TYPE %}selected{% endif %}>{{ TYPENAME }}</option>
 					{% endfor %}

@@ -10,7 +10,7 @@
 
 } (function( $, window, document ) {
 		
-	$.ontologySelector = function( el, options ) {
+	$.ontologySelector = function( el, options, curationBlock ) {
 		
 		var base = this;
 		base.$el = $(el);
@@ -30,7 +30,8 @@
 			selectList: base.$el.find( ".ontologySelect" ),
 			headerTxt: base.$el.find( ".ontologyHeaderText" ),
 			viewOptions: base.$el.find( ".ontologyViewOptions" ),
-			selectedTerms: base.$el.find( ".ontologySelectedTerms" )
+			selectedTerms: base.$el.find( ".ontologySelectedTerms" ),
+
 		};
 		
 		base.components.popularViewBtn = base.components.viewBtns.find( ".ontologyViewPopularBtn" );
@@ -103,19 +104,72 @@
 			
 			base.$el.on( "click", ".ontologyTermButtonAdd", function( ) {
 				base.addSelectedTerm( $(this) );
+				curationBlock.setStatus( "NEW" );
 			});
 			
 			base.$el.on( "click", ".ontologyTermButtonQualifier", function( ) {
 				base.addSelectedQualifier( $(this) );
+				curationBlock.setStatus( "NEW" );
 			});
 			
 			base.$el.on( "click", ".ontologyRemoveSelectedTerm", function( ) {
+				base.resetTermWarning( $(this) );
+				curationBlock.setStatus( "NEW" );
 				$(this).parent( ).parent( ).remove( );
+			});
+			
+			base.$el.on( "click", ".ontologyClearAllLink", function( ) {
+				curationBlock.setStatus( "NEW" );
+				base.clearSelectedTerms( );
+			});
+			
+			base.$el.on( "click", ".ontologyClearChecked", function( ) {
+				curationBlock.setStatus( "NEW" );
+				base.clearCheckedTerms( );
+			});
+			
+			base.$el.on( "click", ".ontologyClearAllQualifiers", function( ) {
+				curationBlock.setStatus( "NEW" );
+				base.clearQualifiers( );
+			});
+			
+			base.$el.on( "click", ".ontologyClearCheckedQualifiers", function( ) {
+				curationBlock.setStatus( "NEW" );
+				base.clearCheckedQualifiers( );
+			});
+			
+			base.$el.on( "click", ".ontologyTermCheck", function( ) { 
+				base.toggleTermChecked( true );
+			});
+			
+			base.$el.on( "click", ".ontologyTermUncheck", function( ) { 
+				base.toggleTermChecked( false );
+			});
+			
+			base.$el.on( "click", ".ontologyQualifierCheck", function( ) { 
+				base.toggleQualifierChecked( true );
+			});
+			
+			base.$el.on( "click", ".ontologyQualifierUncheck", function( ) { 
+				base.toggleQualifierChecked( false );
 			});
 			
 			base.loadPopularView( );
 			base.updateTreeView( );
 			
+		};
+		
+		base.resetTermWarning = function( term ) {
+	
+			// Reshow the warning in the case that it was previously
+			// there and then removed to show a qualifier instead
+			var termWrap = term.closest( ".ontologySelectedTermWrap" );
+			var qualifiers = termWrap.find( ".ontologySelectedQualifiers" ).val( );
+			var qualWarning = termWrap.find( ".ontologyTermQualifierWarning" );
+			if( qualWarning.length && qualifiers == "" ) {
+				qualWarning.show( );
+			}
+	
 		};
 		
 		base.changeSelect = function( ) {
@@ -164,10 +218,7 @@
 				}
 				
 			}).done( function(results) {
-				 
-				console.log( results );
 				base.components.popularView.html( results['VIEW'] );
-				
 			}).fail( function( jqXHR, textStatus ) {
 				console.log( textStatus );
 			});
@@ -203,10 +254,7 @@
 				}
 				
 			}).done( function(results) {
-				 
-				console.log( results );
 				base.components.searchView.html( results['VIEW'] );
-				
 			}).fail( function( jqXHR, textStatus ) {
 				console.log( textStatus );
 			});
@@ -247,14 +295,10 @@
 							url: base.data.baseURL + "/scripts/curation/Ontology.php",
 							method: "POST",
 							dataType: "json",
-							data: ajaxData,
-							beforeSend: function( ) {
-								console.log( "SENDING" );
-							}
+							data: ajaxData
 				
 						}).done( function(results) {
 							
-							console.log( results );
 							api.set( 'content.text', results['VIEW'] );
 							
 						}).fail( function( jqXHR, textStatus ) {
@@ -314,7 +358,6 @@
 				
 			}).done( function(results) {
 				 
-				console.log( results );
 				base.components.treeView.html( results['VIEW'] );
 				
 			}).fail( function( jqXHR, textStatus ) {
@@ -346,7 +389,6 @@
 				
 			}).done( function(results) {
 				 
-				console.log( results );
 				treeExpand.html( results['VIEW'] );
 				
 			}).fail( function( jqXHR, textStatus ) {
@@ -402,7 +444,6 @@
 				
 			}).done( function(results) {
 				 
-				console.log( results );
 				base.components.treeView.html( results['VIEW'] );
 				
 			}).fail( function( jqXHR, textStatus ) {
@@ -415,12 +456,51 @@
 			base.components.selectedTerms.html( "" );
 		};
 		
+		base.clearCheckedTerms = function( ) {
+			base.components.selectedTerms.find( ".ontologySelectedCheck:checked" ).each( function( index, element ) {
+				$(this).parent( ).parent( ).remove( );
+			});
+		};
+		
+		base.clearCheckedQualifiers = function( ) {
+			base.components.selectedTerms.find( ".ontologySelectedQualifierCheck:checked" ).each( function( index, element ) {
+				base.resetTermWarning( $(this) );
+				$(this).parent( ).parent( ).remove( );
+			});
+		};
+		
+		base.clearQualifiers = function( ) {
+			base.components.selectedTerms.find( ".ontologySelectedQualifiers" ).each( function( index, element ) {
+				base.resetTermWarning( $(this) );
+				$(this).html( "" );
+			});
+		};
+		
+		base.toggleTermChecked = function( checkAll ) {
+			if( checkAll ) {
+				base.components.selectedTerms.find( ".ontologySelectedCheck" ).prop( "checked", true );
+			} else {
+				base.components.selectedTerms.find( ".ontologySelectedCheck:checked" ).prop( "checked", false );
+			}
+		};
+		
+		base.toggleQualifierChecked = function( checkAll ) {
+			if( checkAll ) {
+				base.components.selectedTerms.find( ".ontologySelectedQualifierCheck" ).prop( "checked", true );
+			} else {
+				base.components.selectedTerms.find( ".ontologySelectedQualifierCheck:checked" ).prop( "checked", false );
+			}
+		};
+		
 		base.addSelectedTerm = function( addBtn ) {
+			
+			addBtn.prop( "disabled", true );
 			
 			var overallTerm = addBtn.closest( ".popularOntologyTerm" )
 			var termID = overallTerm.data( "termid" );
 			var termName = overallTerm.data( "termname" );
 			var termOfficial = overallTerm.data( "termofficial" );
+			var attributeTypeID = base.$el.closest( ".curationBlock" ).data( "attribute" );
 			
 			var selectedTerms = base.components.selectedTerms.find( ".ontologySelectedCheck:checked" ).map( function( ) {
 				return this.value;
@@ -436,6 +516,7 @@
 				ontology_term_name: termName,
 				ontology_term_official: termOfficial,
 				selected_terms: selectedList,
+				attribute_type_id: attributeTypeID,
 				script: "addSelectedTerm"
 			};
 				
@@ -444,14 +525,9 @@
 				url: base.data.baseURL + "/scripts/curation/Ontology.php",
 				method: "POST",
 				dataType: "json",
-				data: ajaxData,
-				beforeSend: function( ) {
-					
-				}
+				data: ajaxData
 				
 			}).done( function(results) {
-				 
-				console.log( results );
 				
 				// If single select is true, you can only
 				// pick a single term, so it always overwrites
@@ -468,54 +544,75 @@
 					base.changeSelect( );
 				}
 				
+				addBtn.prop( "disabled", false );
+				
 			}).fail( function( jqXHR, textStatus ) {
 				console.log( textStatus );
+				addBtn.prop( "disabled", false );
 			});
 			
 		};
 		
 		base.addSelectedQualifier = function( addBtn ) {
-		
-			if( base.options.allowqualifiers ) {
 			
-				var overallTerm = addBtn.closest( ".popularOntologyTerm" )
-				var termID = overallTerm.data( "termid" );
-				var termName = overallTerm.data( "termname" );
-				var termOfficial = overallTerm.data( "termofficial" );
+			addBtn.prop( "disabled", true );
+			
+			var overallTerm = addBtn.closest( ".popularOntologyTerm" )
+			var termID = overallTerm.data( "termid" );
+			var termName = overallTerm.data( "termname" );
+			var termOfficial = overallTerm.data( "termofficial" );
+			
+			var ajaxData = {
+				ontology_term_id: termID,
+				ontology_term_name: termName,
+				ontology_term_official: termOfficial,
+				script: "addSelectedQualifier"
+			};
 				
-				var ajaxData = {
-					ontology_term_id: termID,
-					ontology_term_name: termName,
-					ontology_term_official: termOfficial,
-					script: "addSelectedQualifier"
-				};
+			$.ajax({
+				
+				url: base.data.baseURL + "/scripts/curation/Ontology.php",
+				method: "POST",
+				dataType: "json",
+				data: ajaxData
+				
+			}).done( function(results) {
+				
+				base.components.selectedTerms.find( ".ontologySelectedCheck:checked" ).each( function( index, element ) {
 					
-				$.ajax({
-					
-					url: base.data.baseURL + "/scripts/curation/Ontology.php",
-					method: "POST",
-					dataType: "json",
-					data: ajaxData,
-					beforeSend: function( ) {
+					var qualifierBox = $(element).closest( ".ontologySelectedTerm" ).find( ".ontologySelectedQualifiers" );
+					if( qualifierBox.find( "input[type=checkbox][value=" + results["VALUE"] + "]" ).length <= 0 ) {
 						
+						var qualWarning = $(element).parent( ).find( ".ontologyTermQualifierWarning" );
+						
+						if( base.options.allowqual || qualWarning.length ) {
+							
+							if( qualWarning.length ) {
+								qualWarning.hide( );
+							}
+						
+							if( base.options.singlequal ) {
+								qualifierBox.html( results['VIEW'] );
+							} else {
+								if( qualifierBox.has( ".ontologySelectedQualifier" ).length ) {
+									qualifierBox.append( results['VIEW'] );
+								} else {
+									qualifierBox.html( results['VIEW'] );
+								}
+							}
+							
+						}
 					}
 					
-				}).done( function(results) {
-					 
-					console.log( results );
-					
-					base.components.selectedTerms.find( ".ontologySelectedCheck:checked" ).each( function( index, element ) {
-						var qualifierBox = $(element).closest( ".ontologySelectedTerm" ).find( ".ontologySelectedQualifiers" );
-						if( qualifierBox.find( "input[type=checkbox][value=" + results["VALUE"] + "]" ).length <= 0 ) {
-							qualifierBox.append( results['VIEW'] );
-						}
-					});
-					
-				}).fail( function( jqXHR, textStatus ) {
-					console.log( textStatus );
 				});
 				
-			}
+				addBtn.prop( "disabled", false );
+				
+			}).fail( function( jqXHR, textStatus ) {
+				console.log( textStatus );
+				addBtn.prop( "disabled", false );
+			});
+				
 			
 		};
 		
@@ -526,12 +623,13 @@
 	$.ontologySelector.defaultOptions = { 
 		hoverdelay: 1000,
 		singleselect: false,
-		allowqualifiers: true
+		singlequal: false,
+		allowqual: true
 	};
 	
-	$.fn.ontologySelector = function( options ) {
+	$.fn.ontologySelector = function( options, curationBlock ) {
 		return this.each( function( ) {
-			(new $.ontologySelector( this, options ));
+			(new $.ontologySelector( this, options, curationBlock ));
 		});
 	};
 		

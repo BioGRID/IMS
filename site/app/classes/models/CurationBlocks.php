@@ -25,25 +25,29 @@ class CurationBlocks extends lib\Blocks {
 	private $checklistParticipants;
 	private $checklistSubAttributes;
 	
-	private $blockCount = 1;
+	private $blockCount = 0;
 	private $participantCount = 1;
 	private $lastParticipant = "";
 	
-	private $ignoreAttributes = array( "31" => "", "35" => "", "36" => "", "32" => "", "23" => "" );
-	
+	private $ignoreAttributes;
 	private $ontologies;
+	private $curationOps;
 	 
 	public function __construct( ) {
 		parent::__construct( );
 		
+		global $siteOps;
+		
 		$this->lookups = new models\Lookups( );
 		$this->ontologies = new models\OntologyBlocks( );
+		$this->curationOps = new models\CurationOperations( );
 		
 		$this->partTypes = $this->lookups->buildParticipantTypesHash( false );
 		$this->partRoles = $this->lookups->buildParticipantRoleHash( );
 		$this->orgNames = $this->lookups->buildOrganismNameHash( );
 		$this->idTypes = $this->lookups->buildIDTypeHash( );
 		$this->attributeTypes = $this->lookups->buildAttributeTypeHASH( );
+		$this->ignoreAttributes = array_flip( $siteOps["IGNORE_ATTRIBUTES"] );
 		$this->buildAttributeTypeSelectLists( );
 		
 		$this->blockCount = 1;
@@ -92,31 +96,9 @@ class CurationBlocks extends lib\Blocks {
 		$blocks = array( );
 		$links = array( );
 		
-		// Get organism ID from the session for their currently selected group
-		// Use it as the default when showing a participant block
-		
-		$orgID = "559292";
-		if( isset( $_SESSION[SESSION_NAME]['GROUP'] ) ) {
-			$orgID = $_SESSION[SESSION_NAME]['GROUPS'][$_SESSION[SESSION_NAME]['GROUP']]['ORGANISM_ID'];
-		}
-		
-		switch( strtolower($type) ) {
-			
-			case "1" : // Protein-Protein Binary Interaction
-			
-				$links[] = array( "BLOCK" => "participant", "DATA" => array( "role" => "2", "type" => "1", "organism" => $orgID, "required" => 1 ) );
-				$links[] = array( "BLOCK" => "participant", "DATA" => array( "role" => "3", "type" => "1", "organism" => $orgID, "required" => 1 ) );
-				$links[] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "11", "required" => 1 ) );
-				$links[] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "13", "required" => 1 ) );
-				$links[] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "22", "required" => 0 ) );
-				
-				$links = $this->processCurationLinks( $links, 1 );
-			
-				break;
-				
-			
-		}
-		
+		$curationChecklist = $this->curationOps->fetchCurationWorkflowSettings( $type );
+		$links = $this->processCurationLinks( $curationChecklist );
+
 		return $this->generateView( $blocks, $links );
 		
 	}
@@ -149,7 +131,8 @@ class CurationBlocks extends lib\Blocks {
 		}
 		
 		if( sizeof( $link ) > 0 ) {
-			$links = array( $link );
+			$links = array( );
+			$links[$this->blockCount] = $link;
 			$links = $this->processCurationLinks( $links );
 			return $links[0];
 		} 
@@ -268,9 +251,10 @@ class CurationBlocks extends lib\Blocks {
 		
 		$updatedLinks = array( );
 		
-		foreach( $links as $link ) {
+		$lastLinkID = $this->blockCount;
+		foreach( $links as $linkID => $link ) {
 			
-			$link['ID'] = "block-" . $this->blockCount;
+			$link['ID'] = "block-" . $linkID; 
 			
 			if( $link['BLOCK'] == "participant" ) {
 				
@@ -290,10 +274,11 @@ class CurationBlocks extends lib\Blocks {
 			}
 			
 			
-			$this->blockCount++;
+			$lastLinkID = $linkID;
 			$updatedLinks[] = $this->processView( 'curation' . DS . 'checklist' . DS . 'ListItem.tpl', $link, false );
 		}
 		
+		$this->blockCount = $lastLinkID + 1;
 		return $updatedLinks;
 		
 	}
@@ -318,7 +303,9 @@ class CurationBlocks extends lib\Blocks {
 				"TERMS" => $ontologyOptions["TERMS"],
 				"QUALIFIERS" => $ontologyOptions["QUALIFIERS"],
 				"SINGLE_SELECT" => $ontologyOptions["SINGLE_SELECT"],
-				"SELECTED_ONT" => $ontologyOptions["SELECTED_ONTOLOGY"]
+				"SELECTED_ONT" => $ontologyOptions["SELECTED_ONTOLOGY"],
+				"SINGLE_QUAL" => $ontologyOptions["SINGLE_QUAL"],
+				"ALLOW_QUAL" => $ontologyOptions["ALLOW_QUAL"]
 			);
 			
 			// Fill out the list of ontologies here
@@ -430,6 +417,7 @@ class CurationBlocks extends lib\Blocks {
 		
 		foreach( $this->attributeTypes as $attributeID => $attributeInfo ) {
 			$catID = $attributeInfo->attribute_type_category_id;
+			
 			if( $catID == "1" ) {
 				if( !isset( $this->ignoreAttributes[$attributeInfo->attribute_type_id] ) ) {
 					$this->checklistAttributes[$attributeInfo->attribute_type_id] = $attributeInfo->attribute_type_name;

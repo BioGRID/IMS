@@ -11,7 +11,7 @@
 
 } (function( $, window, document ) {
 		
-	$.curationBlock = function( el, options ) {
+	$.curationBlock = function( el, options, curationWorkflow ) {
 	
 		var base = this;
 		base.$el = $(el);
@@ -47,7 +47,7 @@
 			base.initRemoveBtn( );
 			base.initValidateBtn( );
 			
-			base.$el.on( "change", "select.changeField", function( ) {
+			base.$el.on( "change", "select.changeField, input.changeCheck", function( ) {
 				base.setStatus( "NEW" );
 			});
 			
@@ -75,7 +75,7 @@
 		
 		base.clickRemoveBtn = function( ) {
 			var prevItem = base.components.checklistItem.prev( ).find( ".workflowLink" );
-			clickWorkflowLink( prevItem );
+			curationWorkflow.clickWorkflowLink( prevItem );
 			base.components.checklistItem.remove( );
 			base.el.remove( );
 		};
@@ -89,9 +89,32 @@
 		
 		base.clickValidateBtn = function( ) {
 			
+			base.components.validateBtn.prop( "disabled", true );	
 			base.setStatus( "PROCESSING" );
 			
-			var ajaxData = $("#" + base.data.id + " :input").serializeArray( );
+			// Get input fields
+			var ajaxData = $("#" + base.data.id + " .dataField:input").serializeArray( );
+			
+			// Get checkbox values from Ontology Selector
+			var ontologyTerms = { };
+			var termCount = 0;
+			$("#" + base.data.id + " .ontologySelectedTerm").each( function( ) {
+				
+				var ontologyTerm = $(this).find( ".ontologySelectedCheck" ).val( );
+				ontologyTerms[ontologyTerm] = []
+				$(this).find( ".ontologySelectedQualifierCheck" ).each( function( ) {
+					ontologyTerms[ontologyTerm].push( $(this).val( ) );
+				});
+				
+				termCount++;
+				
+			});
+
+			if( termCount > 0 ) {
+				ajaxData.push({name: 'ontologyTerms', value: JSON.stringify( ontologyTerms )});
+			}
+			
+			// Core curation details
 			ajaxData.push({name: 'curationCode', value: $("#curationCode").val( )});
 			ajaxData.push({name: 'id', value: base.data.id});
 			ajaxData.push({name: 'type', value: base.data.type});
@@ -100,7 +123,7 @@
 			ajaxData.push({name: 'name', value: base.data.name});
 			ajaxData.push({name: 'required', value: base.data.required});
 				
-			$.ajax({
+			return $.ajax({
 				
 				url: base.data.baseURL + "/scripts/curation/Validate.php",
 				method: "POST",
@@ -134,8 +157,11 @@
 					base.setCounts( results['COUNTS'] );
 				}
 				
+				base.components.validateBtn.prop( "disabled", false );
+				
 			}).fail( function( jqXHR, textStatus ) {
 				console.log( textStatus );
+				base.components.validateBtn.prop( "disabled", false );
 			});
 			
 		};
@@ -184,8 +210,7 @@
 				base.clickValidateBtn( );
 			} 
 		};
-
-		
+	
 		base.init( );
 	
 	};
@@ -194,9 +219,9 @@
 		validateDelay: 1200
 	};
 
-	$.fn.curationBlock = function( options ) {
+	$.fn.curationBlock = function( options, curationWorkflow ) {
 		return this.each( function( ) {
-			(new $.curationBlock( this, options ));
+			(new $.curationBlock( this, options, curationWorkflow ));
 		});
 	};
 		

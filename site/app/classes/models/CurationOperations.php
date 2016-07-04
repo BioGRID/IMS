@@ -1,0 +1,150 @@
+<?php
+
+
+namespace IMS\app\classes\models;
+
+/**
+ * Curation Operations
+ * A set of functions for common curation operational
+ * functionality often shared amongst other scripts
+ */
+
+use \PDO;
+use IMS\app\lib;
+use IMS\app\classes\models;
+
+class CurationOperations {
+	
+	private $db;
+	 
+	public function __construct( ) {
+		$this->db = new PDO( DB_CONNECT, DB_USER, DB_PASS );
+		$this->db->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
+		
+		$loader = new \Twig_Loader_Filesystem( TEMPLATE_PATH );
+		$this->twig = new \Twig_Environment( $loader );
+	}
+	
+	/**
+	 * Fetch a configuration for a curation workflow based on the type
+	 * of curation about to be performed.
+	 */
+	 
+	public function fetchCurationWorkflowSettings( $curationType ) {
+		
+		$curationSettings = array( );
+		
+		// Get organism ID from the session for their currently selected group
+		// Use it as the default when showing a participant block
+		
+		$orgID = "559292";
+		if( isset( $_SESSION[SESSION_NAME]['GROUP'] ) ) {
+			$orgID = $_SESSION[SESSION_NAME]['GROUPS'][$_SESSION[SESSION_NAME]['GROUP']]['ORGANISM_ID'];
+		}
+		
+		// VALIDATE OPTIONS
+		// Type: list_match: must match the list passed in as block, can match to many
+		// Type: list_align: must match the list passed in as block, can match to 1 or many
+		
+		// THIS NEEDS TO BE CHANGED TO A DATABASE CALL LATER AND STORED IN A TABLE
+		// KEEPING IT AS A MANUALLY CREATED ARRAY FOR NOW TO AVOID HAVING TO WRITE ADMIN
+		// TOOL AND TO MAKE IT EASY TO TWEAK UNTIL WE HAVE A FORMAT THAT WORKS
+		
+		switch( strtolower($curationType) ) {
+			
+			case "1" : // Protein-Protein Binary Interaction
+			
+				$curationSettings[0] = array( "BLOCK" => "participant", "DATA" => array( "role" => "2", "type" => "1", "organism" => $orgID, "required" => 1 ), "VALIDATE" => array( "type" => "list_match", "block" => 1 ) );
+				$curationSettings[1] = array( "BLOCK" => "participant", "DATA" => array( "role" => "3", "type" => "1", "organism" => $orgID, "required" => 1 ), "VALIDATE" => array( "type" => "list_align", "block" => 0 ) );
+				$curationSettings[2] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "11", "required" => 1 ) );
+				$curationSettings[3] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "13", "required" => 1 ) );
+				$curationSettings[4] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "22", "required" => 0 ) );
+				break;
+				
+			
+		}
+		
+		return $curationSettings;
+		
+	}
+	
+	/**
+	 * Process messages to create errors
+	 */
+	 
+	public function processErrors( $messages ) {
+		$errors = $this->twig->render( 'curation' . DS . 'error' . DS . 'CurationError.tpl', array( "ERRORS" => $messages ) );
+		return $errors;
+	}
+	
+	/**
+	 * Generate text for validation error messages
+	 * based on the type of error
+	 */
+	 
+	public function generateError( $errorType, $details = array( ) ) {
+	
+		switch( strtoupper( $errorType ) ) {
+			
+			case "REQUIRED" :
+				return array( "class" => "danger", "message" => $details['blockName'] . " is a required field. It will not validate while no data has been entered in the provided fields." );
+				
+			case "NON_NUMERIC" :
+				
+				$message = "The score value <strong>" . $details['score'] . "</strong> is NON NUMERIC on line <strong>" . implode( ", ", $details['lines'] ) . "</strong>. Please use a numerical value or use a hyphen (-) for no score on this line.";
+				
+				return array( "class" => "danger", "message" => $message );
+				
+			case "AMBIGUOUS" :
+			
+				$message = "The identifier <strong>" . $details['identifier'] . "</strong> is AMBIGUOUS on lines <strong>" . implode( ", ", $details['lines'] ) . "</strong>. <br />Ambiguities are: ";
+				
+				foreach( $details['options'] as $geneID => $annotation ) {
+					$options[] = "<a href='http://thebiogrid.org/" . $annotation['gene_id'] . "' target='_blank'>" . $annotation['primary_name'] . "</a> (<a class='lineReplace' data-lines='" . implode( "|", $details['lines'] ) . "' data-value='BG_" . $annotation['gene_id'] . "'>" . "<i class='fa fa-lg fa-exchange'></i>" . "</a>)</a>";
+				}
+				
+				$message .= implode( ", ", $options ) . "<div class='text-success statusMsg'></div>";
+				return array( "class" => "danger", "message" => $message );
+				
+			case "UNKNOWN" :
+			
+				$message = "The identifier <strong>" . $details['identifier'] . "</strong> is UNKNOWN on lines <strong>" . implode( ", ", $details['lines'] ) . "</strong>. If you believe it to be valid, you can add it as an unknown participant. Alternatively, you can correct it, by entering an alternative identifier below. To enter a BioGRID ID, preface term with BG_ (example: BG_123456). Otherwise, any other term will be assumed to be the same ID Type as the others listed above...";
+				
+				$message .= "<div class='clearfix'><div class='input-group col-lg-6 col-md-6 col-sm-12 col-xs-12 marginTopSm'><input type='text' class=' form-control unknownReplaceField' placeholder='Enter Replacement Term' value='' /><span class='input-group-btn'><button data-lines='" . implode( "|", $details['lines'] ) . "' class='btn btn-success unknownReplaceSubmit' type='button'>Replace</button></span></div></div>";
+				
+				$message .= "<div class='text-success statusMsg'></div>";
+				
+				return array( "class" => "warning", "message" => $message );
+				
+			case "ALLELE_MISMATCH" :
+				
+				$message = "The number of alleles in <strong>Allele Box #" . $details['alleleBoxNumber'] . "</strong> does not match the number of participants specified. You must enter an allele for every participant or use a hyphen (-) if wanting no allele. Please correct this and try validation again.";
+				
+				return array( "class" => "danger", "message" => $message );
+				
+			case "NOCODE" :
+				return array( "class" => "danger", "message" => "No curation code was passed to the validation script. Please try again!" );
+				
+			case "BLANK" :
+				return array( "class" => "warning", "message" => $details['blockName'] . " is currently blank but is not a required field. If you do not wish to use it, you can remove it by clicking the remove button, or simply ignore it, and your submission will still succeed, with this block ignored." );
+				
+			case "INVALID_ONTOLOGY_TERM" :
+				return array( "class" => "danger", "message" => "One of the ontology terms you selected is not a valid ontology term id, try re-searching for your ontology term mappings and adding them again!" );
+				
+			case "BIOCHEMICAL_ACTIVITY_WRONG_QUALIFIER" :
+				return array( "class" => "danger", "message" => "Your selected ontology term: " . $details['term'] . " must have a qualifier appended from the BioGRID Post-Translational modification ontology, but you selected a qualifier from a different ontology. Please correct this mistake and re-attempt validation." );
+				
+			case "BIOCHEMICAL_ACTIVITY_NO_QUALIFIER" :
+				return array( "class" => "danger", "message" => "Your selected ontology term: " . $details['term'] . " must have a qualifier appended from the BioGRID Post-Translational modification ontology, but you selected none or too many. Please correct this mistake and re-attempt validation." );
+				
+			case "INVALID_BLOCKS" :
+				return array( "class" => "danger", "message" => "Your data was not submitted because one or more items in the checklist to the right are still invalid. The following blocks: <strong>" . implode( ", ", $details['invalidBlocks'] ) . "</strong> still have errors that need to be fixed before submitting. You can find the errors that still exist by clicking on a checklist item marked with a red X to the right, and scrolling to the bottom..." );
+
+			default:
+				return array( "class" => "danger", "message" => "An unknown error has occurred." );
+			
+		}
+	
+	}
+	
+}

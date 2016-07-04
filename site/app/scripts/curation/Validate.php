@@ -8,7 +8,7 @@
 session_start( );
 header( "Cache-control: private" );
 
-ini_set( "memory_limit", "2048M" );
+ini_set( "memory_limit", "3096M" );
 
 require_once __DIR__ . '/../../../app/lib/Bootstrap.php';
 
@@ -20,6 +20,7 @@ if( $_POST['required'] == "1" ) {
 }
 
 $validate = new models\CurationValidation( $_POST['name'] );
+$curationOps = new models\CurationOperations( );
 
 if( isset( $_POST['curationCode'] ) ) {
 	$curationCode = $_POST['curationCode'];
@@ -38,7 +39,7 @@ if( isset( $_POST['curationCode'] ) ) {
 	}
 	
 	if( sizeof( $results['ERRORS'] ) > 0 ) {
-		$results['ERRORS'] = $validate->processErrors( $results['ERRORS'] );
+		$results['ERRORS'] = $curationOps->processErrors( $results['ERRORS'] );
 	} else {
 		$results['ERRORS'] = "";
 	}
@@ -47,7 +48,7 @@ if( isset( $_POST['curationCode'] ) ) {
 	
 } else {
 
-	$errors = $validate->processErrors( array( $validate->generateError( "NOCODE" )) );
+	$errors = $curationOps->processErrors( array( $curationOps->generateError( "NOCODE" )) );
 	echo json_encode( array( "STATUS" => "ERROR", "ERRORS" => $errors ) );
 
 }
