@@ -117,6 +117,8 @@
 				var ajaxData = {
 					"validationStatus" : allValidated,
 					"invalidBlocks" : JSON.stringify( invalidBlocks ),
+					"curationType" : $("#curationType").val( ),
+					"curationCode" : $("#curationCode").val( ),
 					"script" : 'submitCuratedDataset'
 				};
 
