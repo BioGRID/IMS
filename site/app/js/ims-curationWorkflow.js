@@ -135,6 +135,8 @@
 					
 				}).done( function(data) {
 					
+					console.log( data );
+					
 					base.toggleSubmitBtn( true );
 					if( data["STATUS"] == "SUCCESS" ) {
 						console.log( "Submitted Successfully!" );

@@ -544,8 +544,8 @@ class CurationValidation {
 			$stmt->execute( array( $status, json_encode( $data ), $row->curation_id ) );
 		} else {
 			// PERFORM INSERT
-			$stmt = $this->db->prepare( "INSERT INTO " . DB_IMS . ".curation VALUES ( '0',?,?,?,?,?,?,?,NOW( ) )" );
-			$stmt->execute( array( $code, $status, $block, json_encode( $data ), $type, $subType, $required ) );
+			$stmt = $this->db->prepare( "INSERT INTO " . DB_IMS . ".curation VALUES ( '0',?,?,?,?,?,?,?,?,NOW( ) )" );
+			$stmt->execute( array( $code, $status, $block, json_encode( $data ), $type, $subType, $this->blockName, $required ) );
 		}
 		
 	}
