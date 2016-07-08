@@ -600,20 +600,21 @@ class CurationValidation {
 	}
 	
 	/**
-	 * Fetch matching annotation by the gene ids that are passed in
+	 * Fetch matching annotation by the values and type that are passed in
 	 */
 	 
-	private function fetchMatchingAnnotation( $geneIDs, $type, &$annotationSet ) {
+	private function fetchMatchingAnnotation( $values, $type, &$annotationSet ) {
 		
 		$matchingAnnotation = array( );
+		$participantHASH = $this->fetchParticipantIDHash( $values, $type );
 		
 		switch( $type ) {
 			
 			case "1" : // Gene
 			
-				$params = implode( ",", array_fill( 0, sizeof( $geneIDs ), "?" ));
+				$params = implode( ",", array_fill( 0, sizeof( $values ), "?" ));
 				$stmt = $this->db->prepare( "SELECT gene_id, systematic_name, official_symbol, aliases, organism_id, organism_official_name, organism_abbreviation, organism_strain FROM " . DB_QUICK . ".quick_annotation WHERE gene_id IN ( " . $params . " )" );
-				$stmt->execute( $geneIDs );
+				$stmt->execute( $values );
 
 				while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
 					
@@ -641,12 +642,63 @@ class CurationValidation {
 						$annotation['organism_strain'] = $row->organism_strain;
 					}
 					
+					// Get a participant ID out of the database
+					// and store it for quicker processing later on
+					if( isset( $participantHASH[$row->gene_id] )) {
+						$annotation['participant_id'] = $participantHASH[$row->gene_id];
+					} else {
+						$participantID = $this->fetchParticipantID( $row->gene_id, $type );
+						$annotation['participant_id'] = $participantID;
+					}
+					
 					$annotationSet[$annotation['gene_id']] = $annotation;
 				}
 				
 				break;
 			
 		}
+		
+	}
+	
+	/**
+	 * Fetch a hash table of existing participants so we can quickly
+	 * determine which ones require addition
+	 */
+	 
+	private function fetchParticipantIDHash( $values, $type ) {
+		
+		$params = implode( ",", array_fill( 0, sizeof( $values ), "?" ));
+		$stmt = $this->db->prepare( "SELECT participant_id, participant_value FROM " . DB_IMS . ".participants WHERE participant_value IN ( " . $params . " ) AND participant_type_id=? AND participant_status='active'" );
+		$values[] = $type;
+		$stmt->execute( $values );
+		
+		$mappingHASH = array( );
+		while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			$mappingHASH[$row->participant_value] = $row->participant_id;
+		}
+		
+		return $mappingHASH;
+		
+	}
+	
+	/**
+	 * Determine if a participant exists for this combination of value and type
+	 * and if not, add it. Return the id of the participant.
+	 */
+	 
+	private function fetchParticipantID( $value, $type ) {
+		
+		$stmt = $this->db->prepare( "SELECT participant_id FROM " . DB_IMS . ".participants WHERE participant_value=? AND participant_type_id=? AND participant_status='active' LIMIT 1" );
+		$stmt->execute( array( $value, $type ) );
+		
+		if( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			return $row->participant_id;
+		}
+		
+		$stmt = $this->db->prepare( "INSERT INTO " . DB_IMS . ".participants VALUES ( '0',?,?,NOW( ),'active' )" );
+		$stmt->execute( array( $value, $type ) );
+		
+		return $this->db->lastInsertId( );
 		
 	}
 	
