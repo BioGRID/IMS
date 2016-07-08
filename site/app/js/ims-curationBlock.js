@@ -129,6 +129,7 @@
 				method: "POST",
 				dataType: "json",
 				data: ajaxData,
+				timeout: 300000,
 				beforeSend: function( ) {
 					base.components.errorList.html( "" );
 					base.components.errorBox.hide( );
