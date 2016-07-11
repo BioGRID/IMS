@@ -2,6 +2,7 @@
     "require": {
         "twig/twig": "^1.23",
         "elasticsearch/elasticsearch": "^2.1",
-        "monolog/monolog": "^1.17"
+        "monolog/monolog": "^1.17",
+        "hashids/hashids": "^1.0"
     }
 }

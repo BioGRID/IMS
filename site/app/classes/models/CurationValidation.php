@@ -12,6 +12,7 @@ namespace IMS\app\classes\models;
 use \PDO;
 use IMS\app\lib;
 use IMS\app\classes\models;
+use IMS\app\classes\utilities;
 
 class CurationValidation {
 	
@@ -21,6 +22,7 @@ class CurationValidation {
 	private $attributeTypeInfo;
 	
 	private $curationOps;
+	private $hashids;
 	
 	public function __construct( $blockName ) {
 		$this->db = new PDO( DB_CONNECT, DB_USER, DB_PASS );
@@ -34,6 +36,7 @@ class CurationValidation {
 		$this->attributeTypeInfo = $this->lookups->buildAttributeTypeHASH( );
 		
 		$this->curationOps = new models\CurationOperations( );
+		$this->hashids = new utilities\Hashes( );
 	}
 	
 	/**
@@ -466,7 +469,7 @@ class CurationValidation {
 					}
 					
 					$warningList[$identifier][] = $lineCount;
-					$mapping[] = array( "id" => "", "key" => $identifier, "status" => "UNKNOWN", "annotation" => array( ) );
+					$mapping[] = array( "id" => "", "key" => $identifier, "status" => "UNKNOWN", "role" => $role, "type" => $type );
 					$counts["UNKNOWN"]++;
 					
 				} else if( sizeof( $termIDs ) > 1 ) {
@@ -477,13 +480,13 @@ class CurationValidation {
 					}
 					
 					$errorList[$identifier][] = $lineCount;
-					$mapping[] = array( "id" => "", "key" => $identifier, "status" => "AMBIGUOUS", "annotation" => array( ) );
+					$mapping[] = array( "id" => "", "key" => $identifier, "status" => "AMBIGUOUS", "role" => $role, "type" => $type );
 					$counts["AMBIGUOUS"]++;
 					
 				} else {
 					// VALID MAPPING
 					$termID = current( $termIDs );
-					$mapping[] = array( "id" => $termID, "key" => $identifier, "status" => "VALID", "annotation" => $annotationSet[$termID] );
+					$mapping[] = array( "id" => $termID, "key" => $identifier, "status" => "VALID", "role" => $role, "type" => $type );
 					$counts["VALID"]++;
 				}
 				
