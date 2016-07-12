@@ -32,7 +32,7 @@ class CurationOperations {
 	 
 	public function fetchCurationWorkflowSettings( $curationType ) {
 		
-		$curationSettings = array( );
+		$curationSettings = array( "CONFIG" => array( ), "CHECKLIST" => array( ) );
 		
 		// Get organism ID from the session for their currently selected group
 		// Use it as the default when showing a participant block
@@ -53,11 +53,15 @@ class CurationOperations {
 			
 			case "1" : // Protein-Protein Binary Interaction
 			
-				$curationSettings[0] = array( "BLOCK" => "participant", "DATA" => array( "role" => "2", "type" => "1", "organism" => $orgID, "required" => 1 ), "VALIDATE" => array( "type" => "single_equal", "block" => 1 ) );
-				$curationSettings[1] = array( "BLOCK" => "participant", "DATA" => array( "role" => "3", "type" => "1", "organism" => $orgID, "required" => 1 ), "VALIDATE" => array( "type" => "single_equal", "block" => 0 ) );
-				$curationSettings[2] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "11", "required" => 1 ) );
-				$curationSettings[3] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "13", "required" => 1 ) );
-				$curationSettings[4] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "22", "required" => 0 ) );
+				// Config
+				$curationSettings['CONFIG']['participant_method'] = 'row';
+				
+				// Checklist Items
+				$curationSettings['CHECKLIST'][0] = array( "BLOCK" => "participant", "DATA" => array( "role" => "2", "type" => "1", "organism" => $orgID, "required" => 1 ), "VALIDATE" => array( "type" => "single_equal", "block" => 1 ), "METHOD" => "row" );
+				$curationSettings['CHECKLIST'][1] = array( "BLOCK" => "participant", "DATA" => array( "role" => "3", "type" => "1", "organism" => $orgID, "required" => 1 ), "VALIDATE" => array( "type" => "single_equal", "block" => 0 ) );
+				$curationSettings['CHECKLIST'][2] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "11", "required" => 1 ) );
+				$curationSettings['CHECKLIST'][3] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "13", "required" => 1 ) );
+				$curationSettings['CHECKLIST'][4] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "22", "required" => 0 ) );
 				break;
 				
 			

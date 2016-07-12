@@ -217,7 +217,7 @@
 	};
 
 	$.curationBlock.defaultOptions = { 
-		validateDelay: 1200
+		validateDelay: 600
 	};
 
 	$.fn.curationBlock = function( options, curationWorkflow ) {

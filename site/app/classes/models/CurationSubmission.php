@@ -56,7 +56,13 @@ class CurationSubmission {
 				if( !$this->validateSubmission( ) ) {
 					$status = "ERROR";
 				} else {
+					
+					// Process each block of stored data and generate a
+					// game plan for processing. Game plan will be based
+					// on the values and fields stored
+					
 					$status = "SUCCESS";
+					
 				}
 				
 			}
@@ -76,7 +82,7 @@ class CurationSubmission {
 		$isValid = true;
 		
 		// Check to see if any of the blocks have validation requirements
-		foreach( $this->workflowSettings as $id => $blockSettings ) {
+		foreach( $this->workflowSettings['CHECKLIST'] as $id => $blockSettings ) {
 			if( isset( $blockSettings['VALIDATE'] ) ) {
 				$validateTarget = "block-" . $blockSettings['VALIDATE']['block'];
 				$validationTest = $blockSettings['VALIDATE']['type'];
