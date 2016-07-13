@@ -19,6 +19,7 @@ class CurationSubmission {
 	private $curationOps;
 	private $workflowSettings;
 	private $curatedData;
+	private $blocks;
 	private $errors;
 	
 	public function __construct( ) {
@@ -27,6 +28,8 @@ class CurationSubmission {
 		
 		$this->curationOps = new models\CurationOperations( );
 		$this->errors = array( );
+		
+		$this->blocks = array( );
 	}
 	
 	/**
@@ -60,6 +63,18 @@ class CurationSubmission {
 					// Process each block of stored data and generate a
 					// game plan for processing. Game plan will be based
 					// on the values and fields stored
+					
+					// $participantBlocks = array( );
+					// Build Interactions
+					// foreach( $curatedData as $blockID => $blockTypes ) {
+						// foreach( $blockTypes as $blockType => $blockSubType ) {
+							// if( $blockType == "participant" ) {
+								// $participantBlocks[] = $blockID;
+							// }
+						// }
+					// }
+					
+					// $participantBlocks = array_unique( $participantBlocks );
 					
 					$status = "SUCCESS";
 					
@@ -111,22 +126,21 @@ class CurationSubmission {
 			
 			case "SINGLE_EQUAL" :
 			
-				$testSize = sizeof( $this->curatedData[$testBlock]["participant"]["members"]->curation_data );
-				$compareSize = sizeof( $this->curatedData[$compareBlock]["participant"]["members"]->curation_data );
+				$testData = $this->curatedData[$testBlock]->getData( "members", 0 );
+				$compareData = $this->curatedData[$compareBlock]->getData( "members", 0 );
+			
+				$testSize = sizeof( $testData['DATA'] );
+				$compareSize = sizeof( $compareData['DATA'] );
 			
 				if( $testSize == 1 || $compareSize == 1 ) {
-					
 					return true;
-					
 				} else {
-					
 					if( $testSize == $compareSize ) {
 						return true;
 					}
-					
 				}
 				
-				$this->errors[] = $this->curationOps->generateError( "SINGLE_EQUAL", array( "testBlockName" => $this->curatedData[$testBlock]["participant"]["members"]->curation_name, "compareBlockName" => $this->curatedData[$compareBlock]["participant"]["members"]->curation_name, "testBlockSize" => $testSize, "compareBlockSize" => $compareSize ) );
+				$this->errors[] = $this->curationOps->generateError( "SINGLE_EQUAL", array( "testBlockName" => $testData['NAME'], "compareBlockName" => $compareData['NAME'], "testBlockSize" => $testSize, "compareBlockSize" => $compareSize ) );
 				
 				break;
 				
@@ -149,22 +163,24 @@ class CurationSubmission {
 		$results = array( );
 		while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
 			
+			//new models\CurationOperations( );
 			if( !isset( $results[$row->curation_block] ) ) {
-				$results[$row->curation_block] = array( );
+				$results[$row->curation_block] = new models\CurationData( $row->curation_block );
+				$results[$row->curation_block]->setType( $row->curation_type );
 			}
 			
-			if( !isset( $results[$row->curation_block][$row->curation_type] ) ) {
-				$results[$row->curation_block][$row->curation_type] = array( );
+			$results[$row->curation_block]->addData( $row->curation_subtype, $row->attribute_type_id, $row->curation_data, $row->curation_name, $row->curation_required );
+			
+			if( !isset( $this->blocks[strtoupper($row->curation_type)] )) {
+				$this->blocks[strtoupper($row->curation_type)] = array( );
 			}
 			
-			if( !isset( $results[$row->curation_block][$row->curation_type][$row->curation_subtype] ) ) {
-				$results[$row->curation_block][$row->curation_type][$row->curation_subtype] = array( );
-			}
-			
-			$results[$row->curation_block][$row->curation_type][$row->curation_subtype] = $row;
-			$results[$row->curation_block][$row->curation_type][$row->curation_subtype]->curation_data = json_decode( $row->curation_data );
+			$this->blocks[strtoupper($row->curation_type)][] = $row->curation_block;
 			
 		}
+		
+		$this->blocks['PARTICIPANT'] = array_unique( $this->blocks['PARTICIPANT'] );
+		$this->blocks['ATTRIBUTE'] = array_unique( $this->blocks['ATTRIBUTE'] );
 		
 		return $results;
 		

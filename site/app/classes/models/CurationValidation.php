@@ -238,7 +238,7 @@ class CurationValidation {
 		}
 		
 		// INSERT/UPDATE IT IN THE DATABASE
-		$this->updateCurationEntries( $curationCode, $status, $block, $ontologyTermSet, "attribute", $attributeTypeID, $isRequired );
+		$this->updateCurationEntries( $curationCode, $status, $block, $ontologyTermSet, "attribute", "-", $attributeTypeID, $isRequired );
 		
 		return array( "STATUS" => $status, "ERRORS" => $messages );
 		
@@ -286,7 +286,7 @@ class CurationValidation {
 		}
 	
 		// INSERT/UPDATE IT IN THE DATABASE
-		$this->updateCurationEntries( $curationCode, $status, $block, $scoreSet, "attribute", $attributeID, $isRequired );
+		$this->updateCurationEntries( $curationCode, $status, $block, $scoreSet, "attribute", "-", $attributeID, $isRequired );
 		
 		return array( "STATUS" => $status, "ERRORS" => $messages );
 		
@@ -323,7 +323,7 @@ class CurationValidation {
 		}
 		
 		// INSERT/UPDATE IT IN THE DATABASE
-		$this->updateCurationEntries( $curationCode, $status, $block, $noteSet, "attribute", "22", $isRequired );
+		$this->updateCurationEntries( $curationCode, $status, $block, $noteSet, "attribute", "-", "22", $isRequired );
 		
 		return array( "STATUS" => $status, "ERRORS" => $messages );
 		
@@ -357,7 +357,7 @@ class CurationValidation {
 		} 
 		
 		// INSERT/UPDATE IT IN THE DATABASE
-		$this->updateCurationEntries( $curationCode, $results["STATUS"], $block, $alleleSet, "attribute", "36", false );
+		$this->updateCurationEntries( $curationCode, $results["STATUS"], $block, $alleleSet, "participant", "attribute", "36", false );
 		
 		return $results;
 		
@@ -518,9 +518,9 @@ class CurationValidation {
 		}
 		
 		// Update Curation Database Entries
-		$this->updateCurationEntries( $curationCode, $status, $block, $mapping, "participant", "members", $isRequired );
-		$this->updateCurationEntries( $curationCode, "NEW", $block, $annotationSet, "participant", "annotation", $isRequired );
-		$this->updateCurationEntries( $curationCode, "NEW", $block, $termMap, "participant", "terms", $isRequired );
+		$this->updateCurationEntries( $curationCode, $status, $block, $mapping, "participant", "members", "0", $isRequired );
+		$this->updateCurationEntries( $curationCode, "NEW", $block, $annotationSet, "participant", "annotation", "0", $isRequired );
+		$this->updateCurationEntries( $curationCode, "NEW", $block, $termMap, "participant", "terms", "0", $isRequired );
 		
 		return array( "STATUS" => $status, "ERRORS" => $messages, "COUNTS" => $counts );
 		
@@ -531,24 +531,24 @@ class CurationValidation {
 	 * and the format of the table
 	 */
 	 
-	private function updateCurationEntries( $code, $status, $block, $data, $type, $subType, $isRequired ) {
+	private function updateCurationEntries( $code, $status, $block, $data, $type, $subType, $attributeTypeID, $isRequired ) {
 		
 		$required = 0;
 		if( $isRequired ) {
 			$required = 1;
 		}
 		
-		$stmt = $this->db->prepare( "SELECT curation_id FROM " . DB_IMS . ".curation WHERE curation_code=? AND curation_block=? AND curation_type=? AND curation_subtype=? LIMIT 1" );
+		$stmt = $this->db->prepare( "SELECT curation_id FROM " . DB_IMS . ".curation WHERE curation_code=? AND curation_block=? AND curation_type=? AND curation_subtype=? AND attribute_type_id=? LIMIT 1" );
 		
-		$stmt->execute( array( $code, $block, $type, $subType ) );
+		$stmt->execute( array( $code, $block, $type, $subType, $attributeTypeID ) );
 		if( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
 			// PERFORM UPDATE INSTEAD OF INSERT
 			$stmt = $this->db->prepare( "UPDATE " . DB_IMS . ".curation SET curation_status=?, curation_data=? WHERE curation_id=?" );
 			$stmt->execute( array( $status, json_encode( $data ), $row->curation_id ) );
 		} else {
 			// PERFORM INSERT
-			$stmt = $this->db->prepare( "INSERT INTO " . DB_IMS . ".curation VALUES ( '0',?,?,?,?,?,?,?,?,NOW( ) )" );
-			$stmt->execute( array( $code, $status, $block, json_encode( $data ), $type, $subType, $this->blockName, $required ) );
+			$stmt = $this->db->prepare( "INSERT INTO " . DB_IMS . ".curation VALUES ( '0',?,?,?,?,?,?,?,?,?,NOW( ) )" );
+			$stmt->execute( array( $code, $status, $block, json_encode( $data ), $type, $subType, $attributeTypeID, $this->blockName, $required ) );
 		}
 		
 	}

@@ -54,7 +54,7 @@ class CurationOperations {
 			case "1" : // Protein-Protein Binary Interaction
 			
 				// Config
-				$curationSettings['CONFIG']['participant_method'] = 'row';
+				$curationSettings['CONFIG']['participant_method'] = 'row'; 
 				
 				// Checklist Items
 				$curationSettings['CHECKLIST'][0] = array( "BLOCK" => "participant", "DATA" => array( "role" => "2", "type" => "1", "organism" => $orgID, "required" => 1 ), "VALIDATE" => array( "type" => "single_equal", "block" => 1 ), "METHOD" => "row" );
@@ -76,7 +76,7 @@ class CurationOperations {
 	 */
 	 
 	public function processErrors( $messages ) {
-		$errors = $this->twig->render( 'curation' . DS . 'error' . DS . 'CurationError.tpl', array( "ERRORS" => $messages ) );
+		$errors = $this->twig->render( 'curation' . DS . 'error' . DS . 'CurationError.tpl', array( "ERRORS" => $messages ) ); 
 		return $errors;
 	}
 	
