@@ -12,7 +12,6 @@ namespace IMS\app\classes\models;
 use \PDO;
 use IMS\app\lib;
 use IMS\app\classes\models;
-use IMS\app\classes\utilities;
 
 class CurationValidation {
 	
@@ -22,7 +21,6 @@ class CurationValidation {
 	private $attributeTypeInfo;
 	
 	private $curationOps;
-	private $hashids;
 	
 	public function __construct( $blockName ) {
 		$this->db = new PDO( DB_CONNECT, DB_USER, DB_PASS );
@@ -36,7 +34,7 @@ class CurationValidation {
 		$this->attributeTypeInfo = $this->lookups->buildAttributeTypeHASH( );
 		
 		$this->curationOps = new models\CurationOperations( );
-		$this->hashids = new utilities\Hashes( );
+
 	}
 	
 	/**

@@ -12,6 +12,7 @@ namespace IMS\app\classes\models;
 use \PDO;
 use IMS\app\lib;
 use IMS\app\classes\models;
+use IMS\app\classes\utilities;
 
 class CurationSubmission {
 	
@@ -21,6 +22,7 @@ class CurationSubmission {
 	private $curatedData;
 	private $blocks;
 	private $errors;
+	private $hashids;
 	
 	public function __construct( ) {
 		$this->db = new PDO( DB_CONNECT, DB_USER, DB_PASS );
@@ -30,6 +32,7 @@ class CurationSubmission {
 		$this->errors = array( );
 		
 		$this->blocks = array( );
+		$this->hashids = new utilities\Hashes( );
 	}
 	
 	/**
@@ -58,11 +61,20 @@ class CurationSubmission {
 				// see if data is valid
 				if( !$this->validateSubmission( ) ) {
 					$status = "ERROR";
-				} else {
+				} else {  
 					
 					// Process each block of stored data and generate a
 					// game plan for processing. Game plan will be based
 					// on the values and fields stored
+					
+					// Build Participants
+					if( $this->workflowSettings['CONFIG']['participant_method'] == "row" ) {
+						
+						// Create Participant Pairings
+						$participantList = $this->generateParticipantRowPairings( );
+						print_r( $participantList );
+							
+					}
 					
 					// $participantBlocks = array( );
 					// Build Interactions
@@ -84,6 +96,60 @@ class CurationSubmission {
 		}
 		
 		return json_encode( array( "STATUS" => $status, "ERRORS" => $this->curationOps->processErrors( $this->errors ) ) );
+		
+	}
+	
+	/**
+	 * Generate a list of participant pairings based on the number
+	 * of pariticpants provided and the fact that we want row based
+	 * pairings
+	 */
+	 
+	private function generateParticipantRowPairings( ) {
+		
+		// Fetch all the sets of participant members
+		
+		$participantSets = array( );
+		$size = 0;
+		foreach( $this->blocks['PARTICIPANT'] as $block ) {
+			$participantMembers = $this->curatedData[$block]->getData( "members", 0 );
+			
+			$setSize = sizeof( $participantMembers['DATA'] );
+			if( $setSize > $size ) {
+				$size = $setSize;
+			}
+			
+			$participantSets[] = $participantMembers['DATA'];
+			
+		}
+		
+		// Step through each array and take either the matching 
+		// rows element or the first element in cases where only
+		// one entry is provided
+		
+		$participantList = array( );
+		for( $i = 0; $i < $size; $i++ ) {
+			
+			$currentPair = array( );
+			$participantIDs = array( );
+			$roleIDs = array( );
+			foreach( $participantSets as $participantSet ) {
+				if( isset( $participantSet[$i] )) {
+					$currentPair[] = $participantSet[$i];
+					$participantIDs[] = $participantSet[$i]->id;
+					$roleIDs[] = $participantSet[$i]->role;
+				} else {
+					$currentPair[] = $participantSet[0];
+					$participantIDs[] = $participantSet[0]->id;
+					$roleIDs[] = $participantSet[0]->role;
+				}
+			}
+			
+			$participantList[] = array( "PARTICIPANTS" => $currentPair, "HASH" => $this->hashids->generateHash( $participantIDs, $roleIDs ) );
+			
+		}
+		
+		return $participantList;
 		
 	}
 	
