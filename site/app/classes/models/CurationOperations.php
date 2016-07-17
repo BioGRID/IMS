@@ -72,6 +72,41 @@ class CurationOperations {
 	}
 	
 	/**
+	 * Process a curation workflow notification
+	 */
+	 
+	public function fetchCurationNotification( $options ) {
+		
+		$notification = "";
+		
+		if( isset( $options['notificationType'] )) {
+			
+			$params = array( );
+			switch( strtoupper( $options['notificationType'] )) {
+		
+				case "ERROR" :
+				
+					$params = array(
+						"NOTIFICATION" => "Your submission failed due to one or more errors...",
+						"NOTIFICATION_TYPE" => "text-danger",
+						"VIEW_LINK" => "<i class='fa fa-arrow-left'></i> View Errors"
+					);
+					
+					break;
+					
+					
+		
+			}
+			
+			return $this->twig->render( 'curation' . DS . 'checklist' . DS . 'Notification.tpl', $params ); 
+		
+		}
+		
+		return "";
+		
+	}
+	
+	/**
 	 * Process messages to create errors
 	 */
 	 
