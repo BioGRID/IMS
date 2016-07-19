@@ -434,6 +434,8 @@ class CurationValidation {
 				$this->fetchMatchingAnnotation( $idChunk, $type, $annotationSet );
 			}
 			
+			$unknownParticipantHASH = array( );
+			
 			$lineCount = 1;
 			$errorList = array( );
 			$warningList = array( );
@@ -466,8 +468,15 @@ class CurationValidation {
 						$warningList[$identifier] = array( );
 					}
 					
+					$hashIndex = strtoupper($identifier . "|" . $type . "|" . $taxa);
+					if( !isset( $unknownParticipantHASH[$hashIndex] )) {
+						$unknownParticipantHASH[$hashIndex] = $this->processUnknownParticipant( $identifier, $type, $taxa );
+					}
+					
+					$participantID = $unknownParticipantHASH[$hashIndex];
+					
 					$warningList[$identifier][] = $lineCount;
-					$mapping[] = array( "id" => "", "key" => $identifier, "status" => "UNKNOWN", "role" => $role, "type" => $type );
+					$mapping[] = array( "id" => "", "key" => $identifier, "status" => "UNKNOWN", "role" => $role, "type" => $type, "participant" => $participantID );
 					$counts["UNKNOWN"]++;
 					
 				} else if( sizeof( $termIDs ) > 1 ) {
@@ -484,7 +493,8 @@ class CurationValidation {
 				} else {
 					// VALID MAPPING
 					$termID = current( $termIDs );
-					$mapping[] = array( "id" => $termID, "key" => $identifier, "status" => "VALID", "role" => $role, "type" => $type );
+					$termAnn = $annotationSet[$termID];
+					$mapping[] = array( "id" => $termID, "key" => $identifier, "status" => "VALID", "role" => $role, "type" => $type, "participant" => $termAnn['participant_id'] );
 					$counts["VALID"]++;
 				}
 				
@@ -698,6 +708,39 @@ class CurationValidation {
 		
 		$stmt = $this->db->prepare( "INSERT INTO " . DB_IMS . ".participants VALUES ( '0',?,?,NOW( ),'active' )" );
 		$stmt->execute( array( $value, $type ) );
+		
+		return $this->db->lastInsertId( );
+		
+	}
+	
+	/**
+	 * Fetch the participant ID of an unknown participant
+	 */
+	 
+	private function processUnknownParticipant( $value, $type, $orgID ) {
+		
+		$unknownParticipantID = $this->fetchUnknownParticipantID( $value, $type, $orgID );
+		$participantID = $this->fetchParticipantID( $unknownParticipantID, "5" ); // 5 is Unknown Participant
+		return $participantID;
+		
+	}
+	
+	/**
+	 * Determine if an  unknown_participant exists for this combination of value, organism, and type
+	 * and if not, add it. Return the id of the unknown_participant.
+	 */
+	 
+	private function fetchUnknownParticipantID( $value, $type, $orgID ) {
+		
+		$stmt = $this->db->prepare( "SELECT unknown_participant_id FROM " . DB_IMS . ".unknown_participants WHERE unknown_participant_value=? AND participant_type_id=? AND unknown_participant_status='active' AND organism_id=? LIMIT 1" );
+		$stmt->execute( array( $value, $type, $orgID ) );
+		
+		if( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			return $row->unknown_participant_id;
+		}
+		
+		$stmt = $this->db->prepare( "INSERT INTO " . DB_IMS . ".unknown_participants VALUES ( '0',?,?,?,'0',NOW( ),'active' )" );
+		$stmt->execute( array( $value, $type, $orgID ) );
 		
 		return $this->db->lastInsertId( );
 		
