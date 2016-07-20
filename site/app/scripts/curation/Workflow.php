@@ -66,6 +66,12 @@ if( isset( $_POST['script'] ) ) {
 			echo $curationSubmit->processCurationSubmission( $_POST );
 			break;
 			
+		// Fetch a formatted notification
+		case 'loadWorkflowNotification' :
+			$curationOps = new models\CurationOperations( );
+			echo $curationOps->fetchCurationNotification( $_POST );
+			break;
+			
 	}
 		
 }

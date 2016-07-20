@@ -32,7 +32,7 @@ class CurationOperations {
 	 
 	public function fetchCurationWorkflowSettings( $curationType ) {
 		
-		$curationSettings = array( );
+		$curationSettings = array( "CONFIG" => array( ), "CHECKLIST" => array( ) );
 		
 		// Get organism ID from the session for their currently selected group
 		// Use it as the default when showing a participant block
@@ -43,8 +43,7 @@ class CurationOperations {
 		}
 		
 		// VALIDATE OPTIONS
-		// Type: list_match: must match the list passed in as block, can match to many
-		// Type: list_align: must match the list passed in as block, can match to 1 or many
+		// Type: single_equal: must have only a single entry or the same number of entries as the block specified in the "block" parameter
 		
 		// THIS NEEDS TO BE CHANGED TO A DATABASE CALL LATER AND STORED IN A TABLE
 		// KEEPING IT AS A MANUALLY CREATED ARRAY FOR NOW TO AVOID HAVING TO WRITE ADMIN
@@ -54,11 +53,15 @@ class CurationOperations {
 			
 			case "1" : // Protein-Protein Binary Interaction
 			
-				$curationSettings[0] = array( "BLOCK" => "participant", "DATA" => array( "role" => "2", "type" => "1", "organism" => $orgID, "required" => 1 ), "VALIDATE" => array( "type" => "list_match", "block" => 1 ) );
-				$curationSettings[1] = array( "BLOCK" => "participant", "DATA" => array( "role" => "3", "type" => "1", "organism" => $orgID, "required" => 1 ), "VALIDATE" => array( "type" => "list_align", "block" => 0 ) );
-				$curationSettings[2] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "11", "required" => 1 ) );
-				$curationSettings[3] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "13", "required" => 1 ) );
-				$curationSettings[4] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "22", "required" => 0 ) );
+				// Config
+				$curationSettings['CONFIG']['participant_method'] = 'row'; 
+				
+				// Checklist Items
+				$curationSettings['CHECKLIST'][0] = array( "BLOCK" => "participant", "DATA" => array( "role" => "2", "type" => "1", "organism" => $orgID, "required" => 1 ), "VALIDATE" => array( "type" => "single_equal", "block" => 1 ), "METHOD" => "row" );
+				$curationSettings['CHECKLIST'][1] = array( "BLOCK" => "participant", "DATA" => array( "role" => "3", "type" => "1", "organism" => $orgID, "required" => 1 ), "VALIDATE" => array( "type" => "single_equal", "block" => 0 ) );
+				$curationSettings['CHECKLIST'][2] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "11", "required" => 1 ) );
+				$curationSettings['CHECKLIST'][3] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "13", "required" => 1 ) );
+				$curationSettings['CHECKLIST'][4] = array( "BLOCK" => "attribute", "DATA" => array( "type" => "22", "required" => 0 ) );
 				break;
 				
 			
@@ -69,11 +72,46 @@ class CurationOperations {
 	}
 	
 	/**
+	 * Process a curation workflow notification
+	 */
+	 
+	public function fetchCurationNotification( $options ) {
+		
+		$notification = "";
+		
+		if( isset( $options['notificationType'] )) {
+			
+			$params = array( );
+			switch( strtoupper( $options['notificationType'] )) {
+		
+				case "ERROR" :
+				
+					$params = array(
+						"NOTIFICATION" => "Your submission failed due to one or more errors...",
+						"NOTIFICATION_TYPE" => "text-danger",
+						"VIEW_LINK" => "<i class='fa fa-arrow-left'></i> View Errors"
+					);
+					
+					break;
+					
+					
+		
+			}
+			
+			return $this->twig->render( 'curation' . DS . 'checklist' . DS . 'Notification.tpl', $params ); 
+		
+		}
+		
+		return "";
+		
+	}
+	
+	/**
 	 * Process messages to create errors
 	 */
 	 
 	public function processErrors( $messages ) {
-		$errors = $this->twig->render( 'curation' . DS . 'error' . DS . 'CurationError.tpl', array( "ERRORS" => $messages ) );
+		$errors = $this->twig->render( 'curation' . DS . 'error' . DS . 'CurationError.tpl', array( "ERRORS" => $messages ) ); 
 		return $errors;
 	}
 	
@@ -139,6 +177,9 @@ class CurationOperations {
 				
 			case "INVALID_BLOCKS" :
 				return array( "class" => "danger", "message" => "Your data was not submitted because one or more items in the checklist to the right are still invalid. The following blocks: <strong>" . implode( ", ", $details['invalidBlocks'] ) . "</strong> still have errors that need to be fixed before submitting. You can find the errors that still exist by clicking on a checklist item marked with a red X to the right, and scrolling to the bottom..." );
+				
+			case "SINGLE_EQUAL" :
+				return array( "class" => "danger", "message" => "Your data was not submitted because <strong>" . $details['testBlockName'] . "</strong> or <strong>" . $details['compareBlockName'] . "</strong> must contain only a single entry (which will be repeated automatically) or <strong>" . $details['testBlockName'] . "</strong> must contain the exact same number of entries as <strong>" . $details['compareBlockName'] . "</strong>. Currently, <strong>" . $details['testBlockName'] . "</strong> contains <strong> " . $details['testBlockSize'] . "</strong> entries and <strong>" . $details['compareBlockName'] . "</strong> contains <strong> " . $details['compareBlockSize'] . "</strong> entries" );
 
 			default:
 				return array( "class" => "danger", "message" => "An unknown error has occurred." );

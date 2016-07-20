@@ -97,7 +97,7 @@ class CurationBlocks extends lib\Blocks {
 		$links = array( );
 		
 		$curationChecklist = $this->curationOps->fetchCurationWorkflowSettings( $type );
-		$links = $this->processCurationLinks( $curationChecklist );
+		$links = $this->processCurationLinks( $curationChecklist['CHECKLIST'] );
 
 		return $this->generateView( $blocks, $links );
 		

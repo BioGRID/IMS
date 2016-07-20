@@ -45,12 +45,12 @@
 			});
 			
 			base.$el.on( "click", "#curationWorkflowErrorBtn", function( ) {
-				base.showWorkflowErrors( );
+				base.showWorkflowDetails( );
 			});
 
 		};
 		
-		base.showWorkflowErrors = function( ) {
+		base.showWorkflowDetails = function( ) {
 			$(".workflowLink").parent( ).removeClass( "active" ).find( ".curationSubmenu" ).slideUp( 'fast' );
 			
 			// Hide currently showing curation panel
@@ -60,7 +60,7 @@
 			}
 			
 			// Show Workflow Errors
-			$("#curationWorkflowErrors").show( );
+			$("#curationWorkflowDetails").show( );
 		};
 		
 		base.toggleSubmitBtn = function( enableBtn ) {
@@ -77,13 +77,12 @@
 				submitBtn.find( ".submitProgress" ).show( );
 			}
 			
-			
 		};
 		
 		base.clickSubmitBtn = function( ) {
 			
 			base.toggleSubmitBtn( false );
-			$("#curationSubmitNotifications").hide( );
+			$("#curationSubmitNotifications").html( "" );
 			
 			var allValidated = true;
 			var curationBlockCount = base.data.curationBlocks.length;
@@ -117,6 +116,8 @@
 				var ajaxData = {
 					"validationStatus" : allValidated,
 					"invalidBlocks" : JSON.stringify( invalidBlocks ),
+					"curationType" : $("#curationType").val( ),
+					"curationCode" : $("#curationCode").val( ),
 					"script" : 'submitCuratedDataset'
 				};
 
@@ -128,18 +129,28 @@
 					dataType: "json",
 					data: ajaxData,
 					beforeSend: function( ) {
-						$(".curationWorkflowErrorList").html( "" );
+						$(".curationWorkflowDetails").html( "" );
+						$("#curationSubmitNotifications").html( "Processing Submission <i class='fa fa-refresh fa-spin fa-lg'></i>" );
 					}
 					
 				}).done( function(data) {
+					
+					console.log( data );
 					
 					base.toggleSubmitBtn( true );
 					if( data["STATUS"] == "SUCCESS" ) {
 						console.log( "Submitted Successfully!" );
 					} else {
-						$(".curationWorkflowErrorList").html( data["ERRORS"] );
-						$("#curationSubmitNotifications").show( );
-						base.showWorkflowErrors( );
+						
+						$("#curationWorkflowDetails").html( function( ) {
+							var header = "<h3>Submission Results</h3>"; 
+							var errors = data["ERRORS"];
+							return header + errors;
+						});
+						
+						base.showSubmitNotification( "ERROR" );
+						
+						base.showWorkflowDetails( );
 					}
 					
 				}).fail( function( jqXHR, textStatus ) {
@@ -154,11 +165,31 @@
 			
 		};
 		
+		// Generate a standard submission notification
+		base.showSubmitNotification = function( notificationType ) {
+			
+			$.ajax({
+				
+				url: base.data.baseURL + "/scripts/curation/Workflow.php",
+				method: "POST",
+				dataType: "html",
+				data: { "notificationType" : notificationType, "script" : "loadWorkflowNotification" },
+				beforeSend: function( ) {
+					$("#curationSubmitNotifications").html( "" );
+				}
+				
+			}).done( function(data) {
+				$("#curationSubmitNotifications").html( data );
+			});
+			
+		};
+		
+		
 		// Process functionality of clicking on a workflow link
 		base.clickWorkflowLink = function( link ) {
 			
 			$(".workflowLink").not(link).parent( ).removeClass( "active" ).find( ".curationSubmenu" ).slideUp( 'fast' );
-			$("#curationWorkflowErrors").hide( );
+			$("#curationWorkflowDetails").hide( );
 			
 			// Only Participants have Submenus
 			

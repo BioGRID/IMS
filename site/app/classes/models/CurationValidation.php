@@ -34,6 +34,7 @@ class CurationValidation {
 		$this->attributeTypeInfo = $this->lookups->buildAttributeTypeHASH( );
 		
 		$this->curationOps = new models\CurationOperations( );
+
 	}
 	
 	/**
@@ -235,7 +236,7 @@ class CurationValidation {
 		}
 		
 		// INSERT/UPDATE IT IN THE DATABASE
-		$this->updateCurationEntries( $curationCode, $status, $block, $ontologyTermSet, "attribute", $attributeTypeID, $isRequired );
+		$this->updateCurationEntries( $curationCode, $status, $block, $ontologyTermSet, "attribute", "-", $attributeTypeID, $isRequired );
 		
 		return array( "STATUS" => $status, "ERRORS" => $messages );
 		
@@ -283,7 +284,7 @@ class CurationValidation {
 		}
 	
 		// INSERT/UPDATE IT IN THE DATABASE
-		$this->updateCurationEntries( $curationCode, $status, $block, $scoreSet, "attribute", $attributeID, $isRequired );
+		$this->updateCurationEntries( $curationCode, $status, $block, $scoreSet, "attribute", "-", $attributeID, $isRequired );
 		
 		return array( "STATUS" => $status, "ERRORS" => $messages );
 		
@@ -320,7 +321,7 @@ class CurationValidation {
 		}
 		
 		// INSERT/UPDATE IT IN THE DATABASE
-		$this->updateCurationEntries( $curationCode, $status, $block, $noteSet, "attribute", "22", $isRequired );
+		$this->updateCurationEntries( $curationCode, $status, $block, $noteSet, "attribute", "-", "22", $isRequired );
 		
 		return array( "STATUS" => $status, "ERRORS" => $messages );
 		
@@ -354,7 +355,7 @@ class CurationValidation {
 		} 
 		
 		// INSERT/UPDATE IT IN THE DATABASE
-		$this->updateCurationEntries( $curationCode, $results["STATUS"], $block, $alleleSet, "attribute", "36", false );
+		$this->updateCurationEntries( $curationCode, $results["STATUS"], $block, $alleleSet, "participant", "attribute", "36", false );
 		
 		return $results;
 		
@@ -433,6 +434,8 @@ class CurationValidation {
 				$this->fetchMatchingAnnotation( $idChunk, $type, $annotationSet );
 			}
 			
+			$unknownParticipantHASH = array( );
+			
 			$lineCount = 1;
 			$errorList = array( );
 			$warningList = array( );
@@ -465,8 +468,15 @@ class CurationValidation {
 						$warningList[$identifier] = array( );
 					}
 					
+					$hashIndex = strtoupper($identifier . "|" . $type . "|" . $taxa);
+					if( !isset( $unknownParticipantHASH[$hashIndex] )) {
+						$unknownParticipantHASH[$hashIndex] = $this->processUnknownParticipant( $identifier, $type, $taxa );
+					}
+					
+					$participantID = $unknownParticipantHASH[$hashIndex];
+					
 					$warningList[$identifier][] = $lineCount;
-					$mapping[] = array( "id" => "", "key" => $identifier, "status" => "UNKNOWN", "annotation" => array( ) );
+					$mapping[] = array( "id" => "", "key" => $identifier, "status" => "UNKNOWN", "role" => $role, "type" => $type, "participant" => $participantID );
 					$counts["UNKNOWN"]++;
 					
 				} else if( sizeof( $termIDs ) > 1 ) {
@@ -477,13 +487,14 @@ class CurationValidation {
 					}
 					
 					$errorList[$identifier][] = $lineCount;
-					$mapping[] = array( "id" => "", "key" => $identifier, "status" => "AMBIGUOUS", "annotation" => array( ) );
+					$mapping[] = array( "id" => "", "key" => $identifier, "status" => "AMBIGUOUS", "role" => $role, "type" => $type );
 					$counts["AMBIGUOUS"]++;
 					
 				} else {
 					// VALID MAPPING
 					$termID = current( $termIDs );
-					$mapping[] = array( "id" => $termID, "key" => $identifier, "status" => "VALID", "annotation" => $annotationSet[$termID] );
+					$termAnn = $annotationSet[$termID];
+					$mapping[] = array( "id" => $termID, "key" => $identifier, "status" => "VALID", "role" => $role, "type" => $type, "participant" => $termAnn['participant_id'] );
 					$counts["VALID"]++;
 				}
 				
@@ -515,9 +526,9 @@ class CurationValidation {
 		}
 		
 		// Update Curation Database Entries
-		$this->updateCurationEntries( $curationCode, $status, $block, $mapping, "participant", "members", $isRequired );
-		$this->updateCurationEntries( $curationCode, "NEW", $block, $annotationSet, "participant", "annotation", $isRequired );
-		$this->updateCurationEntries( $curationCode, "NEW", $block, $termMap, "participant", "terms", $isRequired );
+		$this->updateCurationEntries( $curationCode, $status, $block, $mapping, "participant", "members", "0", $isRequired );
+		$this->updateCurationEntries( $curationCode, "NEW", $block, $annotationSet, "participant", "annotation", "0", $isRequired );
+		$this->updateCurationEntries( $curationCode, "NEW", $block, $termMap, "participant", "terms", "0", $isRequired );
 		
 		return array( "STATUS" => $status, "ERRORS" => $messages, "COUNTS" => $counts );
 		
@@ -528,24 +539,24 @@ class CurationValidation {
 	 * and the format of the table
 	 */
 	 
-	private function updateCurationEntries( $code, $status, $block, $data, $type, $subType, $isRequired ) {
+	private function updateCurationEntries( $code, $status, $block, $data, $type, $subType, $attributeTypeID, $isRequired ) {
 		
 		$required = 0;
 		if( $isRequired ) {
 			$required = 1;
 		}
 		
-		$stmt = $this->db->prepare( "SELECT curation_id FROM " . DB_IMS . ".curation WHERE curation_code=? AND curation_block=? AND curation_type=? AND curation_subtype=? LIMIT 1" );
+		$stmt = $this->db->prepare( "SELECT curation_id FROM " . DB_IMS . ".curation WHERE curation_code=? AND curation_block=? AND curation_type=? AND curation_subtype=? AND attribute_type_id=? LIMIT 1" );
 		
-		$stmt->execute( array( $code, $block, $type, $subType ) );
+		$stmt->execute( array( $code, $block, $type, $subType, $attributeTypeID ) );
 		if( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
 			// PERFORM UPDATE INSTEAD OF INSERT
 			$stmt = $this->db->prepare( "UPDATE " . DB_IMS . ".curation SET curation_status=?, curation_data=? WHERE curation_id=?" );
 			$stmt->execute( array( $status, json_encode( $data ), $row->curation_id ) );
 		} else {
 			// PERFORM INSERT
-			$stmt = $this->db->prepare( "INSERT INTO " . DB_IMS . ".curation VALUES ( '0',?,?,?,?,?,?,?,NOW( ) )" );
-			$stmt->execute( array( $code, $status, $block, json_encode( $data ), $type, $subType, $required ) );
+			$stmt = $this->db->prepare( "INSERT INTO " . DB_IMS . ".curation VALUES ( '0',?,?,?,?,?,?,?,?,?,NOW( ) )" );
+			$stmt->execute( array( $code, $status, $block, json_encode( $data ), $type, $subType, $attributeTypeID, $this->blockName, $required ) );
 		}
 		
 	}
@@ -600,20 +611,21 @@ class CurationValidation {
 	}
 	
 	/**
-	 * Fetch matching annotation by the gene ids that are passed in
+	 * Fetch matching annotation by the values and type that are passed in
 	 */
 	 
-	private function fetchMatchingAnnotation( $geneIDs, $type, &$annotationSet ) {
+	private function fetchMatchingAnnotation( $values, $type, &$annotationSet ) {
 		
 		$matchingAnnotation = array( );
+		$participantHASH = $this->fetchParticipantIDHash( $values, $type );
 		
 		switch( $type ) {
 			
 			case "1" : // Gene
 			
-				$params = implode( ",", array_fill( 0, sizeof( $geneIDs ), "?" ));
+				$params = implode( ",", array_fill( 0, sizeof( $values ), "?" ));
 				$stmt = $this->db->prepare( "SELECT gene_id, systematic_name, official_symbol, aliases, organism_id, organism_official_name, organism_abbreviation, organism_strain FROM " . DB_QUICK . ".quick_annotation WHERE gene_id IN ( " . $params . " )" );
-				$stmt->execute( $geneIDs );
+				$stmt->execute( $values );
 
 				while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
 					
@@ -641,12 +653,96 @@ class CurationValidation {
 						$annotation['organism_strain'] = $row->organism_strain;
 					}
 					
+					// Get a participant ID out of the database
+					// and store it for quicker processing later on
+					if( isset( $participantHASH[$row->gene_id] )) {
+						$annotation['participant_id'] = $participantHASH[$row->gene_id];
+					} else {
+						$participantID = $this->fetchParticipantID( $row->gene_id, $type );
+						$annotation['participant_id'] = $participantID;
+					}
+					
 					$annotationSet[$annotation['gene_id']] = $annotation;
 				}
 				
 				break;
 			
 		}
+		
+	}
+	
+	/**
+	 * Fetch a hash table of existing participants so we can quickly
+	 * determine which ones require addition
+	 */
+	 
+	private function fetchParticipantIDHash( $values, $type ) {
+		
+		$params = implode( ",", array_fill( 0, sizeof( $values ), "?" ));
+		$stmt = $this->db->prepare( "SELECT participant_id, participant_value FROM " . DB_IMS . ".participants WHERE participant_value IN ( " . $params . " ) AND participant_type_id=? AND participant_status='active'" );
+		$values[] = $type;
+		$stmt->execute( $values );
+		
+		$mappingHASH = array( );
+		while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			$mappingHASH[$row->participant_value] = $row->participant_id;
+		}
+		
+		return $mappingHASH;
+		
+	}
+	
+	/**
+	 * Determine if a participant exists for this combination of value and type
+	 * and if not, add it. Return the id of the participant.
+	 */
+	 
+	private function fetchParticipantID( $value, $type ) {
+		
+		$stmt = $this->db->prepare( "SELECT participant_id FROM " . DB_IMS . ".participants WHERE participant_value=? AND participant_type_id=? AND participant_status='active' LIMIT 1" );
+		$stmt->execute( array( $value, $type ) );
+		
+		if( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			return $row->participant_id;
+		}
+		
+		$stmt = $this->db->prepare( "INSERT INTO " . DB_IMS . ".participants VALUES ( '0',?,?,NOW( ),'active' )" );
+		$stmt->execute( array( $value, $type ) );
+		
+		return $this->db->lastInsertId( );
+		
+	}
+	
+	/**
+	 * Fetch the participant ID of an unknown participant
+	 */
+	 
+	private function processUnknownParticipant( $value, $type, $orgID ) {
+		
+		$unknownParticipantID = $this->fetchUnknownParticipantID( $value, $type, $orgID );
+		$participantID = $this->fetchParticipantID( $unknownParticipantID, "5" ); // 5 is Unknown Participant
+		return $participantID;
+		
+	}
+	
+	/**
+	 * Determine if an  unknown_participant exists for this combination of value, organism, and type
+	 * and if not, add it. Return the id of the unknown_participant.
+	 */
+	 
+	private function fetchUnknownParticipantID( $value, $type, $orgID ) {
+		
+		$stmt = $this->db->prepare( "SELECT unknown_participant_id FROM " . DB_IMS . ".unknown_participants WHERE unknown_participant_value=? AND participant_type_id=? AND unknown_participant_status='active' AND organism_id=? LIMIT 1" );
+		$stmt->execute( array( $value, $type, $orgID ) );
+		
+		if( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			return $row->unknown_participant_id;
+		}
+		
+		$stmt = $this->db->prepare( "INSERT INTO " . DB_IMS . ".unknown_participants VALUES ( '0',?,?,?,'0',NOW( ),'active' )" );
+		$stmt->execute( array( $value, $type, $orgID ) );
+		
+		return $this->db->lastInsertId( );
 		
 	}
 	

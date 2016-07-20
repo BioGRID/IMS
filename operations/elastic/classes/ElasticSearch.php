@@ -55,7 +55,7 @@ class ElasticSearch {
 	private function buildQuickLookups( ) {
 		$this->interactionTypesHash = $this->lookups->buildInteractionTypeHash( );
 		$this->userNameHash = $this->lookups->buildUserNameHash( );
-		$this->participantTypeHash = $this->lookups->buildParticipantTypesHash( );
+		$this->participantTypeHash = $this->lookups->buildParticipantTypesHash( true );
 		$this->participantRoleHash = $this->lookups->buildParticipantRoleHash( );
 		$this->annotationHash = $this->lookups->buildAnnotationHash( );
 		$this->participantTypeMappingHash = $this->lookups->buildParticipantTypeMappingHash( );
