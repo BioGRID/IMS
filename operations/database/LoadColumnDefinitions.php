@@ -28,6 +28,6 @@ $colDefs->insert( $columns, "2" );
 
 // Chemical Columns
 $columns = $colDefs->getChemDefs( );
-$colDefs->insert( $columns, "4" );
+$colDefs->insert( $columns, "7" );
 
 ?>
