@@ -72,7 +72,6 @@ class CurationSubmission {
 						
 						// Create Participant Pairings
 						$participantList = $this->generateParticipantRowPairings( );
-						print_r( $participantList );
 							
 					}
 					
@@ -136,11 +135,11 @@ class CurationSubmission {
 			foreach( $participantSets as $participantSet ) {
 				if( isset( $participantSet[$i] )) {
 					$currentPair[] = $participantSet[$i];
-					$participantIDs[] = $participantSet[$i]->id;
+					$participantIDs[] = $participantSet[$i]->participant;
 					$roleIDs[] = $participantSet[$i]->role;
 				} else {
 					$currentPair[] = $participantSet[0];
-					$participantIDs[] = $participantSet[0]->id;
+					$participantIDs[] = $participantSet[0]->participant;
 					$roleIDs[] = $participantSet[0]->role;
 				}
 			}
