@@ -400,9 +400,11 @@ class CurationValidation {
 					$identifier = $splitIdentifier[1];
 				}
 				
-				if( !isset( $termMap[$identifier] )) {
+				$index = $identifier . "|" . $taxa;
+				
+				if( !isset( $termMap[$index] )) {
 					$matchList = $this->fetchMatchingIdentifiers( $identifier, $type, $taxa, $idType );
-					$termMap[$identifier] = $matchList;
+					$termMap[$index] = $matchList;
 					
 					foreach( $matchList as $matchID => $matchInfo ) {
 						if( !isset( $annotationSet[$matchID] ) ) {
@@ -418,8 +420,8 @@ class CurationValidation {
 				// annotation set.
 				
 				if( sizeof( $splitIdentifier ) > 1 ) {
-					if( !isset( $termMap[$identifier][$splitIdentifier[0]] ) ) {
-						$termMap[$identifier][$splitIdentifier[0]] = $splitIdentifier[0];
+					if( !isset( $termMap[$index][$splitIdentifier[0]] ) ) {
+						$termMap[$index][$splitIdentifier[0]] = $splitIdentifier[0];
 						if( !isset( $annotationSet[$splitIdentifier[0]] ) ) {
 							$annotationSet[$splitIdentifier[0]] = array( );
 							$toAnnotate[] = $splitIdentifier[0];
@@ -451,7 +453,8 @@ class CurationValidation {
 					$identifier = $splitIdentifier[1];
 				} 
 				
-				$termIDs = $termMap[$identifier];
+				$index = $identifier . "|" . $taxa;
+				$termIDs = $termMap[$index];
 				
 				// If we specified a specific GENE ID to use, then here
 				// we convert the annotation from a pack of ids to a 
@@ -503,7 +506,8 @@ class CurationValidation {
 			}
 			
 			foreach( $errorList as $identifier => $lines ) {
-				$termSet = $termMap[$identifier];
+				$index = $identifier . "|" . $taxa;
+				$termSet = $termMap[$index];
 				$options = array( );
 				foreach( $termSet as $termID => $termDetails ) {
 					$options[$termID] = $annotationSet[$termID];
