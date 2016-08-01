@@ -23,6 +23,8 @@ class CurationSubmission {
 	private $blocks;
 	private $errors;
 	private $hashids;
+	private $lookups;
+	private $attributeHASH;
 	
 	public function __construct( ) {
 		$this->db = new PDO( DB_CONNECT, DB_USER, DB_PASS );
@@ -33,6 +35,10 @@ class CurationSubmission {
 		
 		$this->blocks = array( );
 		$this->hashids = new utilities\Hashes( );
+		
+		$this->lookups = new models\Lookups( );
+		$this->attributeHASH = $this->lookups->buildAttributeTypeHASH( );
+		
 	}
 	
 	/**
@@ -57,6 +63,8 @@ class CurationSubmission {
 				// Fetch curation details from database
 				$this->curatedData = $this->fetchCurationSubmissionEntries( $options['curationCode'] );
 				
+				//print_r( $this->curatedData );
+				
 				// Test curated data against workflow settings to
 				// see if data is valid
 				if( !$this->validateSubmission( ) ) {
@@ -74,6 +82,18 @@ class CurationSubmission {
 						$participantList = $this->generateParticipantRowPairings( );
 							
 					}
+					
+					
+					
+					// Check for Duplicates
+					
+					// Insert into the Database
+					
+					
+					
+					// Insert into Elastic Search
+					
+					
 					
 					// $participantBlocks = array( );
 					// Build Interactions
@@ -107,11 +127,10 @@ class CurationSubmission {
 	private function generateParticipantRowPairings( ) {
 		
 		// Fetch all the sets of participant members
-		
 		$participantSets = array( );
 		$size = 0;
 		foreach( $this->blocks['PARTICIPANT'] as $block ) {
-			$participantMembers = $this->curatedData[$block]->getData( "members", 0 );
+			$participantMembers = $this->curatedData[$block]->getData( "members" );
 			
 			$setSize = sizeof( $participantMembers['DATA'] );
 			if( $setSize > $size ) {
@@ -120,6 +139,26 @@ class CurationSubmission {
 			
 			$participantSets[] = $participantMembers['DATA'];
 			
+		}
+		
+		// Fetch all the set of ATTRIBUTE_EACH
+		$attributesEach = array( );
+		if( isset( $this->blocks['ATTRIBUTE_EACH'] )) {
+			foreach( $this->blocks['ATTRIBUTE_EACH'] as $block ) {
+				$attributeMembers = $this->curatedData[$block]->getData( "" );
+				$attributesEach[] = $attributeMembers['DATA'];
+			}
+		}
+		
+		// Build set of participants from ATTRIBUTE_ALL
+		$attributesAll = array( );
+		if( isset( $this->blocks['ATTRIBUTE_ALL'] )) {
+			foreach( $this->blocks['ATTRIBUTE_ALL'] as $block ) {
+				$attributeMember = $this->curatedData[$block]->getData( "" );
+				foreach( $attributeMember["DATA"] as $entryID => $attributeDetails ) {
+					$attributesAll[] = $attributeDetails;
+				}
+			}
 		}
 		
 		// Step through each array and take either the matching 
@@ -135,20 +174,33 @@ class CurationSubmission {
 			foreach( $participantSets as $participantSet ) {
 				if( isset( $participantSet[$i] )) {
 					$currentPair[] = $participantSet[$i];
-					$participantIDs[] = $participantSet[$i]->participant;
-					$roleIDs[] = $participantSet[$i]->role;
+					$participantIDs[] = $participantSet[$i]['participant'];
+					$roleIDs[] = $participantSet[$i]['role'];
 				} else {
 					$currentPair[] = $participantSet[0];
-					$participantIDs[] = $participantSet[0]->participant;
-					$roleIDs[] = $participantSet[0]->role;
+					$participantIDs[] = $participantSet[0]['participant'];
+					$roleIDs[] = $participantSet[0]['role'];
 				}
 			}
 			
+			// Add Each Attributes
+			
+			
+			// Add All Attributes
 			$participantList[] = array( "PARTICIPANTS" => $currentPair, "HASH" => $this->hashids->generateHash( $participantIDs, $roleIDs ) );
 			
 		}
 		
 		return $participantList;
+		
+	}
+	
+	/**
+	 * Generate a list of attributes and assign them to the 
+	 * participants in the participant list
+	 */
+	 
+	private function matchAttributesToParticipants( $participantList, $attributeSet ) {
 		
 	}
 	
@@ -236,16 +288,48 @@ class CurationSubmission {
 			
 			$results[$row->curation_block]->addData( $row->curation_subtype, $row->attribute_type_id, $row->curation_data, $row->curation_name, $row->curation_required );
 			
-			if( !isset( $this->blocks[strtoupper($row->curation_type)] )) {
-				$this->blocks[strtoupper($row->curation_type)] = array( );
+			
+			$curationType = strtoupper($row->curation_type);
+			if( $curationType == "ATTRIBUTE" ) {
+				if( $row->curation_status == "WARNING" ) {
+					// Skip because Warning Attribute just means
+					// that it was empty
+					continue;
+				} else {
+
+					// Get details about the attribute
+					$attributeInfo = $this->attributeHASH[$row->attribute_type_id];
+					
+					// If it's a type that has a unique value for each participant set
+					// like quantitative scores, place it in ATTRIBUTE_EACH
+					if( $attributeInfo->attribute_type_category_id == "2" ) {
+						$curationType = "ATTRIBUTE_EACH";
+					} else {
+						// Otherwise, place it in a list where
+						// we apply the attribute to all participants
+						$curationType = "ATTRIBUTE_ALL";
+					}
+					
+				}
+			} 
+			
+			if( !isset( $this->blocks[$curationType] )) {
+				$this->blocks[$curationType] = array( );
 			}
 			
-			$this->blocks[strtoupper($row->curation_type)][] = $row->curation_block;
+			$this->blocks[$curationType][] = $row->curation_block;
 			
 		}
 		
 		$this->blocks['PARTICIPANT'] = array_unique( $this->blocks['PARTICIPANT'] );
-		$this->blocks['ATTRIBUTE'] = array_unique( $this->blocks['ATTRIBUTE'] );
+		
+		if( isset( $this->blocks['ATTRIBUTE_EACH'] ) ) {
+			$this->blocks['ATTRIBUTE_EACH'] = array_unique( $this->blocks['ATTRIBUTE_EACH'] );
+		}
+		
+		if( isset( $this->blocks['ATTRIBUTE_ALL'] ) ) {
+			$this->blocks['ATTRIBUTE_ALL'] = array_unique( $this->blocks['ATTRIBUTE_ALL'] );
+		}
 		
 		return $results;
 		

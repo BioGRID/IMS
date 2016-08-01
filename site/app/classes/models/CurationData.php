@@ -18,10 +18,12 @@ class CurationData {
 	private $blockID;
 	private $type;
 	private $data;
+	private $attributeType;
 	
 	public function __construct( $blockID ) {
 		$this->blockID = $blockID;
 		$this->type = "";
+		$this->attributeType = "";
 		$this->data = array( );
 	}
 	
@@ -37,7 +39,7 @@ class CurationData {
 	 * Get the curation type
 	 */
 	 
-	public function getType( $type ) {
+	public function getType( ) {
 		return $this->type;
 	}
 	
@@ -47,15 +49,15 @@ class CurationData {
 	 
 	public function addData( $subtype, $attributeTypeID, $data, $name, $required ) {
 		
-		if( $subtype == "" ) {
-			$subtype = "attribute";
+		if( $subtype == "" || $subtype == "-" ) {
+			$subtype = "ATTRIBUTE";
 		}
 		
 		if( !isset( $this->data[strtoupper($subtype)] )) {
 			$this->data[strtoupper($subtype)] = array( );
 		}
 		
-		$this->data[strtoupper($subtype)][$attributeTypeID] = array( "ID" => $attributeTypeID, "DATA" => json_decode( $data ), "NAME" => $name, "REQUIRED" => $required );
+		$this->data[strtoupper($subtype)] = array( "ID" => $attributeTypeID, "DATA" => json_decode( $data, true ), "NAME" => $name, "REQUIRED" => $required );
 		
 	}
 	
@@ -63,13 +65,13 @@ class CurationData {
 	 * Get data by passed in criteria
 	 */
 	 
-	public function getData( $subtype, $attributeTypeID ) {
+	public function getData( $subtype ) {
 		
-		if( $subtype == "" ) {
-			$subtype = "attribute";
+		if( $subtype == "" || $subtype == "-" ) {
+			$subtype = "ATTRIBUTE";
 		}
 		
-		return $this->data[strtoupper($subtype)][$attributeTypeID];
+		return $this->data[strtoupper($subtype)];
 	}
 	
 	

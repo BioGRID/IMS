@@ -41,7 +41,6 @@ class Hashes {
 		
 		sort( $combinedList, SORT_NUMERIC );
 		
-		print_r( $combinedList );
 		return $this->hashids->encode( $combinedList );
 		
 	}

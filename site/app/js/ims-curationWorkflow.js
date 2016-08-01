@@ -126,7 +126,7 @@
 					
 					url: base.data.baseURL + "/scripts/curation/Workflow.php",
 					method: "POST",
-					dataType: "json",
+					dataType: "html",
 					data: ajaxData,
 					beforeSend: function( ) {
 						$(".curationWorkflowDetails").html( "" );
