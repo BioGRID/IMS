@@ -217,7 +217,8 @@ class CurationValidation {
 					
 						// Process through the list of qualifiers
 						foreach( $qualifiers as $qualifier ) {
-							$qualifierTerm = $this->processOntologyTerm( $termDetails->ontology_term_id, $termDetails->ontology_term_official_id, "31" );
+							$qualDetails = $this->fetchOntologyTermDetails( $qualifier );
+							$qualifierTerm = $this->processOntologyTerm( $qualDetails->ontology_term_id, $qualDetails->ontology_term_official_id, "31" );
 							if( !isset( $ontologyTerm["qualifiers"] ) ) {
 								$ontologyTerm["qualifiers"] = array( );
 							}

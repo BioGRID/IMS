@@ -127,7 +127,7 @@
 				
 				url: base.data.baseURL + "/scripts/curation/Validate.php",
 				method: "POST",
-				dataType: "json",
+				dataType: "html",
 				data: ajaxData,
 				timeout: 300000,
 				beforeSend: function( ) {

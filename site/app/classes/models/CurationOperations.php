@@ -180,6 +180,9 @@ class CurationOperations {
 				
 			case "SINGLE_EQUAL" :
 				return array( "class" => "danger", "message" => "Your data was not submitted because <strong>" . $details['testBlockName'] . "</strong> or <strong>" . $details['compareBlockName'] . "</strong> must contain only a single entry (which will be repeated automatically) or <strong>" . $details['testBlockName'] . "</strong> must contain the exact same number of entries as <strong>" . $details['compareBlockName'] . "</strong>. Currently, <strong>" . $details['testBlockName'] . "</strong> contains <strong> " . $details['testBlockSize'] . "</strong> entries and <strong>" . $details['compareBlockName'] . "</strong> contains <strong> " . $details['compareBlockSize'] . "</strong> entries" );
+				
+			case "QUANT_COUNT" :
+				return array( "class" => "danger", "message" => "Your data was not submitted because <strong>" . $details['quantName'] . "</strong> must contain the same number of entries as the number of participants. Currently, <strong>" . $details['quantName'] . "</strong> contains <strong> " . $details['quantSize'] . "</strong> entries but you are entering <strong> " . $details['participantSize'] . "</strong> participants." );
 
 			default:
 				return array( "class" => "danger", "message" => "An unknown error has occurred." );

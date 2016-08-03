@@ -57,7 +57,8 @@ class CurationData {
 			$this->data[strtoupper($subtype)] = array( );
 		}
 		
-		$this->data[strtoupper($subtype)] = array( "ID" => $attributeTypeID, "DATA" => json_decode( $data, true ), "NAME" => $name, "REQUIRED" => $required );
+		$dataSet = json_decode( $data, true );
+		$this->data[strtoupper($subtype)] = array( "ID" => $attributeTypeID, "DATA" => $dataSet, "NAME" => $name, "REQUIRED" => $required, "SIZE" => sizeof( $dataSet ) );
 		
 	}
 	
@@ -72,6 +73,48 @@ class CurationData {
 		}
 		
 		return $this->data[strtoupper($subtype)];
+	}
+	
+	/**
+	 * Get Data Size
+	 */
+	 
+	public function getDataSize( $subtype ) {
+		
+		if( $subtype == "" || $subtype == "-" ) {
+			$subtype = "ATTRIBUTE";
+		}
+		
+		return $this->data[strtoupper($subtype)]['SIZE'];
+		
+	}
+	
+	/**
+	 * Get Type ID
+	 */
+	 
+	public function getTypeID( $subtype ) {
+		
+		if( $subtype == "" || $subtype == "-" ) {
+			$subtype = "ATTRIBUTE";
+		}
+		
+		return $this->data[strtoupper($subtype)]['ID'];
+		
+	}
+	
+	/**
+	 * Get Type ID
+	 */
+	 
+	public function getName( $subtype ) {
+		
+		if( $subtype == "" || $subtype == "-" ) {
+			$subtype = "ATTRIBUTE";
+		}
+		
+		return $this->data[strtoupper($subtype)]['NAME'];
+		
 	}
 	
 	

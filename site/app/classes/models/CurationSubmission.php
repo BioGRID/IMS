@@ -63,11 +63,26 @@ class CurationSubmission {
 				// Fetch curation details from database
 				$this->curatedData = $this->fetchCurationSubmissionEntries( $options['curationCode'] );
 				
+				// Determine the row count if we are doing a row
+				// based input by determining the largest participant
+				// dataset size
+				$rowCount = 1;
+				if( $this->workflowSettings['CONFIG']['participant_method'] == "row" ) {
+					foreach( $this->curatedData as $curatedData ) {
+						if( strtoupper($curatedData->getType( )) == "PARTICIPANT" ) {
+							$dataSize = $curatedData->getDataSize( "members" );
+							if( $dataSize > $rowCount ) {
+								$rowCount = $dataSize;
+							}
+						}
+					}
+				}
+				
 				//print_r( $this->curatedData );
 				
 				// Test curated data against workflow settings to
 				// see if data is valid
-				if( !$this->validateSubmission( ) ) {
+				if( !$this->validateSubmission( $rowCount ) ) {
 					$status = "ERROR";
 				} else {  
 					
@@ -83,6 +98,7 @@ class CurationSubmission {
 							
 					}
 					
+					//print_r( $participantList );
 					
 					
 					// Check for Duplicates
@@ -146,9 +162,11 @@ class CurationSubmission {
 		if( isset( $this->blocks['ATTRIBUTE_EACH'] )) {
 			foreach( $this->blocks['ATTRIBUTE_EACH'] as $block ) {
 				$attributeMembers = $this->curatedData[$block]->getData( "" );
-				$attributesEach[] = $attributeMembers['DATA'];
+				$attributesEach[] = $attributeMembers;
 			}
 		}
+		
+		//print_r( $attributesEach );
 		
 		// Build set of participants from ATTRIBUTE_ALL
 		$attributesAll = array( );
@@ -160,6 +178,8 @@ class CurationSubmission {
 				}
 			}
 		}
+		
+		//print_r( $attributesAll );
 		
 		// Step through each array and take either the matching 
 		// rows element or the first element in cases where only
@@ -179,12 +199,14 @@ class CurationSubmission {
 				} else {
 					$currentPair[] = $participantSet[0];
 					$participantIDs[] = $participantSet[0]['participant'];
-					$roleIDs[] = $participantSet[0]['role'];
+					$roleIDs[] = $participantSet[0]['role']; 
 				}
 			}
 			
-			// Add Each Attributes
+			// Add EACH Attributes
 			
+			
+			// Add ALL Attributes
 			
 			// Add All Attributes
 			$participantList[] = array( "PARTICIPANTS" => $currentPair, "HASH" => $this->hashids->generateHash( $participantIDs, $roleIDs ) );
@@ -209,7 +231,7 @@ class CurationSubmission {
 	 * to see if data passes the test
 	 */
 	 
-	private function validateSubmission( ) {
+	private function validateSubmission( $rowCount ) {
 		
 		$isValid = true;
 		
@@ -220,6 +242,25 @@ class CurationSubmission {
 				$validationTest = $blockSettings['VALIDATE']['type'];
 				if( !$this->runValidationTest( "block-" . $id, $validateTarget, $validationTest ) ) {
 					$isValid = false;
+				}
+			}
+		}
+		
+		// Check to see if the fields that need equal number of entries as 
+		// participants have the correct number of entries
+		if( $this->workflowSettings['CONFIG']['participant_method'] == "row" ) {
+			foreach( $this->curatedData as $curatedData ) {
+				if( strtoupper($curatedData->getType( )) == "ATTRIBUTE" ) {
+					$attributeInfo = $this->attributeHASH[$curatedData->getTypeID( "" )];
+					
+					// If we have a quantitative score block
+					if( $attributeInfo->attribute_type_category_id == "2" ) {
+						$dataSize = $curatedData->getDataSize( "" );
+						if( $dataSize != $rowCount ) {
+							$this->errors[] = $this->curationOps->generateError( "QUANT_COUNT", array( "quantName" => $curatedData->getName( "" ), "participantSize" => $rowCount, "quantSize" => $dataSize ) );
+							$isValid = false;
+						}
+					}
 				}
 			}
 		}
