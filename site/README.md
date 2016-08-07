@@ -29,3 +29,4 @@ To use all of the tools contained within, you require at least the following:
 		+ WEB_URL: change this to your url (ex: http://www.example.com) or use an ip (http://192.16.222.32)
 		+ ELASTIC SEARCH: change ES_HOST and ES_PORT to match your elastic search setup
 + Run: **composer install** or **php composer.phar install** depening on your setup to install composer requirements
++ Run: **npm install** to install NPM requirements
