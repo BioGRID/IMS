@@ -30,3 +30,4 @@ To use all of the tools contained within, you require at least the following:
 		+ ELASTIC SEARCH: change ES_HOST and ES_PORT to match your elastic search setup
 + Run: **composer install** or **php composer.phar install** depening on your setup to install composer requirements
 + Run: **npm install** to install NPM requirements
++ Run: **npm run build** to copy and build the components from app to www
