@@ -6,7 +6,7 @@ To use all of the tools contained within, you require at least the following:
 
 + MySQL 5.5+ (https://www.mysql.com/)
 + PHP 5.5.9+ (http://www.php.net/)
-+ PHP Mycrpt
++ PHP Mycrpt, PHP CURL
 + NPM (https://www.npmjs.com/)
 + Composer (https://getcomposer.org/)
 + Lessc (to modify the look and feel of the site easily, directly in the .less files) (http://lesscss.org/)
