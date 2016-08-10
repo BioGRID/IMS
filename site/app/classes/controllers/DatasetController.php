@@ -101,6 +101,7 @@ class DatasetController extends lib\Controller {
 					"AVAILABILITY_LABEL" => $dataset['AVAILABILITY_LABEL'],
 					"WEB_URL" => WEB_URL,
 					"WIKI_URL" => WIKI_URL,
+					"IMG_URL" => IMG_URL,
 					"DATASET_SOURCE_ID" => $dataset['ANNOTATION']['ID'],
 					"TYPE_NAME" => $dataset['TYPE_NAME'],
 					"STATUS_LABEL" => $dataset['HISTORY_LABEL'],
@@ -111,7 +112,8 @@ class DatasetController extends lib\Controller {
 					"SUBSECTIONS" => $subSections,
 					"INTERACTIONTYPES" => $interactionTypeHASH,
 					"SHOW_ACCESSED" => "hidden",
-					"SHOW_INPROGRESS" => "hidden"
+					"SHOW_INPROGRESS" => "hidden",
+					"LINKOUTS" => $dataset['ANNOTATION']['LINKOUTS']
 				);
 				
 				$this->headerParams->set( "CANONICAL", "<link rel='canonical' href='" . WEB_URL . "' />" );
