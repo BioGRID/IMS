@@ -384,7 +384,7 @@ class Datasets {
 			$linkouts[] = array( "URL" => "http://dx.doi.org/" . $pubmedRecord->pubmed_doi, "NAME" => "doi" );
 		}
 		
-		$linkouts[] = array( "URL" => "http://www.yeastgenome.org/reference/" . $pubmedRecord->pubmed_id, "NAME" => "sgd" );
+		$linkouts[] = array( "URL" => "http://www.yeastgenome.org/reference/" . $pubmedRecord->pubmed_id . "/overview", "NAME" => "sgd" );
 		
 		// Fetch Mappings we have downloaded into the database
 		$stmt = $this->db->prepare( "SELECT external_database_id, external_database_url, external_database_name FROM " . DB_IMS . ".pubmed_mappings WHERE pubmed_id=?" );
