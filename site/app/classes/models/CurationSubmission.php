@@ -90,11 +90,47 @@ class CurationSubmission {
 					// game plan for processing. Game plan will be based
 					// on the values and fields stored
 					
-					// Build Participants
+					// Get a set of all Participant Blocks and their Members
+					$participantSets = array( );
+					$size = 0;
+					foreach( $this->blocks['PARTICIPANT'] as $block ) {
+						$participantMembers = $this->curatedData[$block]->getData( "members" );
+						
+						$setSize = sizeof( $participantMembers['DATA'] );
+						if( $setSize > $size ) {
+							$size = $setSize;
+						}
+						
+						$participantSets[] = $participantMembers['DATA'];
+						
+					}
+					
+					// Build Sets of Attributes Applied to Each Row
+					$attributesEach = array( );
+					if( isset( $this->blocks['ATTRIBUTE_EACH'] )) {
+						foreach( $this->blocks['ATTRIBUTE_EACH'] as $block ) {
+							$attributeMembers = $this->curatedData[$block]->getData( "" );
+							$attributesEach[] = $attributeMembers;
+						}
+					}
+		
+					// Build set of attributes applied to all rows
+					$attributesAll = array( );
+					if( isset( $this->blocks['ATTRIBUTE_ALL'] )) {
+						foreach( $this->blocks['ATTRIBUTE_ALL'] as $block ) {
+							$attributeMember = $this->curatedData[$block]->getData( "" );
+							foreach( $attributeMember["DATA"] as $entryID => $attributeDetails ) {
+								$attributesAll[] = $attributeDetails;
+							}
+						}
+					}
+					
+					// Process Interactions
 					if( $this->workflowSettings['CONFIG']['participant_method'] == "row" ) {
 						
 						// Create Participant Pairings
-						$participantList = $this->generateParticipantRowPairings( );
+						$participantList = $this->processRows( $participantSets, $attributesEach, $attributesAll, $size );
+						print_r( $participantList );
 							
 					}
 					
@@ -140,53 +176,14 @@ class CurationSubmission {
 	 * pairings
 	 */
 	 
-	private function generateParticipantRowPairings( ) {
-		
-		// Fetch all the sets of participant members
-		$participantSets = array( );
-		$size = 0;
-		foreach( $this->blocks['PARTICIPANT'] as $block ) {
-			$participantMembers = $this->curatedData[$block]->getData( "members" );
-			
-			$setSize = sizeof( $participantMembers['DATA'] );
-			if( $setSize > $size ) {
-				$size = $setSize;
-			}
-			
-			$participantSets[] = $participantMembers['DATA'];
-			
-		}
-		
-		// Fetch all the set of ATTRIBUTE_EACH
-		$attributesEach = array( );
-		if( isset( $this->blocks['ATTRIBUTE_EACH'] )) {
-			foreach( $this->blocks['ATTRIBUTE_EACH'] as $block ) {
-				$attributeMembers = $this->curatedData[$block]->getData( "" );
-				$attributesEach[] = $attributeMembers;
-			}
-		}
-		
-		//print_r( $attributesEach );
-		
-		// Build set of participants from ATTRIBUTE_ALL
-		$attributesAll = array( );
-		if( isset( $this->blocks['ATTRIBUTE_ALL'] )) {
-			foreach( $this->blocks['ATTRIBUTE_ALL'] as $block ) {
-				$attributeMember = $this->curatedData[$block]->getData( "" );
-				foreach( $attributeMember["DATA"] as $entryID => $attributeDetails ) {
-					$attributesAll[] = $attributeDetails;
-				}
-			}
-		}
-		
-		//print_r( $attributesAll );
+	private function processRows( $participantSets, $attributesEach, $attributesAll, $participantSize ) {
 		
 		// Step through each array and take either the matching 
 		// rows element or the first element in cases where only
 		// one entry is provided
 		
 		$participantList = array( );
-		for( $i = 0; $i < $size; $i++ ) {
+		for( $i = 0; $i < $participantSize; $i++ ) {
 			
 			$currentPair = array( );
 			$participantIDs = array( );

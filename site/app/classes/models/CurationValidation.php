@@ -84,12 +84,12 @@ class CurationValidation {
 	}
 	
 	/**
-	 * Process an ontology attribute and either return the existing
+	 * Process an attribute and either return the existing
 	 * attribute id, or add it and return the newly created attribute
 	 * id
 	 */
 	 
-	private function processOntologyAttribute( $termID, $attributeTypeID ) {
+	private function processAttribute( $termID, $attributeTypeID ) {
 		
 		$stmt = $this->db->prepare( "SELECT attribute_id FROM " . DB_IMS . ".attributes WHERE attribute_value=? AND attribute_type_id=? AND attribute_status='active'  LIMIT 1" );
 		$stmt->execute( array( $termID, $attributeTypeID ) );
@@ -119,7 +119,7 @@ class CurationValidation {
 		$ontologyTerm["ontology_term_official_id"] = $termOfficialID;
 	
 		// Check to see if the term is an attribute, if not, add it
-		$attributeID = $this->processOntologyAttribute( $termID, $attributeTypeID );
+		$attributeID = $this->processAttribute( $termID, $attributeTypeID );
 		$ontologyTerm["attribute_id"] = $attributeID;
 		$ontologyTerm["attribute_value"] = $termID;
 		$ontologyTerm["attribute_type_id"] = $attributeTypeID;
@@ -248,46 +248,83 @@ class CurationValidation {
 	 * values with a simple validation process
 	 */
 	 
-	private function validateQuantitiativeScores( $scores, $attributeID, $block, $curationCode, $isRequired = false ) {
+	private function validateQuantitiativeScores( $scores, $attributeTypeID, $block, $curationCode, $isRequired = false ) {
 		
 		$messages = array( );
 		$scoreSet = array( );
 		
-		$scoreList = explode( PHP_EOL, trim($scores) );
-		$lineCount = 1;
-		foreach( $scoreList as $score ) {
-			$score = trim( str_replace( array( ",", " " ), "", $score ) );
-			
-			if( !is_numeric( $score ) && $score != "-" ) {
-				$messages[] = $this->curationOps->generateError( "NON_NUMERIC", array( "score" => $score, "lines" => array( $lineCount ) ) );
-			}
-			
-			$scoreSet[] = $score;
-			$lineCount++;
-
-		}
-		
 		$status = "VALID";
-		if( sizeof( $messages ) > 0 ) {
-			$status = "ERROR";
+		
+		$scores = trim( $scores );
+		if( strlen( $scores ) <= 0 && $isRequired ) {
+			$messages[] = $this->curationOps->generateError( "REQUIRED", array( "blockName" => $this->blockName ));
+		} else if( strlen( $scores ) <= 0 ) {
+			// DO NOTHING, CAUSE IT"S EMPTY AND NOT REQUIRED
 		} else {
-			if( $isRequired ) {
-				if( sizeof( $scoreSet ) <= 0 ) {
-					array_unshift( $messages, $this->curationOps->generateError( "REQUIRED", array( "blockName" => $this->blockName ) ) );
-					$status = "ERROR";
+		
+			$scoreList = explode( PHP_EOL, $scores );
+			$lineCount = 1;
+			
+			foreach( $scoreList as $score ) {
+				$score = trim( str_replace( array( ",", " " ), "", $score ));
+				
+				if( !is_numeric( $score ) && $score != "-" ) {
+					$messages[] = $this->curationOps->generateError( "NON_NUMERIC", array( "score" => $score, "lines" => array( $lineCount ) ) );
 				}
-			} else {
-				if( sizeof( $scoreSet ) <= 0 ) {
-					$messages[] = $this->curationOps->generateError( "BLANK", array( "blockName" => $this->blockName ) );
-					$status = "WARNING";
-				} 
+					
+				$scoreSet[] = $this->processScore( $score, $attributeTypeID );
+				$lineCount++;
+
 			}
+			
+			$status = "VALID";
+			if( sizeof( $messages ) > 0 ) {
+				$status = "ERROR";
+			} else {
+				if( $isRequired ) {
+					if( sizeof( $scoreSet ) <= 0 ) {
+						array_unshift( $messages, $this->curationOps->generateError( "REQUIRED", array( "blockName" => $this->blockName ) ) );
+						$status = "ERROR";
+					}
+				} else {
+					if( sizeof( $scoreSet ) <= 0 ) {
+						$messages[] = $this->curationOps->generateError( "BLANK", array( "blockName" => $this->blockName ) );
+						$status = "WARNING";
+					} 
+				}
+			}
+			
 		}
 	
 		// INSERT/UPDATE IT IN THE DATABASE
-		$this->updateCurationEntries( $curationCode, $status, $block, $scoreSet, "attribute", "-", $attributeID, $isRequired );
+		$this->updateCurationEntries( $curationCode, $status, $block, $scoreSet, "attribute", "-", $attributeTypeID, $isRequired );
 		
 		return array( "STATUS" => $status, "ERRORS" => $messages );
+		
+	}
+	
+	/**
+	 * Process a quantitiative score 
+	 */
+	 
+	private function processScore( $score, $attributeTypeID ) {
+		
+		$formattedScore = array( );
+		$formattedScore["ontology_term_id"] = "0";
+		$formattedScore["ontology_term_official_id"] = "0";
+		
+		// Add basic score info
+		$formattedScore["attribute_value"] = $score;
+		$formattedScore["attribute_type_id"] = $attributeTypeID;
+	
+		// Get details about attribute type from attributeTypeInfo lookup
+		$attributeTypeInfo = $this->attributeTypeInfo[$attributeTypeID];
+		$formattedScore["attribute_type_name"] = $attributeTypeInfo->attribute_type_name;
+		$formattedScore["attribute_type_shortcode"] = $attributeTypeInfo->attribute_type_shortcode;
+		$formattedScore["attribute_type_category_id"] = $attributeTypeInfo->attribute_type_category_id;
+		$formattedScore["attribute_type_category_name"] = $attributeTypeInfo->attribute_type_category_name;
+		
+		return $formattedScore;
 		
 	}
 	
@@ -304,7 +341,8 @@ class CurationValidation {
 		foreach( $notesList as $note ) {
 			$note = $this->cleanText( $note );
 			if( strlen( $note ) > 0 ) {
-				$noteSet[] = $note;
+				$attributeID = $this->processAttribute( $note, "22" );
+				$noteSet[] = $this->processNote( $note ); 
 			}
 		}
 		
@@ -325,6 +363,33 @@ class CurationValidation {
 		$this->updateCurationEntries( $curationCode, $status, $block, $noteSet, "attribute", "-", "22", $isRequired );
 		
 		return array( "STATUS" => $status, "ERRORS" => $messages );
+		
+	}
+	
+	/**
+	 * Process each note into a formatted record
+	 */
+	 
+	private function processNote( $note ) {
+		
+		$formattedNote = array( );
+		$formattedNote["ontology_term_id"] = "0";
+		$formattedNote["ontology_term_official_id"] = "0";
+	
+		// Check to see if the note is an attribute, if not add it
+		$attributeID = $this->processAttribute( $note, "22" );
+		$formattedNote["attribute_id"] = $attributeID;
+		$formattedNote["attribute_value"] = $note;
+		$formattedNote["attribute_type_id"] = "22";
+	
+		// Get details about attribute type from attributeTypeInfo lookup
+		$attributeTypeInfo = $this->attributeTypeInfo["22"];
+		$formattedNote["attribute_type_name"] = $attributeTypeInfo->attribute_type_name;
+		$formattedNote["attribute_type_shortcode"] = $attributeTypeInfo->attribute_type_shortcode;
+		$formattedNote["attribute_type_category_id"] = $attributeTypeInfo->attribute_type_category_id;
+		$formattedNote["attribute_type_category_name"] = $attributeTypeInfo->attribute_type_category_name;
+		
+		return $formattedNote;
 		
 	}
 	
