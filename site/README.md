@@ -31,3 +31,16 @@ To use all of the tools contained within, you require at least the following:
 + Run: **composer install** or **php composer.phar install** depening on your setup to install composer requirements
 + Run: **npm install** to install NPM requirements
 + Run: **npm run build** to copy and build the components from app to www
+
+## Nginx/Apache Tweaks
++ If you intend to work with large inputs via the user interface or via the file uploader, you will need to make modifications to your web server configuration to increase memory availability for body size.
+    + NGINX: Add the following to your Server configuration for IMS 4: **client_max_body_size 128M;** (adjust this value as required)
+
+## PHP Configuration Tweaks
++ If you intend to work with large inputs via the user interface or via the file uploader, you will need to make modifications to your php configuration to increase memory availability.
+    + Modify the following variables as required in your php-fpm php.ini file (example settings): 
+		+ max_execution_time = 600
+		+ max_input_time = 60
+		+ memory_limit = 2000M
+		+ post_max_size = 128M
+		+ upload_max_filesize = 128M
