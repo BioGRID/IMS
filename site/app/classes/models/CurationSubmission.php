@@ -21,23 +21,31 @@ class CurationSubmission {
 	private $workflowSettings;
 	private $curatedData;
 	private $blocks;
+	private $annotation;
 	private $errors;
 	private $hashids;
 	private $lookups;
 	private $attributeHASH;
+	private $participantTypes;
+	private $participantRoles;
+	private $organismHASH;
 	
 	public function __construct( ) {
 		$this->db = new PDO( DB_CONNECT, DB_USER, DB_PASS );
 		$this->db->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
 		
 		$this->curationOps = new models\CurationOperations( );
-		$this->errors = array( );
-		
-		$this->blocks = array( );
 		$this->hashids = new utilities\Hashes( );
-		
 		$this->lookups = new models\Lookups( );
+		
+		$this->errors = array( );
+		$this->blocks = array( );
+		$this->annotation = array( );
+		
 		$this->attributeHASH = $this->lookups->buildAttributeTypeHASH( );
+		$this->participantTypes = $this->lookups->buildParticipantTypesHash( true );
+		$this->participantRoles = $this->lookups->buildParticipantRoleHash( );
+		$this->organismHASH = $this->lookups->buildOrganismHash( );
 		
 	}
 	
@@ -62,6 +70,11 @@ class CurationSubmission {
 				
 				// Fetch curation details from database
 				$this->curatedData = $this->fetchCurationSubmissionEntries( $options['curationCode'] );
+				
+				// Fetch annotation lookups for participants
+				foreach( $this->blocks['PARTICIPANT'] as $participantBlock ) {
+					$this->annotation[$participantBlock] = $this->curatedData[$participantBlock]->getData( "annotation" );
+				}
 				
 				// Determine the row count if we are doing a row
 				// based input by determining the largest participant
@@ -101,7 +114,7 @@ class CurationSubmission {
 							$size = $setSize;
 						}
 						
-						$participantSets[] = $participantMembers['DATA'];
+						$participantSets[$block] = $participantMembers['DATA'];
 						
 					}
 					
@@ -130,7 +143,6 @@ class CurationSubmission {
 						
 						// Create Participant Pairings
 						$participantList = $this->processRows( $participantSets, $attributesEach, $attributesAll, $size );
-						print_r( $participantList );
 							
 					}
 					
@@ -182,23 +194,21 @@ class CurationSubmission {
 		// rows element or the first element in cases where only
 		// one entry is provided
 		
+		print_r( $participantSets );
+		
 		$participantList = array( );
 		for( $i = 0; $i < $participantSize; $i++ ) {
 			
-			$currentPair = array( );
-			$participantIDs = array( );
-			$roleIDs = array( );
-			foreach( $participantSets as $participantSet ) {
+			$currentParticipants = array( );
+			foreach( $participantSets as $block => $participantSet ) {
 				if( isset( $participantSet[$i] )) {
-					$currentPair[] = $participantSet[$i];
-					$participantIDs[] = $participantSet[$i]['participant'];
-					$roleIDs[] = $participantSet[$i]['role'];
+					$currentParticipants[] = $this->processParticipant( $participantSet[$i], $block );
 				} else {
-					$currentPair[] = $participantSet[0];
-					$participantIDs[] = $participantSet[0]['participant'];
-					$roleIDs[] = $participantSet[0]['role']; 
+					$currentParticipants[] = $this->processParticipant( $participantSet[0], $block );
 				}
 			}
+			
+			print_r( $currentParticipants );
 			
 			// Add EACH Attributes
 			
@@ -206,11 +216,54 @@ class CurationSubmission {
 			// Add ALL Attributes
 			
 			// Add All Attributes
-			$participantList[] = array( "PARTICIPANTS" => $currentPair, "HASH" => $this->hashids->generateHash( $participantIDs, $roleIDs ) );
+			//$participantList[] = array( "PARTICIPANTS" => $currentPair, "HASH" => $this->hashids->generateHash( $participantIDs, $roleIDs ) );
 			
 		}
 		
 		return $participantList;
+		
+	}
+	
+	/**
+	 * Properly format a participant so it can be inserted into
+	 * elastic search
+	 */
+	 
+	private function processParticipant( $participant, $block ) {
+		
+		$formattedParticipant = array( );
+		$formattedParticipant['participant_id'] = $participant['participant'];
+		$formattedParticipant['participant_role_id'] = $participant['role'];
+		$formattedParticipant['participant_role_name'] = $this->participantRoles[$participant['role']];
+		$formattedParticipant['participant_type_id'] = $participant['type'];
+		$formattedParticipant['participant_type_name'] = $this->participantTypes[$participant['type']];
+		
+		// ANNOTATION HERE
+		
+		if( isset( $this->annotation[$block]['DATA'][$participant['id']] )) {
+			$participantAnnotation = $this->annotation[$block]['DATA'][$participant['id']];
+			$formattedParticipant['primary_name'] = $participantAnnotation['primary_name'];
+			$formattedParticipant['systematic_name'] = $participantAnnotation['systematic_name'];
+			$formattedParticipant['aliases'] = $participantAnnotation['aliases'];
+			$formattedParticipant['organism_id'] = $participantAnnotation['organism_id'];
+			$formattedParticipant['organism_official_name'] = $participantAnnotation['organism_official_name'];
+			$formattedParticipant['organism_abbreviation'] = $participantAnnotation['organism_abbreviation'];
+			$formattedParticipant['organism_strain'] = $participantAnnotation['organism_strain'];
+		} else {
+			$formattedParticipant['primary_name'] = $participant['identifier'];
+			$formattedParticipant['systematic_name'] = "-";
+			$formattedParticipant['aliases'] = array( $participant['identifier'] );
+			
+			$orgInfo = $this->organismHASH[$participant['taxa']];
+			$formattedParticipant['organism_id'] = $orgInfo['organism_id'];
+			$formattedParticipant['organism_official_name'] = $orgInfo['organism_official_name'];
+			$formattedParticipant['organism_abbreviation'] = $orgInfo['organism_abbreviation'];
+			$formattedParticipant['organism_strain'] = $orgInfo['organism_strain'];
+		}
+	
+		$formattedParticipant['attributes'] = array( );
+		
+		return $formattedParticipant;
 		
 	}
 	

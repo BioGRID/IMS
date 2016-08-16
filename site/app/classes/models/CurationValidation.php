@@ -83,29 +83,7 @@ class CurationValidation {
 		
 	}
 	
-	/**
-	 * Process an attribute and either return the existing
-	 * attribute id, or add it and return the newly created attribute
-	 * id
-	 */
-	 
-	private function processAttribute( $termID, $attributeTypeID ) {
-		
-		$stmt = $this->db->prepare( "SELECT attribute_id FROM " . DB_IMS . ".attributes WHERE attribute_value=? AND attribute_type_id=? AND attribute_status='active'  LIMIT 1" );
-		$stmt->execute( array( $termID, $attributeTypeID ) );
-		
-		if( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
-			return $row->attribute_id;
-		} 
-		
-		$stmt = $this->db->prepare( "INSERT INTO " . DB_IMS . ".attributes VALUES ( '0',?,?,NOW( ),'active' )" );
-		$stmt->execute( array( $termID, $attributeTypeID ) );
-		
-		$attributeID = $this->db->lastInsertId( );
-		
-		return $attributeID;
-		
-	}
+
 	
 	/** 
 	 * Get an ontology term annotated with relevant details
@@ -119,7 +97,7 @@ class CurationValidation {
 		$ontologyTerm["ontology_term_official_id"] = $termOfficialID;
 	
 		// Check to see if the term is an attribute, if not, add it
-		$attributeID = $this->processAttribute( $termID, $attributeTypeID );
+		$attributeID = $this->curationOps->processAttribute( $termID, $attributeTypeID );
 		$ontologyTerm["attribute_id"] = $attributeID;
 		$ontologyTerm["attribute_value"] = $termID;
 		$ontologyTerm["attribute_type_id"] = $attributeTypeID;
@@ -341,7 +319,7 @@ class CurationValidation {
 		foreach( $notesList as $note ) {
 			$note = $this->cleanText( $note );
 			if( strlen( $note ) > 0 ) {
-				$attributeID = $this->processAttribute( $note, "22" );
+				$attributeID = $this->curationOps->processAttribute( $note, "22" );
 				$noteSet[] = $this->processNote( $note ); 
 			}
 		}
@@ -377,7 +355,7 @@ class CurationValidation {
 		$formattedNote["ontology_term_official_id"] = "0";
 	
 		// Check to see if the note is an attribute, if not add it
-		$attributeID = $this->processAttribute( $note, "22" );
+		$attributeID = $this->curationOps->processAttribute( $note, "22" );
 		$formattedNote["attribute_id"] = $attributeID;
 		$formattedNote["attribute_value"] = $note;
 		$formattedNote["attribute_type_id"] = "22";
@@ -545,7 +523,7 @@ class CurationValidation {
 					$participantID = $unknownParticipantHASH[$hashIndex];
 					
 					$warningList[$identifier][] = $lineCount;
-					$mapping[] = array( "id" => "", "key" => $identifier, "status" => "UNKNOWN", "role" => $role, "type" => $type, "participant" => $participantID );
+					$mapping[] = array( "id" => "", "key" => $identifier . "|" . $taxa, "identifier" => $identifier, "status" => "UNKNOWN", "role" => $role, "type" => "5", "participant" => $participantID, "taxa" => $taxa );
 					$counts["UNKNOWN"]++;
 					
 				} else if( sizeof( $termIDs ) > 1 ) {
@@ -556,14 +534,14 @@ class CurationValidation {
 					}
 					
 					$errorList[$identifier][] = $lineCount;
-					$mapping[] = array( "id" => "", "key" => $identifier, "status" => "AMBIGUOUS", "role" => $role, "type" => $type );
+					$mapping[] = array( "id" => "", "key" => $identifier . "|" . $taxa, "identifier" => $identifier, "status" => "AMBIGUOUS", "role" => $role, "type" => $type, "taxa" => $taxa );
 					$counts["AMBIGUOUS"]++;
 					
 				} else {
 					// VALID MAPPING
 					$termID = current( $termIDs );
 					$termAnn = $annotationSet[$termID];
-					$mapping[] = array( "id" => $termID, "key" => $identifier, "status" => "VALID", "role" => $role, "type" => $type, "participant" => $termAnn['participant_id'] );
+					$mapping[] = array( "id" => $termID, "key" => $identifier . "|" . $taxa, "identifier" => $identifier, "status" => "VALID", "role" => $role, "type" => $type, "participant" => $termAnn['participant_id'], "taxa" => $taxa );
 					$counts["VALID"]++;
 				}
 				
@@ -708,6 +686,7 @@ class CurationValidation {
 					
 					$annotation['primary_name'] = $row->official_symbol;
 					$annotation['aliases'][] = $annotation['primary_name'];
+					$annotation['systematic_name'] = $row->systematic_name;
 					
 					if( $row->systematic_name != "-" ) {
 						$annotation['systematic_name'] = $row->systematic_name;
@@ -719,9 +698,10 @@ class CurationValidation {
 					$annotation['organism_abbreviation'] = $row->organism_abbreviation;
 					
 					if( $row->organism_strain != "-" ) {
-						$annotation['organism_abbreviation'] .= " (" . $row->organism_strain . ")";
-						$annotation['organism_strain'] = $row->organism_strain;
+						$annotation['organism_abbreviation'] .= " (" . $row->organism_strain . ")";	
 					}
+					
+					$annotation['organism_strain'] = $row->organism_strain;
 					
 					// Get a participant ID out of the database
 					// and store it for quicker processing later on

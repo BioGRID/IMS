@@ -26,6 +26,30 @@ class CurationOperations {
 	}
 	
 	/**
+	 * Process an attribute and either return the existing
+	 * attribute id, or add it and return the newly created attribute
+	 * id
+	 */
+	 
+	public function processAttribute( $termID, $attributeTypeID ) {
+		
+		$stmt = $this->db->prepare( "SELECT attribute_id FROM " . DB_IMS . ".attributes WHERE attribute_value=? AND attribute_type_id=? AND attribute_status='active'  LIMIT 1" );
+		$stmt->execute( array( $termID, $attributeTypeID ) );
+		
+		if( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			return $row->attribute_id;
+		} 
+		
+		$stmt = $this->db->prepare( "INSERT INTO " . DB_IMS . ".attributes VALUES ( '0',?,?,NOW( ),'active' )" );
+		$stmt->execute( array( $termID, $attributeTypeID ) );
+		
+		$attributeID = $this->db->lastInsertId( );
+		
+		return $attributeID;
+		
+	}
+	
+	/**
 	 * Fetch a configuration for a curation workflow based on the type
 	 * of curation about to be performed.
 	 */
