@@ -29,6 +29,7 @@ class CurationSubmission {
 	private $participantTypes;
 	private $participantRoles;
 	private $organismHASH;
+	private $interactionTypes;
 	
 	public function __construct( ) {
 		$this->db = new PDO( DB_CONNECT, DB_USER, DB_PASS );
@@ -46,6 +47,7 @@ class CurationSubmission {
 		$this->participantTypes = $this->lookups->buildParticipantTypesHash( true );
 		$this->participantRoles = $this->lookups->buildParticipantRoleHash( );
 		$this->organismHASH = $this->lookups->buildOrganismHash( );
+		$this->interactionTypes = $this->lookups->buildInteractionTypeHash( );
 		
 	}
 	
@@ -103,6 +105,9 @@ class CurationSubmission {
 					// game plan for processing. Game plan will be based
 					// on the values and fields stored
 					
+					// Get a base interaction representation
+					$baseInt = $this->processInteraction( $options );
+					
 					// Get a set of all Participant Blocks and their Members
 					$participantSets = array( );
 					$size = 0;
@@ -142,7 +147,7 @@ class CurationSubmission {
 					if( $this->workflowSettings['CONFIG']['participant_method'] == "row" ) {
 						
 						// Create Participant Pairings
-						$participantList = $this->processRows( $participantSets, $attributesEach, $attributesAll, $size );
+						$participantList = $this->processRows( $participantSets, $attributesEach, $attributesAll, $size, $baseInt );
 							
 					}
 					
@@ -188,32 +193,57 @@ class CurationSubmission {
 	 * pairings
 	 */
 	 
-	private function processRows( $participantSets, $attributesEach, $attributesAll, $participantSize ) {
+	private function processRows( $participantSets, $attributesEach, $attributesAll, $participantSize, $baseInt ) {
 		
 		// Step through each array and take either the matching 
 		// rows element or the first element in cases where only
 		// one entry is provided
 		
-		print_r( $participantSets );
+		//print_r( $participantSets );
+		//print_r( $attributesEach );
 		
 		$participantList = array( );
 		for( $i = 0; $i < $participantSize; $i++ ) {
 			
-			$currentParticipants = array( );
+			$interaction = $baseInt;
+			
+			$participants = array( );
 			foreach( $participantSets as $block => $participantSet ) {
+				
+				$currentParticipant = "";
 				if( isset( $participantSet[$i] )) {
-					$currentParticipants[] = $this->processParticipant( $participantSet[$i], $block );
+					$currentParticipant = $participantSet[$i];
 				} else {
-					$currentParticipants[] = $this->processParticipant( $participantSet[0], $block );
+					$currentParticipant = $participantSet[0];
 				}
+				
+				$processedParticipant = $this->processParticipant( $currentParticipant, $block );
+				
+				// If one participant is unknown it is an erroroneous 
+				// interaction that is being added
+				if( strtoupper($currentParticipant['status']) == "UNKNOWN" ) {
+					$interaction['interaction_state'] = "error";
+				}
+				
+				$participants[] = $processedParticipant;
+				
 			}
 			
-			print_r( $currentParticipants );
+			$interaction['participants'] = $participants;
+			
 			
 			// Add EACH Attributes
-			
+			foreach( $attributesEach as $attributeSet ) {
+				$interaction['attributes'][] = $attributeSet['DATA'][$i];
+			}
 			
 			// Add ALL Attributes
+			foreach( $attributesAll as $attribute ) {
+				$interaction['attributes'][] = $attribute;
+			}
+			
+			// Insert into Elastic Search
+			print_r( $interaction );
 			
 			// Add All Attributes
 			//$participantList[] = array( "PARTICIPANTS" => $currentPair, "HASH" => $this->hashids->generateHash( $participantIDs, $roleIDs ) );
@@ -222,6 +252,31 @@ class CurationSubmission {
 		
 		return $participantList;
 		
+	}
+	
+	/**
+	 * Create the base details about an interaction
+	 */
+	 
+	private function processInteraction( $options ) {
+		
+		
+		
+		$interaction = array( 
+			"interaction_id" => 0,
+			"dataset_id" => $options['datasetID'],
+			"interaction_type_id" => $options['curationType'],
+			"interaction_type_name" => $this->interactionTypes[$options['curationType']],
+			"interaction_state" => "normal",
+			"history_status" => "ACTIVATED",
+			"history_user_id" => $_SESSION['IMS_USER']['ID'],
+			"history_user_name" => $_SESSION['IMS_USER']['FIRSTNAME'] . " " . $_SESSION['IMS_USER']['LASTNAME'],
+			"history_date" => "",
+			"attributes" => array( ),
+			"participants" => array( )
+		);
+		
+		return $interaction;
 	}
 	
 	/**

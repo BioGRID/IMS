@@ -118,6 +118,7 @@
 					"invalidBlocks" : JSON.stringify( invalidBlocks ),
 					"curationType" : $("#curationType").val( ),
 					"curationCode" : $("#curationCode").val( ),
+					"datasetID" : $("#datasetID").val( ),
 					"script" : 'submitCuratedDataset'
 				};
 
