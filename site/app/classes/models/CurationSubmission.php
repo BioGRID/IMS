@@ -123,7 +123,7 @@ class CurationSubmission {
 						
 					}
 					
-					// Build Sets of Attributes Applied to Each Row
+					// Build Sets of Attributes Applied to EACH Row
 					$attributesEach = array( );
 					if( isset( $this->blocks['ATTRIBUTE_EACH'] )) {
 						foreach( $this->blocks['ATTRIBUTE_EACH'] as $block ) {
@@ -132,7 +132,7 @@ class CurationSubmission {
 						}
 					}
 		
-					// Build set of attributes applied to all rows
+					// Build set of attributes applied to ALL rows
 					$attributesAll = array( );
 					if( isset( $this->blocks['ATTRIBUTE_ALL'] )) {
 						foreach( $this->blocks['ATTRIBUTE_ALL'] as $block ) {
@@ -231,15 +231,20 @@ class CurationSubmission {
 			
 			$interaction['participants'] = $participants;
 			
-			
 			// Add EACH Attributes
 			foreach( $attributesEach as $attributeSet ) {
 				$interaction['attributes'][] = $attributeSet['DATA'][$i];
+				foreach( $attributeSet['DATA'][$i]['attributes'] as $subAttribute ) {
+					$interaction['attributes'][] = $subAttribute;
+				}
 			}
 			
 			// Add ALL Attributes
 			foreach( $attributesAll as $attribute ) {
 				$interaction['attributes'][] = $attribute;
+				foreach( $attribute['attributes'] as $subAttribute ) {
+					$interaction['attributes'][] = $subAttribute;
+				}
 			}
 			
 			// Insert into Elastic Search
@@ -259,8 +264,6 @@ class CurationSubmission {
 	 */
 	 
 	private function processInteraction( $options ) {
-		
-		
 		
 		$interaction = array( 
 			"interaction_id" => 0,
@@ -287,6 +290,7 @@ class CurationSubmission {
 	private function processParticipant( $participant, $block ) {
 		
 		$formattedParticipant = array( );
+		$formattedParticipant['interaction_participant_id'] = "0";
 		$formattedParticipant['participant_id'] = $participant['participant'];
 		$formattedParticipant['participant_role_id'] = $participant['role'];
 		$formattedParticipant['participant_role_name'] = $this->participantRoles[$participant['role']];

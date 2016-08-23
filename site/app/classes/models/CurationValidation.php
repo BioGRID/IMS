@@ -90,16 +90,17 @@ class CurationValidation {
 	 * to prepare it for easy insertion into the database
 	 */
 	 
-	private function processOntologyTerm( $termID, $termOfficialID, $attributeTypeID ) {
+	private function processOntologyTerm( $termID, $termOfficialID, $termName, $attributeTypeID, $attributeParent = 0 ) {
 		
 		$ontologyTerm = array( );
-		$ontologyTerm["ontology_term_id"] = $termID;
-		$ontologyTerm["ontology_term_official_id"] = $termOfficialID;
-	
+		
+		$ontologyTerm["interaction_attribute_id"] = "0";
+		$ontologyTerm["interaction_attribute_parent_id"] = $attributeParent;
+		
 		// Check to see if the term is an attribute, if not, add it
 		$attributeID = $this->curationOps->processAttribute( $termID, $attributeTypeID );
 		$ontologyTerm["attribute_id"] = $attributeID;
-		$ontologyTerm["attribute_value"] = $termID;
+		$ontologyTerm["attribute_value"] = $termName;
 		$ontologyTerm["attribute_type_id"] = $attributeTypeID;
 	
 		// Get details about attribute type from attributeTypeInfo lookup
@@ -108,6 +109,16 @@ class CurationValidation {
 		$ontologyTerm["attribute_type_shortcode"] = $attributeTypeInfo->attribute_type_shortcode;
 		$ontologyTerm["attribute_type_category_id"] = $attributeTypeInfo->attribute_type_category_id;
 		$ontologyTerm["attribute_type_category_name"] = $attributeTypeInfo->attribute_type_category_name;
+		
+		// Add User Info
+		$ontologyTerm["attribute_user_id"] = $_SESSION['IMS_USER']['ID'];
+		$ontologyTerm["attribute_user_name"] = $_SESSION['IMS_USER']['FIRSTNAME'] . " " . $_SESSION['IMS_USER']['LASTNAME'];
+		$ontologyTerm["attribute_addeddate"] = date( 'Y/m/d H:i:s', strtotime( "now" ));
+		
+		$ontologyTerm["ontology_term_id"] = $termID;
+		$ontologyTerm["ontology_term_official_id"] = $termOfficialID;
+		
+		$ontologyTerm["attributes"] = array( );
 		
 		return $ontologyTerm;
 		
@@ -189,18 +200,14 @@ class CurationValidation {
 					} else {
 						
 						// Process ontology Term
-						$ontologyTerm = $this->processOntologyTerm( $termDetails->ontology_term_id, $termDetails->ontology_term_official_id, $attributeTypeID );
-						
-						// Ensure no terms have warning when they should have a qualifier? Maybe do this in JS... May not be needed?!?!
+						$ontologyTerm = $this->processOntologyTerm( $termDetails->ontology_term_id, $termDetails->ontology_term_official_id, $termDetails->ontology_term_name, $attributeTypeID, "0" );
 					
 						// Process through the list of qualifiers
 						foreach( $qualifiers as $qualifier ) {
 							$qualDetails = $this->fetchOntologyTermDetails( $qualifier );
-							$qualifierTerm = $this->processOntologyTerm( $qualDetails->ontology_term_id, $qualDetails->ontology_term_official_id, "31" );
-							if( !isset( $ontologyTerm["qualifiers"] ) ) {
-								$ontologyTerm["qualifiers"] = array( );
-							}
-							$ontologyTerm["qualifiers"][] = $qualifierTerm;
+							$qualifierTerm = $this->processOntologyTerm( $qualDetails->ontology_term_id, $qualDetails->ontology_term_official_id, $qualDetails->ontology_term_name, "31", $ontologyTerm["attribute_id"] );
+							
+							$ontologyTerm["attributes"][] = $qualifierTerm;
 						}
 					
 						// Add completed terms and their qualifiers to the ontologyTermSet
@@ -288,10 +295,11 @@ class CurationValidation {
 	private function processScore( $score, $attributeTypeID ) {
 		
 		$formattedScore = array( );
-		$formattedScore["ontology_term_id"] = "0";
-		$formattedScore["ontology_term_official_id"] = "0";
+		$formattedScore["interaction_attribute_id"] = "0";
+		$formattedScore["interaction_attribute_parent_id"] = "0";
 		
 		// Add basic score info
+		$formattedScore["attribute_id"] = 0;
 		$formattedScore["attribute_value"] = $score;
 		$formattedScore["attribute_type_id"] = $attributeTypeID;
 	
@@ -301,6 +309,16 @@ class CurationValidation {
 		$formattedScore["attribute_type_shortcode"] = $attributeTypeInfo->attribute_type_shortcode;
 		$formattedScore["attribute_type_category_id"] = $attributeTypeInfo->attribute_type_category_id;
 		$formattedScore["attribute_type_category_name"] = $attributeTypeInfo->attribute_type_category_name;
+		
+		// Add User Info
+		$formattedScore["attribute_user_id"] = $_SESSION['IMS_USER']['ID'];
+		$formattedScore["attribute_user_name"] = $_SESSION['IMS_USER']['FIRSTNAME'] . " " . $_SESSION['IMS_USER']['LASTNAME'];
+		$formattedScore["attribute_addeddate"] = date( 'Y/m/d H:i:s', strtotime( "now" ));
+		
+		$formattedScore["ontology_term_id"] = "0";
+		$formattedScore["ontology_term_official_id"] = "0";
+		
+		$formattedScore["attributes"] = array( );
 		
 		return $formattedScore;
 		
@@ -351,8 +369,8 @@ class CurationValidation {
 	private function processNote( $note ) {
 		
 		$formattedNote = array( );
-		$formattedNote["ontology_term_id"] = "0";
-		$formattedNote["ontology_term_official_id"] = "0";
+		$formattedNote["interaction_attribute_id"] = "0";
+		$formattedNote["interaction_attribute_parent_id"] = "0";
 	
 		// Check to see if the note is an attribute, if not add it
 		$attributeID = $this->curationOps->processAttribute( $note, "22" );
@@ -366,6 +384,16 @@ class CurationValidation {
 		$formattedNote["attribute_type_shortcode"] = $attributeTypeInfo->attribute_type_shortcode;
 		$formattedNote["attribute_type_category_id"] = $attributeTypeInfo->attribute_type_category_id;
 		$formattedNote["attribute_type_category_name"] = $attributeTypeInfo->attribute_type_category_name;
+		
+		// Add User Info
+		$formattedNote["attribute_user_id"] = $_SESSION['IMS_USER']['ID'];
+		$formattedNote["attribute_user_name"] = $_SESSION['IMS_USER']['FIRSTNAME'] . " " . $_SESSION['IMS_USER']['LASTNAME'];
+		$formattedNote["attribute_addeddate"] = date( 'Y/m/d H:i:s', strtotime( "now" ));
+		
+		$formattedNote["ontology_term_id"] = "0";
+		$formattedNote["ontology_term_official_id"] = "0";
+		
+		$formattedNote["attributes"] = array( );
 		
 		return $formattedNote;
 		
