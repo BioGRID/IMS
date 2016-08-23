@@ -65,6 +65,26 @@ class Hashes( ) :
 			
 		self.db.commit( )
 		
+	def createParticipantHashByInteractionID( self, interactionID ) :
+	
+		"""Create Single Interaction Participant and Participant Roles Hash"""
+		
+		intCount = 0
+		
+		self.cursor.execute( "SELECT interaction_id FROM " + Config.DB_IMS + ".interactions WHERE interaction_id=%s", [interactionID] )
+		row = self.cursor.fetchone( )
+		
+		self.cursor.execute( "SELECT participant_id, participant_role_id FROM " + Config.DB_IMS + ".interaction_participants WHERE interaction_id=%s AND interaction_participant_status='active'", [row['interaction_id']] )
+		
+		participantList = []
+		for partRow in self.cursor.fetchall( ) :
+			participantList.append( self.combineNumbers( partRow['participant_id'], partRow['participant_role_id'] ))
+		
+		participantList.sort( )
+		print participantList
+		
+		return self.hashids.encode( *participantList )
+		
 	def combineNumbers( self, num1, num2 ) :
 	
 		"""Combine two numbers into a single number with triple zero padding in the middle, not by addition"""

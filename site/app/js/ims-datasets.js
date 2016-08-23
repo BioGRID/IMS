@@ -131,6 +131,7 @@
 						url: baseURL + "/scripts/LoadInteractions.php",
 						type: 'POST',
 						data: function( d ) {  
+						
 							d.type = sectionType;
 							d.datasetID = dsetID; 
 							d.activated = sectionActivated;

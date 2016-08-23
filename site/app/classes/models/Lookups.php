@@ -114,6 +114,35 @@ class Lookups {
 	}
 	
 	/**
+	 * Build a hash that maps organism ids to a set of organism annotation
+	 */
+	 
+	public function buildOrganismHash( ) {
+		
+		$mappingHash = array( );
+		$stmt = $this->db->prepare( "SELECT organism_id, organism_official_name, organism_strain, organism_abbreviation FROM " . DB_QUICK . ".quick_organisms ORDER BY organism_official_name ASC" );
+		$stmt->execute( );
+		
+		while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			
+			$annotation = array( );
+			$annotation['organism_id'] = $row->organism_id;
+			$annotation['organism_official_name'] = $row->organism_official_name;
+			$annotation['organism_abbreviation'] = $row->organism_abbreviation;
+			
+			if( $row->organism_strain != "-" ) {
+				$annotation['organism_abbreviation'] .= " (" . $row->organism_strain . ")";	
+			}
+			
+			$annotation['organism_strain'] = $row->organism_strain;
+			$mappingHash[$row->organism_id] = $annotation;
+		}
+
+		return $mappingHash;
+		
+	}
+	
+	/**
 	 * Build a hash that maps organism ids to a organism name combo
 	 * so we can quickly get organisms in a list
 	 */

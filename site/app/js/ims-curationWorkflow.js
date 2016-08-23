@@ -118,6 +118,7 @@
 					"invalidBlocks" : JSON.stringify( invalidBlocks ),
 					"curationType" : $("#curationType").val( ),
 					"curationCode" : $("#curationCode").val( ),
+					"datasetID" : $("#datasetID").val( ),
 					"script" : 'submitCuratedDataset'
 				};
 
@@ -126,7 +127,7 @@
 					
 					url: base.data.baseURL + "/scripts/curation/Workflow.php",
 					method: "POST",
-					dataType: "json",
+					dataType: "html",
 					data: ajaxData,
 					beforeSend: function( ) {
 						$(".curationWorkflowDetails").html( "" );

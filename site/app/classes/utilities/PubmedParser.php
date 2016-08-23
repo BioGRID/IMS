@@ -19,7 +19,7 @@ class PubmedParser {
 	private $pubYear;
 	
 	public function __construct( ) {
-		$this->baseURL = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi";
+		$this->baseURL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi";
 		$this->params = array( );
 		$this->params['db'] = "pubmed";
 		$this->params['retMax'] = 1000000;

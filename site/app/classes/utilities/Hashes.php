@@ -40,6 +40,7 @@ class Hashes {
 		}
 		
 		sort( $combinedList, SORT_NUMERIC );
+		
 		return $this->hashids->encode( $combinedList );
 		
 	}

@@ -42,7 +42,13 @@
 	<div class='datasetContent'>
 	
 		<div class='datasetHeader'>
-			<div class='datasetLinkouts pull-right'>LINKOUTS {{ LINKOUTS }}</div>
+			<div class='datasetLinkouts pull-right'>
+				{% for LINKOUT in LINKOUTS %}
+					<a href='{{ LINKOUT.URL }}' title='{{ LINKOUT.NAME }} Linkout' target='_BLANK'>
+						<img src='{{ IMG_URL }}/linkouts/{{ LINKOUT.NAME }}.png' alt='{{ LINKOUT.NAME }} Linkout' class='datasetLinkoutImg' />
+					</a>
+				{% endfor %}
+			</div>
 			<h2 class='heading-line marginBotSm'>{{ TYPE_NAME }} ({{ DATASET_SOURCE_ID }})</h2>
 			
 			<div class='container-fluid marginBotSm {{ SHOW_ACCESSED }}'>

@@ -358,10 +358,43 @@ class Datasets {
 			"STATUS" => $row->pubmed_status,
 			"ADDEDDATE" => $row->pubmed_addeddate,
 			"LASTUPDATED" => $row->pubmed_lastupdated,
-			"IS_ANNOTATED" => $row->pubmed_isannotated
+			"IS_ANNOTATED" => $row->pubmed_isannotated,
+			"LINKOUTS" => $this->fetchPubmedLinkouts( $row )
 		);
 		
 		return $annotation;
+		
+	}
+	
+	/**
+	 * Build a set of linkouts based on available information we have 
+	 * about this pubmed
+	 */
+	 
+	private function fetchPubmedLinkouts( $pubmedRecord ) {
+		
+		$linkouts = array( );
+		$linkouts[] = array( "URL" => "http://www.ncbi.nlm.nih.gov/pubmed/" . $pubmedRecord->pubmed_id, "NAME" => "pubmed" );
+		
+		if( $pubmedRecord->pubmed_pmcid != "-" ) {
+			$linkouts[] = array( "URL" => "http://www.ncbi.nlm.nih.gov/pmc/articles/" . $pubmedRecord->pubmed_pmcid, "NAME" => "pmc" );
+		}
+		
+		if( $pubmedRecord->pubmed_doi != "-" ) {
+			$linkouts[] = array( "URL" => "http://dx.doi.org/" . $pubmedRecord->pubmed_doi, "NAME" => "doi" );
+		}
+		
+		$linkouts[] = array( "URL" => "http://www.yeastgenome.org/reference/" . $pubmedRecord->pubmed_id . "/overview", "NAME" => "sgd" );
+		
+		// Fetch Mappings we have downloaded into the database
+		$stmt = $this->db->prepare( "SELECT external_database_id, external_database_url, external_database_name FROM " . DB_IMS . ".pubmed_mappings WHERE pubmed_id=?" );
+		$stmt->execute( array( $pubmedRecord->pubmed_id ) );
+		
+		while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			$linkouts[] = array( "URL" => $row->external_database_url . $row->external_database_id, "NAME" => strtolower( $row->external_database_name ));
+		}
+		
+		return $linkouts;
 		
 	}
 	
@@ -394,7 +427,8 @@ class Datasets {
 			"PUBMED_ID" => $row->prepub_pubmed_id,
 			"STATUS" => $row->prepub_status,
 			"ADDEDDATE" => $row->prepub_addeddate,
-			"LASTUPDATED" => $row->prepub_lastupdated
+			"LASTUPDATED" => $row->prepub_lastupdated,
+			"LINKOUTS" => array( )
 		);
 		
 		return $annotation;

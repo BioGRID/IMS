@@ -26,6 +26,30 @@ class CurationOperations {
 	}
 	
 	/**
+	 * Process an attribute and either return the existing
+	 * attribute id, or add it and return the newly created attribute
+	 * id
+	 */
+	 
+	public function processAttribute( $termID, $attributeTypeID ) {
+		
+		$stmt = $this->db->prepare( "SELECT attribute_id FROM " . DB_IMS . ".attributes WHERE attribute_value=? AND attribute_type_id=? AND attribute_status='active'  LIMIT 1" );
+		$stmt->execute( array( $termID, $attributeTypeID ) );
+		
+		if( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
+			return $row->attribute_id;
+		} 
+		
+		$stmt = $this->db->prepare( "INSERT INTO " . DB_IMS . ".attributes VALUES ( '0',?,?,NOW( ),'active' )" );
+		$stmt->execute( array( $termID, $attributeTypeID ) );
+		
+		$attributeID = $this->db->lastInsertId( );
+		
+		return $attributeID;
+		
+	}
+	
+	/**
 	 * Fetch a configuration for a curation workflow based on the type
 	 * of curation about to be performed.
 	 */
@@ -180,6 +204,9 @@ class CurationOperations {
 				
 			case "SINGLE_EQUAL" :
 				return array( "class" => "danger", "message" => "Your data was not submitted because <strong>" . $details['testBlockName'] . "</strong> or <strong>" . $details['compareBlockName'] . "</strong> must contain only a single entry (which will be repeated automatically) or <strong>" . $details['testBlockName'] . "</strong> must contain the exact same number of entries as <strong>" . $details['compareBlockName'] . "</strong>. Currently, <strong>" . $details['testBlockName'] . "</strong> contains <strong> " . $details['testBlockSize'] . "</strong> entries and <strong>" . $details['compareBlockName'] . "</strong> contains <strong> " . $details['compareBlockSize'] . "</strong> entries" );
+				
+			case "QUANT_COUNT" :
+				return array( "class" => "danger", "message" => "Your data was not submitted because <strong>" . $details['quantName'] . "</strong> must contain the same number of entries as the number of participants. Currently, <strong>" . $details['quantName'] . "</strong> contains <strong> " . $details['quantSize'] . "</strong> entries but you are entering <strong> " . $details['participantSize'] . "</strong> participants." );
 
 			default:
 				return array( "class" => "danger", "message" => "An unknown error has occurred." );

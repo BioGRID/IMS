@@ -83,45 +83,24 @@ class CurationValidation {
 		
 	}
 	
-	/**
-	 * Process an ontology attribute and either return the existing
-	 * attribute id, or add it and return the newly created attribute
-	 * id
-	 */
-	 
-	private function processOntologyAttribute( $termID, $attributeTypeID ) {
-		
-		$stmt = $this->db->prepare( "SELECT attribute_id FROM " . DB_IMS . ".attributes WHERE attribute_value=? AND attribute_type_id=? AND attribute_status='active'  LIMIT 1" );
-		$stmt->execute( array( $termID, $attributeTypeID ) );
-		
-		if( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
-			return $row->attribute_id;
-		} 
-		
-		$stmt = $this->db->prepare( "INSERT INTO " . DB_IMS . ".attributes VALUES ( '0',?,?,NOW( ),'active' )" );
-		$stmt->execute( array( $termID, $attributeTypeID ) );
-		
-		$attributeID = $this->db->lastInsertId( );
-		
-		return $attributeID;
-		
-	}
+
 	
 	/** 
 	 * Get an ontology term annotated with relevant details
 	 * to prepare it for easy insertion into the database
 	 */
 	 
-	private function processOntologyTerm( $termID, $termOfficialID, $attributeTypeID ) {
+	private function processOntologyTerm( $termID, $termOfficialID, $termName, $attributeTypeID, $attributeParent = 0 ) {
 		
 		$ontologyTerm = array( );
-		$ontologyTerm["ontology_term_id"] = $termID;
-		$ontologyTerm["ontology_term_official_id"] = $termOfficialID;
-	
+		
+		$ontologyTerm["interaction_attribute_id"] = "0";
+		$ontologyTerm["interaction_attribute_parent_id"] = $attributeParent;
+		
 		// Check to see if the term is an attribute, if not, add it
-		$attributeID = $this->processOntologyAttribute( $termID, $attributeTypeID );
+		$attributeID = $this->curationOps->processAttribute( $termID, $attributeTypeID );
 		$ontologyTerm["attribute_id"] = $attributeID;
-		$ontologyTerm["attribute_value"] = $termID;
+		$ontologyTerm["attribute_value"] = $termName;
 		$ontologyTerm["attribute_type_id"] = $attributeTypeID;
 	
 		// Get details about attribute type from attributeTypeInfo lookup
@@ -130,6 +109,16 @@ class CurationValidation {
 		$ontologyTerm["attribute_type_shortcode"] = $attributeTypeInfo->attribute_type_shortcode;
 		$ontologyTerm["attribute_type_category_id"] = $attributeTypeInfo->attribute_type_category_id;
 		$ontologyTerm["attribute_type_category_name"] = $attributeTypeInfo->attribute_type_category_name;
+		
+		// Add User Info
+		$ontologyTerm["attribute_user_id"] = $_SESSION['IMS_USER']['ID'];
+		$ontologyTerm["attribute_user_name"] = $_SESSION['IMS_USER']['FIRSTNAME'] . " " . $_SESSION['IMS_USER']['LASTNAME'];
+		$ontologyTerm["attribute_addeddate"] = date( 'Y/m/d H:i:s', strtotime( "now" ));
+		
+		$ontologyTerm["ontology_term_id"] = $termID;
+		$ontologyTerm["ontology_term_official_id"] = $termOfficialID;
+		
+		$ontologyTerm["attributes"] = array( );
 		
 		return $ontologyTerm;
 		
@@ -211,17 +200,14 @@ class CurationValidation {
 					} else {
 						
 						// Process ontology Term
-						$ontologyTerm = $this->processOntologyTerm( $termDetails->ontology_term_id, $termDetails->ontology_term_official_id, $attributeTypeID );
-						
-						// Ensure no terms have warning when they should have a qualifier? Maybe do this in JS... May not be needed?!?!
+						$ontologyTerm = $this->processOntologyTerm( $termDetails->ontology_term_id, $termDetails->ontology_term_official_id, $termDetails->ontology_term_name, $attributeTypeID, "0" );
 					
 						// Process through the list of qualifiers
 						foreach( $qualifiers as $qualifier ) {
-							$qualifierTerm = $this->processOntologyTerm( $termDetails->ontology_term_id, $termDetails->ontology_term_official_id, "31" );
-							if( !isset( $ontologyTerm["qualifiers"] ) ) {
-								$ontologyTerm["qualifiers"] = array( );
-							}
-							$ontologyTerm["qualifiers"][] = $qualifierTerm;
+							$qualDetails = $this->fetchOntologyTermDetails( $qualifier );
+							$qualifierTerm = $this->processOntologyTerm( $qualDetails->ontology_term_id, $qualDetails->ontology_term_official_id, $qualDetails->ontology_term_name, "31", $ontologyTerm["attribute_id"] );
+							
+							$ontologyTerm["attributes"][] = $qualifierTerm;
 						}
 					
 						// Add completed terms and their qualifiers to the ontologyTermSet
@@ -247,46 +233,94 @@ class CurationValidation {
 	 * values with a simple validation process
 	 */
 	 
-	private function validateQuantitiativeScores( $scores, $attributeID, $block, $curationCode, $isRequired = false ) {
+	private function validateQuantitiativeScores( $scores, $attributeTypeID, $block, $curationCode, $isRequired = false ) {
 		
 		$messages = array( );
 		$scoreSet = array( );
 		
-		$scoreList = explode( PHP_EOL, trim($scores) );
-		$lineCount = 1;
-		foreach( $scoreList as $score ) {
-			$score = trim( str_replace( array( ",", " " ), "", $score ) );
-			
-			if( !is_numeric( $score ) && $score != "-" ) {
-				$messages[] = $this->curationOps->generateError( "NON_NUMERIC", array( "score" => $score, "lines" => array( $lineCount ) ) );
-			}
-			
-			$scoreSet[] = $score;
-			$lineCount++;
-
-		}
-		
 		$status = "VALID";
-		if( sizeof( $messages ) > 0 ) {
-			$status = "ERROR";
+		
+		$scores = trim( $scores );
+		if( strlen( $scores ) <= 0 && $isRequired ) {
+			$messages[] = $this->curationOps->generateError( "REQUIRED", array( "blockName" => $this->blockName ));
+		} else if( strlen( $scores ) <= 0 ) {
+			// DO NOTHING, CAUSE IT"S EMPTY AND NOT REQUIRED
 		} else {
-			if( $isRequired ) {
-				if( sizeof( $scoreSet ) <= 0 ) {
-					array_unshift( $messages, $this->curationOps->generateError( "REQUIRED", array( "blockName" => $this->blockName ) ) );
-					$status = "ERROR";
+		
+			$scoreList = explode( PHP_EOL, $scores );
+			$lineCount = 1;
+			
+			foreach( $scoreList as $score ) {
+				$score = trim( str_replace( array( ",", " " ), "", $score ));
+				
+				if( !is_numeric( $score ) && $score != "-" ) {
+					$messages[] = $this->curationOps->generateError( "NON_NUMERIC", array( "score" => $score, "lines" => array( $lineCount ) ) );
 				}
-			} else {
-				if( sizeof( $scoreSet ) <= 0 ) {
-					$messages[] = $this->curationOps->generateError( "BLANK", array( "blockName" => $this->blockName ) );
-					$status = "WARNING";
-				} 
+					
+				$scoreSet[] = $this->processScore( $score, $attributeTypeID );
+				$lineCount++;
+
 			}
+			
+			$status = "VALID";
+			if( sizeof( $messages ) > 0 ) {
+				$status = "ERROR";
+			} else {
+				if( $isRequired ) {
+					if( sizeof( $scoreSet ) <= 0 ) {
+						array_unshift( $messages, $this->curationOps->generateError( "REQUIRED", array( "blockName" => $this->blockName ) ) );
+						$status = "ERROR";
+					}
+				} else {
+					if( sizeof( $scoreSet ) <= 0 ) {
+						$messages[] = $this->curationOps->generateError( "BLANK", array( "blockName" => $this->blockName ) );
+						$status = "WARNING";
+					} 
+				}
+			}
+			
 		}
 	
 		// INSERT/UPDATE IT IN THE DATABASE
-		$this->updateCurationEntries( $curationCode, $status, $block, $scoreSet, "attribute", "-", $attributeID, $isRequired );
+		$this->updateCurationEntries( $curationCode, $status, $block, $scoreSet, "attribute", "-", $attributeTypeID, $isRequired );
 		
 		return array( "STATUS" => $status, "ERRORS" => $messages );
+		
+	}
+	
+	/**
+	 * Process a quantitiative score 
+	 */
+	 
+	private function processScore( $score, $attributeTypeID ) {
+		
+		$formattedScore = array( );
+		$formattedScore["interaction_attribute_id"] = "0";
+		$formattedScore["interaction_attribute_parent_id"] = "0";
+		
+		// Add basic score info
+		$formattedScore["attribute_id"] = 0;
+		$formattedScore["attribute_value"] = $score;
+		$formattedScore["attribute_type_id"] = $attributeTypeID;
+	
+		// Get details about attribute type from attributeTypeInfo lookup
+		$attributeTypeInfo = $this->attributeTypeInfo[$attributeTypeID];
+		$formattedScore["attribute_type_name"] = $attributeTypeInfo->attribute_type_name;
+		$formattedScore["attribute_type_shortcode"] = $attributeTypeInfo->attribute_type_shortcode;
+		$formattedScore["attribute_type_category_id"] = $attributeTypeInfo->attribute_type_category_id;
+		$formattedScore["attribute_type_category_name"] = $attributeTypeInfo->attribute_type_category_name;
+		
+		// Add User Info
+		$formattedScore["attribute_user_id"] = $_SESSION['IMS_USER']['ID'];
+		$formattedScore["attribute_user_name"] = $_SESSION['IMS_USER']['FIRSTNAME'] . " " . $_SESSION['IMS_USER']['LASTNAME'];
+		$formattedScore["attribute_addeddate"] = date( 'Y/m/d H:i:s', strtotime( "now" ));
+		
+		$formattedScore["ontology_term_id"] = "0";
+		$formattedScore["ontology_term_official_id"] = "0";
+		
+		$formattedScore["attributes"] = array( );
+		
+		return $formattedScore;
 		
 	}
 	
@@ -303,7 +337,8 @@ class CurationValidation {
 		foreach( $notesList as $note ) {
 			$note = $this->cleanText( $note );
 			if( strlen( $note ) > 0 ) {
-				$noteSet[] = $note;
+				$attributeID = $this->curationOps->processAttribute( $note, "22" );
+				$noteSet[] = $this->processNote( $note ); 
 			}
 		}
 		
@@ -324,6 +359,43 @@ class CurationValidation {
 		$this->updateCurationEntries( $curationCode, $status, $block, $noteSet, "attribute", "-", "22", $isRequired );
 		
 		return array( "STATUS" => $status, "ERRORS" => $messages );
+		
+	}
+	
+	/**
+	 * Process each note into a formatted record
+	 */
+	 
+	private function processNote( $note ) {
+		
+		$formattedNote = array( );
+		$formattedNote["interaction_attribute_id"] = "0";
+		$formattedNote["interaction_attribute_parent_id"] = "0";
+	
+		// Check to see if the note is an attribute, if not add it
+		$attributeID = $this->curationOps->processAttribute( $note, "22" );
+		$formattedNote["attribute_id"] = $attributeID;
+		$formattedNote["attribute_value"] = $note;
+		$formattedNote["attribute_type_id"] = "22";
+	
+		// Get details about attribute type from attributeTypeInfo lookup
+		$attributeTypeInfo = $this->attributeTypeInfo["22"];
+		$formattedNote["attribute_type_name"] = $attributeTypeInfo->attribute_type_name;
+		$formattedNote["attribute_type_shortcode"] = $attributeTypeInfo->attribute_type_shortcode;
+		$formattedNote["attribute_type_category_id"] = $attributeTypeInfo->attribute_type_category_id;
+		$formattedNote["attribute_type_category_name"] = $attributeTypeInfo->attribute_type_category_name;
+		
+		// Add User Info
+		$formattedNote["attribute_user_id"] = $_SESSION['IMS_USER']['ID'];
+		$formattedNote["attribute_user_name"] = $_SESSION['IMS_USER']['FIRSTNAME'] . " " . $_SESSION['IMS_USER']['LASTNAME'];
+		$formattedNote["attribute_addeddate"] = date( 'Y/m/d H:i:s', strtotime( "now" ));
+		
+		$formattedNote["ontology_term_id"] = "0";
+		$formattedNote["ontology_term_official_id"] = "0";
+		
+		$formattedNote["attributes"] = array( );
+		
+		return $formattedNote;
 		
 	}
 	
@@ -400,9 +472,11 @@ class CurationValidation {
 					$identifier = $splitIdentifier[1];
 				}
 				
-				if( !isset( $termMap[$identifier] )) {
+				$index = $identifier . "|" . $taxa;
+				
+				if( !isset( $termMap[$index] )) {
 					$matchList = $this->fetchMatchingIdentifiers( $identifier, $type, $taxa, $idType );
-					$termMap[$identifier] = $matchList;
+					$termMap[$index] = $matchList;
 					
 					foreach( $matchList as $matchID => $matchInfo ) {
 						if( !isset( $annotationSet[$matchID] ) ) {
@@ -418,8 +492,8 @@ class CurationValidation {
 				// annotation set.
 				
 				if( sizeof( $splitIdentifier ) > 1 ) {
-					if( !isset( $termMap[$identifier][$splitIdentifier[0]] ) ) {
-						$termMap[$identifier][$splitIdentifier[0]] = $splitIdentifier[0];
+					if( !isset( $termMap[$index][$splitIdentifier[0]] ) ) {
+						$termMap[$index][$splitIdentifier[0]] = $splitIdentifier[0];
 						if( !isset( $annotationSet[$splitIdentifier[0]] ) ) {
 							$annotationSet[$splitIdentifier[0]] = array( );
 							$toAnnotate[] = $splitIdentifier[0];
@@ -451,7 +525,8 @@ class CurationValidation {
 					$identifier = $splitIdentifier[1];
 				} 
 				
-				$termIDs = $termMap[$identifier];
+				$index = $identifier . "|" . $taxa;
+				$termIDs = $termMap[$index];
 				
 				// If we specified a specific GENE ID to use, then here
 				// we convert the annotation from a pack of ids to a 
@@ -476,7 +551,7 @@ class CurationValidation {
 					$participantID = $unknownParticipantHASH[$hashIndex];
 					
 					$warningList[$identifier][] = $lineCount;
-					$mapping[] = array( "id" => "", "key" => $identifier, "status" => "UNKNOWN", "role" => $role, "type" => $type, "participant" => $participantID );
+					$mapping[] = array( "id" => "", "key" => $identifier . "|" . $taxa, "identifier" => $identifier, "status" => "UNKNOWN", "role" => $role, "type" => "5", "participant" => $participantID, "taxa" => $taxa );
 					$counts["UNKNOWN"]++;
 					
 				} else if( sizeof( $termIDs ) > 1 ) {
@@ -487,14 +562,14 @@ class CurationValidation {
 					}
 					
 					$errorList[$identifier][] = $lineCount;
-					$mapping[] = array( "id" => "", "key" => $identifier, "status" => "AMBIGUOUS", "role" => $role, "type" => $type );
+					$mapping[] = array( "id" => "", "key" => $identifier . "|" . $taxa, "identifier" => $identifier, "status" => "AMBIGUOUS", "role" => $role, "type" => $type, "taxa" => $taxa );
 					$counts["AMBIGUOUS"]++;
 					
 				} else {
 					// VALID MAPPING
 					$termID = current( $termIDs );
 					$termAnn = $annotationSet[$termID];
-					$mapping[] = array( "id" => $termID, "key" => $identifier, "status" => "VALID", "role" => $role, "type" => $type, "participant" => $termAnn['participant_id'] );
+					$mapping[] = array( "id" => $termID, "key" => $identifier . "|" . $taxa, "identifier" => $identifier, "status" => "VALID", "role" => $role, "type" => $type, "participant" => $termAnn['participant_id'], "taxa" => $taxa );
 					$counts["VALID"]++;
 				}
 				
@@ -503,7 +578,8 @@ class CurationValidation {
 			}
 			
 			foreach( $errorList as $identifier => $lines ) {
-				$termSet = $termMap[$identifier];
+				$index = $identifier . "|" . $taxa;
+				$termSet = $termMap[$index];
 				$options = array( );
 				foreach( $termSet as $termID => $termDetails ) {
 					$options[$termID] = $annotationSet[$termID];
@@ -638,6 +714,7 @@ class CurationValidation {
 					
 					$annotation['primary_name'] = $row->official_symbol;
 					$annotation['aliases'][] = $annotation['primary_name'];
+					$annotation['systematic_name'] = $row->systematic_name;
 					
 					if( $row->systematic_name != "-" ) {
 						$annotation['systematic_name'] = $row->systematic_name;
@@ -649,9 +726,10 @@ class CurationValidation {
 					$annotation['organism_abbreviation'] = $row->organism_abbreviation;
 					
 					if( $row->organism_strain != "-" ) {
-						$annotation['organism_abbreviation'] .= " (" . $row->organism_strain . ")";
-						$annotation['organism_strain'] = $row->organism_strain;
+						$annotation['organism_abbreviation'] .= " (" . $row->organism_strain . ")";	
 					}
+					
+					$annotation['organism_strain'] = $row->organism_strain;
 					
 					// Get a participant ID out of the database
 					// and store it for quicker processing later on

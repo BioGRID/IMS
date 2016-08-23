@@ -18,10 +18,12 @@ class CurationData {
 	private $blockID;
 	private $type;
 	private $data;
+	private $attributeType;
 	
 	public function __construct( $blockID ) {
 		$this->blockID = $blockID;
 		$this->type = "";
+		$this->attributeType = "";
 		$this->data = array( );
 	}
 	
@@ -37,7 +39,7 @@ class CurationData {
 	 * Get the curation type
 	 */
 	 
-	public function getType( $type ) {
+	public function getType( ) {
 		return $this->type;
 	}
 	
@@ -47,15 +49,16 @@ class CurationData {
 	 
 	public function addData( $subtype, $attributeTypeID, $data, $name, $required ) {
 		
-		if( $subtype == "" ) {
-			$subtype = "attribute";
+		if( $subtype == "" || $subtype == "-" ) {
+			$subtype = "ATTRIBUTE";
 		}
 		
 		if( !isset( $this->data[strtoupper($subtype)] )) {
 			$this->data[strtoupper($subtype)] = array( );
 		}
 		
-		$this->data[strtoupper($subtype)][$attributeTypeID] = array( "ID" => $attributeTypeID, "DATA" => json_decode( $data ), "NAME" => $name, "REQUIRED" => $required );
+		$dataSet = json_decode( $data, true );
+		$this->data[strtoupper($subtype)] = array( "ID" => $attributeTypeID, "DATA" => $dataSet, "NAME" => $name, "REQUIRED" => $required, "SIZE" => sizeof( $dataSet ) );
 		
 	}
 	
@@ -63,13 +66,55 @@ class CurationData {
 	 * Get data by passed in criteria
 	 */
 	 
-	public function getData( $subtype, $attributeTypeID ) {
+	public function getData( $subtype ) {
 		
-		if( $subtype == "" ) {
-			$subtype = "attribute";
+		if( $subtype == "" || $subtype == "-" ) {
+			$subtype = "ATTRIBUTE";
 		}
 		
-		return $this->data[strtoupper($subtype)][$attributeTypeID];
+		return $this->data[strtoupper($subtype)];
+	}
+	
+	/**
+	 * Get Data Size
+	 */
+	 
+	public function getDataSize( $subtype ) {
+		
+		if( $subtype == "" || $subtype == "-" ) {
+			$subtype = "ATTRIBUTE";
+		}
+		
+		return $this->data[strtoupper($subtype)]['SIZE'];
+		
+	}
+	
+	/**
+	 * Get Type ID
+	 */
+	 
+	public function getTypeID( $subtype ) {
+		
+		if( $subtype == "" || $subtype == "-" ) {
+			$subtype = "ATTRIBUTE";
+		}
+		
+		return $this->data[strtoupper($subtype)]['ID'];
+		
+	}
+	
+	/**
+	 * Get Type ID
+	 */
+	 
+	public function getName( $subtype ) {
+		
+		if( $subtype == "" || $subtype == "-" ) {
+			$subtype = "ATTRIBUTE";
+		}
+		
+		return $this->data[strtoupper($subtype)]['NAME'];
+		
 	}
 	
 	
