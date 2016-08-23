@@ -17,7 +17,7 @@ from classes import DatabaseProcessor, PubmedArticle, PubmedBook
 pubmedArticle = PubmedArticle.PubmedArticle( )
 pubmedBook = PubmedBook.PubmedBook( )
 
-baseURL = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
+baseURL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
 params = { }
 params['db'] = "pubmed"
 params['retMax'] = 1000000

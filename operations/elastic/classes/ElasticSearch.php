@@ -255,8 +255,8 @@ class ElasticSearch {
 		while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
 			$attDetail = array( );
 			$attDetail['interaction_attribute_id'] = $row->interaction_attribute_id;
+			$attDetail['interaction_attribute_parent_id'] = $row->interaction_attribute_parent;
 			$attDetail['attribute_id'] = $row->attribute_id;
-			$attDetail['attribute_parent_id'] = $row->interaction_attribute_parent;
 			$attDetail['attribute_user_id'] = $row->user_id;
 			$attDetail['attribute_user_name'] = $this->userNameHash[$row->user_id];
 			$attDetail['attribute_addeddate'] = date( 'Y/m/d H:i:s', strtotime( $row->interaction_attribute_addeddate ));
@@ -285,8 +285,8 @@ class ElasticSearch {
 		while( $row = $stmt->fetch( PDO::FETCH_OBJ ) ) {
 			$attDetail = array( );
 			$attDetail['interaction_attribute_id'] = $row->interaction_attribute_id;
+			$attDetail['interaction_attribute_parent_id'] = $row->interaction_attribute_parent;
 			$attDetail['attribute_id'] = $row->attribute_id;
-			$attDetail['attribute_parent_id'] = $row->interaction_attribute_parent;
 			$attDetail['attribute_user_id'] = $row->user_id;
 			$attDetail['attribute_user_name'] = $this->userNameHash[$row->user_id];
 			$attDetail['attribute_addeddate'] = date( 'Y/m/d H:i:s', strtotime( $row->interaction_attribute_addeddate ));
@@ -465,8 +465,8 @@ class ElasticSearch {
 						"history_date" => array( "type" => "date", "format" => "yyyy/MM/dd HH:mm:ss" ),
 						"attributes" => array( "type" => "nested", "properties" => array(  
 							"interaction_attribute_id" => array( "type" => "integer" ),
+							"interaction_attribute_parent_id" => array( "type" => "integer" ),
 							"attribute_id" => array( "type" => "integer" ),
-							"attribute_parent_id" => array( "type" => "integer" ),
 							"attribute_user_id" => array( "type" => "integer" ),
 							"attribute_user_name" => array( "type" => "string" ),
 							"attribute_addeddate" => array( "type" => "date", "format" => "yyyy/MM/dd HH:mm:ss" ),
@@ -482,8 +482,8 @@ class ElasticSearch {
 							"ontology_term_official_id" => array( "type" => "string", "analyzer" => "keyword_analyzer" ),
 							"attributes" => array( "type" => "nested", "properties" => array( 
 								"interaction_attribute_id" => array( "type" => "integer" ),
+								"interaction_attribute_parent_id" => array( "type" => "integer" ),
 								"attribute_id" => array( "type" => "integer" ),
-								"attribute_parent_id" => array( "type" => "integer" ),
 								"attribute_user_id" => array( "type" => "integer" ),
 								"attribute_user_name" => array( "type" => "string", "analyzer" => "keyword_analyzer" ),
 								"attribute_addeddate" => array( "type" => "date", "format" => "yyyy/MM/dd HH:mm:ss" ),
