@@ -54,7 +54,15 @@ class Hashes( ) :
 			
 			attributeList = []
 			for attRow in self.cursor.fetchall( ) :
-				attributeList.append( self.combineNumbers( attRow['attribute_id'], attRow['interaction_attribute_parent'] ))
+			
+				parentAttID = attRow['interaction_attribute_parent']
+				if parentAttID != 0 :
+					self.cursor.execute( "SELECT attribute_id FROM " + Config.DB_IMS + ".interaction_attributes WHERE interaction_attribute_id=%s AND interaction_attribute_status='active'", [parentAttID] )
+					
+					parentRow = self.cursor.fetchone( )
+					parentAttID = parentRow['attribute_id']
+			
+				attributeList.append( self.combineNumbers( attRow['attribute_id'], parentAttID ))
 				
 			attributeList.sort( )
 			

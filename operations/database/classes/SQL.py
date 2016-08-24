@@ -397,7 +397,7 @@ class SQL( ) :
 		hashes = Hashes.Hashes( self.db, self.cursor )
 		
 		self.writeLine( "Building Participant Hashes" )
-		hashes.createParticipantHashes( )
+		# hashes.createParticipantHashes( )
 		
 		self.writeLine( "Building Attribute Hashes" )
 		hashes.createAttributeHashes( )

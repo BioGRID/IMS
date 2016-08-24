@@ -90,12 +90,12 @@ class CurationValidation {
 	 * to prepare it for easy insertion into the database
 	 */
 	 
-	private function processOntologyTerm( $termID, $termOfficialID, $termName, $attributeTypeID, $attributeParent = 0 ) {
+	private function processOntologyTerm( $termID, $termOfficialID, $termName, $attributeTypeID ) {
 		
 		$ontologyTerm = array( );
 		
 		$ontologyTerm["interaction_attribute_id"] = "0";
-		$ontologyTerm["interaction_attribute_parent_id"] = $attributeParent;
+		$ontologyTerm["interaction_attribute_parent_id"] = "0";
 		
 		// Check to see if the term is an attribute, if not, add it
 		$attributeID = $this->curationOps->processAttribute( $termID, $attributeTypeID );
@@ -200,12 +200,12 @@ class CurationValidation {
 					} else {
 						
 						// Process ontology Term
-						$ontologyTerm = $this->processOntologyTerm( $termDetails->ontology_term_id, $termDetails->ontology_term_official_id, $termDetails->ontology_term_name, $attributeTypeID, "0" );
+						$ontologyTerm = $this->processOntologyTerm( $termDetails->ontology_term_id, $termDetails->ontology_term_official_id, $termDetails->ontology_term_name, $attributeTypeID );
 					
 						// Process through the list of qualifiers
 						foreach( $qualifiers as $qualifier ) {
 							$qualDetails = $this->fetchOntologyTermDetails( $qualifier );
-							$qualifierTerm = $this->processOntologyTerm( $qualDetails->ontology_term_id, $qualDetails->ontology_term_official_id, $qualDetails->ontology_term_name, "31", $ontologyTerm["attribute_id"] );
+							$qualifierTerm = $this->processOntologyTerm( $qualDetails->ontology_term_id, $qualDetails->ontology_term_official_id, $qualDetails->ontology_term_name, "31");
 							
 							$ontologyTerm["attributes"][] = $qualifierTerm;
 						}

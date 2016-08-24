@@ -59,11 +59,13 @@ class CurationSubmission {
 	public function processCurationSubmission( $options ) {
 		
 		$status = "SUCCESS";
+		$this->db->beginTransaction( );
 		
 		if( isset( $options['validationStatus'] ) ) {
 			if( $options['validationStatus'] == "false" ) {
 				$status = "ERROR";
 				$this->errors[] = $this->curationOps->generateError( "INVALID_BLOCKS", array( "invalidBlocks" => json_decode( $_POST['invalidBlocks'] ) ) );
+				$this->db->rollBack( );
 			} else {
 				
 				// All blocks are Valid
@@ -147,7 +149,7 @@ class CurationSubmission {
 					if( $this->workflowSettings['CONFIG']['participant_method'] == "row" ) {
 						
 						// Create Participant Pairings
-						$participantList = $this->processRows( $participantSets, $attributesEach, $attributesAll, $size, $baseInt );
+						$status = $this->processRows( $participantSets, $attributesEach, $attributesAll, $size, $baseInt );
 							
 					}
 					
@@ -176,8 +178,14 @@ class CurationSubmission {
 					
 					// $participantBlocks = array_unique( $participantBlocks );
 					
-					$status = "SUCCESS";
-					
+				}
+				
+				if( $status == "SUCCESS" ) {
+					print "COMMITTING";
+					$this->db->commit( );
+				} else {
+					print "ROLLING BACK!";
+					$this->db->rollBack( );
 				}
 				
 			}
@@ -208,13 +216,20 @@ class CurationSubmission {
 			$interaction = $baseInt;
 			
 			$participants = array( );
+			$participantIDs = array( );
+			$participantRoles = array( );
 			foreach( $participantSets as $block => $participantSet ) {
 				
 				$currentParticipant = "";
+
 				if( isset( $participantSet[$i] )) {
 					$currentParticipant = $participantSet[$i];
+					$participantIDs[] = $participantSet[$i]["participant"];
+					$participantRoles[] = $participantSet[$i]["role"];
 				} else {
 					$currentParticipant = $participantSet[0];
+					$participantIDs[] = $participantSet[0]["participant"];
+					$participantRoles[] = $participantSet[0]["role"];
 				}
 				
 				$processedParticipant = $this->processParticipant( $currentParticipant, $block );
@@ -229,23 +244,40 @@ class CurationSubmission {
 				
 			}
 			
+			$participantHashID = $this->hashids->generateHash( $participantIDs, $participantRoles );
+			
+			$interaction["participant_hash"] = $participantHashID;
 			$interaction['participants'] = $participants;
+			
+			$attributeIDs = array( );
+			$attributeParentIDs = array( );
 			
 			// Add EACH Attributes
 			foreach( $attributesEach as $attributeSet ) {
 				$interaction['attributes'][] = $attributeSet['DATA'][$i];
+				$attributeIDs[] = $attributeSet['DATA'][$i]["attribute_id"];
+				$attributeParentIDs[] = 0;
 				foreach( $attributeSet['DATA'][$i]['attributes'] as $subAttribute ) {
 					$interaction['attributes'][] = $subAttribute;
+					$attributeIDs[] = $subAttribute["attribute_id"];
+					$attributeParentIDs[] = $attributeSet['DATA'][$i]["attribute_id"];
 				}
 			}
 			
 			// Add ALL Attributes
 			foreach( $attributesAll as $attribute ) {
 				$interaction['attributes'][] = $attribute;
+				$attributeIDs[] = $attribute["attribute_id"];
+				$attributeParentIDs[] = 0;
 				foreach( $attribute['attributes'] as $subAttribute ) {
 					$interaction['attributes'][] = $subAttribute;
+					$attributeIDs[] = $subAttribute["attribute_id"];
+					$attributeParentIDs[] = $attribute["attribute_id"];
 				}
 			}
+			
+			$attributeHashID = $this->hashids->generateHash( $attributeIDs, $attributeParentIDs );
+			$interaction["attribute_hash"] = $attributeHashID;
 			
 			// Insert into Elastic Search
 			print_r( $interaction );
@@ -275,6 +307,8 @@ class CurationSubmission {
 			"history_user_id" => $_SESSION['IMS_USER']['ID'],
 			"history_user_name" => $_SESSION['IMS_USER']['FIRSTNAME'] . " " . $_SESSION['IMS_USER']['LASTNAME'],
 			"history_date" => "",
+			"attribute_hash" => "",
+			"participant_hash" => "",
 			"attributes" => array( ),
 			"participants" => array( )
 		);
