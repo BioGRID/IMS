@@ -31,6 +31,8 @@ class CurationSubmission {
 	private $organismHASH;
 	private $interactionTypes;
 	
+	private $insertStmts;
+	
 	public function __construct( ) {
 		$this->db = new PDO( DB_CONNECT, DB_USER, DB_PASS );
 		$this->db->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
@@ -48,6 +50,13 @@ class CurationSubmission {
 		$this->participantRoles = $this->lookups->buildParticipantRoleHash( );
 		$this->organismHASH = $this->lookups->buildOrganismHash( );
 		$this->interactionTypes = $this->lookups->buildInteractionTypeHash( );
+		
+		$this->insertStmts = array( 
+			"interaction" => $this->db->prepare( "INSERT INTO " . DB_IMS . ".interactions VALUES( '0', ?, ?, ?, ?, ? )" ),
+			"history" => $this->db->prepare( "INSERT INTO " . DB_IMS . ".history VALUES( '0', ?, ?, ?, ?, ?, ? )" ),
+			"interaction_participants" => $this->db->prepare( "INSERT INTO " . DB_IMS . ".interaction_participants VALUES( '0', ?, ?, ?, ?, ? )" ),
+			"interaction_attributes" => $this->db->prepare( "INSERT INTO " . DB_IMS . ".interaction_attributes VALUES( '0', ?, ?, ?, ?, ?, ? )" )
+		);
 		
 	}
 	
@@ -180,13 +189,13 @@ class CurationSubmission {
 					
 				}
 				
-				if( $status == "SUCCESS" ) {
-					print "COMMITTING";
-					$this->db->commit( );
-				} else {
+				//if( $status == "SUCCESS" ) {
+					//print "COMMITTING";
+					//$this->db->commit( );
+				//} else {
 					print "ROLLING BACK!";
 					$this->db->rollBack( );
-				}
+				//}
 				
 			}
 		}
@@ -207,13 +216,13 @@ class CurationSubmission {
 		// rows element or the first element in cases where only
 		// one entry is provided
 		
-		//print_r( $participantSets );
-		//print_r( $attributesEach );
+		$currentDate = date( 'Y/m/d H:i:s', strtotime( "now" ));
 		
 		$participantList = array( );
 		for( $i = 0; $i < $participantSize; $i++ ) {
 			
 			$interaction = $baseInt;
+			$interaction['history_date'] = $currentDate;
 			
 			$participants = array( );
 			$participantIDs = array( );
@@ -258,7 +267,6 @@ class CurationSubmission {
 				$attributeIDs[] = $attributeSet['DATA'][$i]["attribute_id"];
 				$attributeParentIDs[] = 0;
 				foreach( $attributeSet['DATA'][$i]['attributes'] as $subAttribute ) {
-					$interaction['attributes'][] = $subAttribute;
 					$attributeIDs[] = $subAttribute["attribute_id"];
 					$attributeParentIDs[] = $attributeSet['DATA'][$i]["attribute_id"];
 				}
@@ -270,7 +278,6 @@ class CurationSubmission {
 				$attributeIDs[] = $attribute["attribute_id"];
 				$attributeParentIDs[] = 0;
 				foreach( $attribute['attributes'] as $subAttribute ) {
-					$interaction['attributes'][] = $subAttribute;
 					$attributeIDs[] = $subAttribute["attribute_id"];
 					$attributeParentIDs[] = $attribute["attribute_id"];
 				}
@@ -280,15 +287,161 @@ class CurationSubmission {
 			$interaction["attribute_hash"] = $attributeHashID;
 			
 			// Insert into Elastic Search
-			print_r( $interaction );
 			
-			// Add All Attributes
-			//$participantList[] = array( "PARTICIPANTS" => $currentPair, "HASH" => $this->hashids->generateHash( $participantIDs, $roleIDs ) );
+			if( !$interactionID = $this->insertInteraction( $interaction ) ) {
+				// Return Errors
+			} else {
+				
+				$interaction['interaction_id'] = $interactionID;
+				
+				if( !$this->insertHistory( "ACTIVATED", $interactionID, $interaction['history_user_id'], "New Interaction", "1", $interaction['history_date'] )) {
+					// Return Errors
+				}
+				
+				if( !$interaction['participants'] = $this->insertInteractionParticipants( $interaction['participants'], $interactionID, $currentDate, "active" )) {
+					// Return Errors
+				}
+				
+				if( !$interaction['attributes'] = $this->insertInteractionAttributes( $interaction['attributes'], $interactionID, $currentDate, "active" )) {
+					// Return Errors
+				}
+			
+				print_r( $interaction );
+			
+			}
 			
 		}
 		
 		return $participantList;
 		
+	}
+	
+	/**
+	 * Insert Interaction Participants to the interaction_participants table
+	 */
+	 
+	private function insertInteractionParticipants( $participants, $interactionID, $date, $status ) {
+		
+		try {
+			
+			$participantList = array( );
+			foreach( $participants as $participant ) {
+				
+				$this->insertStmts['interaction_participants']->execute( array( $interactionID, $participant['participant_id'], $participant['participant_role_id'], $date, $status ));
+				
+				$interactionParticipantID = $this->db->lastInsertId( );
+				$participant['interaction_participant_id'] = $interactionParticipantID;
+				$participantList[] = $participant;
+				
+			}
+			
+			if( sizeof( $participantList ) > 0 ) {
+				return $participantList;
+			}
+			
+		} catch( PDOException $e ) {
+			echo 'Connection Failed: ' . $e->getMessage( );
+		}
+		
+		return false;
+		
+	}
+	
+	/**
+	 * Insert Interaction Attributes to the interaction_attributes table
+	 */
+	 
+	private function insertInteractionAttributes( $attributes, $interactionID, $date, $status ) {
+		
+		try {
+			
+			$attributeList = array( );
+			foreach( $attributes as $attribute ) {
+				
+				$this->insertStmts['interaction_attributes']->execute( array( $interactionID, $attribute['attribute_id'], "0", $attribute['attribute_user_id'], $date, $status ));
+				
+				$interactionAttributeID = $this->db->lastInsertId( );
+				$attribute['interaction_attribute_id'] = $interactionAttributeID;
+				$attribute['attribute_addeddate'] = $date;
+				
+				// Process Child Attributes by Inserting into the Database
+				// and also splitting them out in the elastic search record
+				// so they can be indexed correctly for searching
+				
+				$childAttributes = array( );
+				foreach( $attribute['attributes'] as $childAttribute ) {
+					
+					$this->insertStmts['interaction_attributes']->execute( array( $interactionID, $childAttribute['attribute_id'], $interactionAttributeID, $childAttribute['attribute_user_id'], $date, $status ));
+				
+					$interactionChildAttributeID = $this->db->lastInsertId( );
+					$childAttribute['interaction_attribute_id'] = $interactionChildAttributeID;
+					$childAttribute['interaction_attribute_parent_id'] = $interactionAttributeID;
+					$childAttribute['attribute_addeddate'] = $date;
+					$childAttributes[] = $childAttribute;
+				}
+				
+				// Add newly Annotated Child Attributes in place of
+				// originals
+				$attribute['attributes'] = $childAttributes;
+				
+				// Add the Parent Attribute to the master List
+				$attributeList[] = $attribute;
+				
+				// Add Child Attributes as separate attributes
+				$attributeList = array_merge( $attributeList, $childAttributes );
+				
+			}
+			
+			if( sizeof( $attributeList ) > 0 ) {
+				return $attributeList;
+			}
+			
+		} catch( PDOException $e ) {
+			echo 'Connection Failed: ' . $e->getMessage( );
+		}
+		
+		return false;
+		
+	}
+	
+	/**
+	 * Insert an interaction into the database
+	 */
+	 
+	private function insertInteraction( $interaction ) {
+		
+		try {
+			
+			$this->insertStmts['interaction']->execute( array( $interaction['participant_hash'], $interaction['attribute_hash'], $interaction['dataset_id'], $interaction['interaction_type_id'], $interaction['interaction_state'] ));
+			
+			return $this->db->lastInsertId( );
+			
+		} catch( PDOException $e ) {
+			echo 'Connection Failed: ' . $e->getMessage( );
+		}
+		
+		return false;
+		
+	}
+	
+	/**
+	 * Insert an entry into the History table
+	 */
+	 
+	private function insertHistory( $modType, $interactionID, $userID, $comment, $operationID, $date ) {
+	
+		try {
+			
+			$this->insertStmts['history']->execute( array( $modType, $interactionID, $userID, $comment, $operationID, $date ));
+			
+			return true;
+			
+		} catch( PDOException $e ) {
+			echo 'Connection Failed: ' . $e->getMessage( );
+		}
+		
+		return false;
+	
 	}
 	
 	/**
