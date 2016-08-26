@@ -207,6 +207,9 @@ class CurationOperations {
 				
 			case "QUANT_COUNT" :
 				return array( "class" => "danger", "message" => "Your data was not submitted because <strong>" . $details['quantName'] . "</strong> must contain the same number of entries as the number of participants. Currently, <strong>" . $details['quantName'] . "</strong> contains <strong> " . $details['quantSize'] . "</strong> entries but you are entering <strong> " . $details['participantSize'] . "</strong> participants." );
+				
+			case "DATABASE_INSERT" :
+				return array( "class" => "danger", "message" => "Your data was not submitted because there was an issue inserting it into the database. If this problem persists, please contact the site administrators and paste in the following details:<br />" . implode( "<br />", $details['dbErrors'] ) );
 
 			default:
 				return array( "class" => "danger", "message" => "An unknown error has occurred." );

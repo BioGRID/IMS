@@ -30,6 +30,7 @@ class CurationSubmission {
 	private $participantRoles;
 	private $organismHASH;
 	private $interactionTypes;
+	private $dbErrors;
 	
 	private $insertStmts;
 	
@@ -57,6 +58,8 @@ class CurationSubmission {
 			"interaction_participants" => $this->db->prepare( "INSERT INTO " . DB_IMS . ".interaction_participants VALUES( '0', ?, ?, ?, ?, ? )" ),
 			"interaction_attributes" => $this->db->prepare( "INSERT INTO " . DB_IMS . ".interaction_attributes VALUES( '0', ?, ?, ?, ?, ?, ? )" )
 		);
+		
+		$this->dbErrors = array( );
 		
 	}
 	
@@ -117,7 +120,7 @@ class CurationSubmission {
 					// on the values and fields stored
 					
 					// Get a base interaction representation
-					$baseInt = $this->processInteraction( $options );
+					$baseInt = $this->generateInteractionStructure( $options );
 					
 					// Get a set of all Participant Blocks and their Members
 					$participantSets = array( );
@@ -157,35 +160,15 @@ class CurationSubmission {
 					// Process Interactions
 					if( $this->workflowSettings['CONFIG']['participant_method'] == "row" ) {
 						
-						// Create Participant Pairings
-						$status = $this->processRows( $participantSets, $attributesEach, $attributesAll, $size, $baseInt );
+						// Create Participant Pairings and Process to Database
+						$stats = $this->processRows( $participantSets, $attributesEach, $attributesAll, $size, $baseInt );
+						if($stats['ERROR'] > 0 ) {
+							$status = "ERROR";
+							$this->errors[] = $this->curationOps->generateError( "DATABASE_INSERT", array( "dbErrors" => $this->dbErrors ) );
+						}
 							
 					}
 					
-					//print_r( $participantList );
-					
-					
-					// Check for Duplicates
-					
-					// Insert into the Database
-					
-					
-					
-					// Insert into Elastic Search
-					
-					
-					
-					// $participantBlocks = array( );
-					// Build Interactions
-					// foreach( $curatedData as $blockID => $blockTypes ) {
-						// foreach( $blockTypes as $blockType => $blockSubType ) {
-							// if( $blockType == "participant" ) {
-								// $participantBlocks[] = $blockID;
-							// }
-						// }
-					// }
-					
-					// $participantBlocks = array_unique( $participantBlocks );
 					
 				}
 				
@@ -216,13 +199,11 @@ class CurationSubmission {
 		// rows element or the first element in cases where only
 		// one entry is provided
 		
-		$currentDate = date( 'Y/m/d H:i:s', strtotime( "now" ));
-		
-		$participantList = array( );
+		$this->dbErrors = array( );
+		$stats = array( "INSERTED" => 0, "DUPLICATE" => 0, "ERROR" => 0 );
 		for( $i = 0; $i < $participantSize; $i++ ) {
 			
 			$interaction = $baseInt;
-			$interaction['history_date'] = $currentDate;
 			
 			$participants = array( );
 			$participantIDs = array( );
@@ -241,7 +222,7 @@ class CurationSubmission {
 					$participantRoles[] = $participantSet[0]["role"];
 				}
 				
-				$processedParticipant = $this->processParticipant( $currentParticipant, $block );
+				$processedParticipant = $this->generateParticipantStructure( $currentParticipant, $block );
 				
 				// If one participant is unknown it is an erroroneous 
 				// interaction that is being added
@@ -286,33 +267,55 @@ class CurationSubmission {
 			$attributeHashID = $this->hashids->generateHash( $attributeIDs, $attributeParentIDs );
 			$interaction["attribute_hash"] = $attributeHashID;
 			
-			// Insert into Elastic Search
+			// Insert into Database
+			$insertResults = $this->submitInteraction( $interaction );
+			$interaction = $insertResults['INTERACTION'];
 			
-			if( !$interactionID = $this->insertInteraction( $interaction ) ) {
-				// Return Errors
+			if( $insertResults['STATUS'] ) {
+				$stats['INSERTED']++;
 			} else {
-				
-				$interaction['interaction_id'] = $interactionID;
-				
-				if( !$this->insertHistory( "ACTIVATED", $interactionID, $interaction['history_user_id'], "New Interaction", "1", $interaction['history_date'] )) {
-					// Return Errors
-				}
-				
-				if( !$interaction['participants'] = $this->insertInteractionParticipants( $interaction['participants'], $interactionID, $currentDate, "active" )) {
-					// Return Errors
-				}
-				
-				if( !$interaction['attributes'] = $this->insertInteractionAttributes( $interaction['attributes'], $interactionID, $currentDate, "active" )) {
-					// Return Errors
-				}
-			
-				print_r( $interaction );
-			
+				$stats['ERROR']++;
 			}
+			
+			print_r( $interaction );
 			
 		}
 		
-		return $participantList;
+		return $stats;
+		
+	}
+	
+	/**
+	 * Process Interaction into the Database
+	 */
+	 
+	private function submitInteraction( $interaction ) {
+		
+		$currentDate = date( 'Y/m/d H:i:s', strtotime( "now" ));
+		$interaction['history_date'] = $currentDate;
+	
+		$insertComplete = true;
+		if( !$interactionID = $this->insertInteractionToDB( $interaction ) ) {
+			$insertComplete = false;
+		} else {
+			
+			$interaction['interaction_id'] = $interactionID;
+			
+			if( !$this->insertHistoryToDB( "ACTIVATED", $interactionID, $interaction['history_user_id'], "New " . $interaction['interaction_type_name'] . " Interaction", "1", $interaction['history_date'] )) {
+				$insertComplete = false;
+			}
+			
+			if( !$interaction['participants'] = $this->insertInteractionParticipantsToDB( $interaction['participants'], $interactionID, $currentDate, "active" )) {
+				$insertComplete = false;
+			}
+			
+			if( !$interaction['attributes'] = $this->insertInteractionAttributesToDB( $interaction['attributes'], $interactionID, $currentDate, "active" )) {
+				$insertComplete = false;
+			}
+		
+		}
+		
+		return array( "STATUS" => $insertComplete, "INTERACTION" => $interaction );
 		
 	}
 	
@@ -320,7 +323,7 @@ class CurationSubmission {
 	 * Insert Interaction Participants to the interaction_participants table
 	 */
 	 
-	private function insertInteractionParticipants( $participants, $interactionID, $date, $status ) {
+	private function insertInteractionParticipantsToDB( $participants, $interactionID, $date, $status ) {
 		
 		try {
 			
@@ -340,7 +343,7 @@ class CurationSubmission {
 			}
 			
 		} catch( PDOException $e ) {
-			echo 'Connection Failed: ' . $e->getMessage( );
+			$this->dbErrors[] = 'DB ERROR: ' . $e->getMessage( );
 		}
 		
 		return false;
@@ -351,7 +354,7 @@ class CurationSubmission {
 	 * Insert Interaction Attributes to the interaction_attributes table
 	 */
 	 
-	private function insertInteractionAttributes( $attributes, $interactionID, $date, $status ) {
+	private function insertInteractionAttributesToDB( $attributes, $interactionID, $date, $status ) {
 		
 		try {
 			
@@ -397,7 +400,7 @@ class CurationSubmission {
 			}
 			
 		} catch( PDOException $e ) {
-			echo 'Connection Failed: ' . $e->getMessage( );
+			$this->dbErrors[] = 'DB ERROR: ' . $e->getMessage( );
 		}
 		
 		return false;
@@ -408,7 +411,7 @@ class CurationSubmission {
 	 * Insert an interaction into the database
 	 */
 	 
-	private function insertInteraction( $interaction ) {
+	private function insertInteractionToDB( $interaction ) {
 		
 		try {
 			
@@ -417,7 +420,7 @@ class CurationSubmission {
 			return $this->db->lastInsertId( );
 			
 		} catch( PDOException $e ) {
-			echo 'Connection Failed: ' . $e->getMessage( );
+			$this->dbErrors[] = 'DB ERROR: ' . $e->getMessage( );
 		}
 		
 		return false;
@@ -428,7 +431,7 @@ class CurationSubmission {
 	 * Insert an entry into the History table
 	 */
 	 
-	private function insertHistory( $modType, $interactionID, $userID, $comment, $operationID, $date ) {
+	private function insertHistoryToDB( $modType, $interactionID, $userID, $comment, $operationID, $date ) {
 	
 		try {
 			
@@ -437,7 +440,7 @@ class CurationSubmission {
 			return true;
 			
 		} catch( PDOException $e ) {
-			echo 'Connection Failed: ' . $e->getMessage( );
+			$this->dbErrors[] = 'DB ERROR: ' . $e->getMessage( );
 		}
 		
 		return false;
@@ -448,7 +451,7 @@ class CurationSubmission {
 	 * Create the base details about an interaction
 	 */
 	 
-	private function processInteraction( $options ) {
+	private function generateInteractionStructure( $options ) {
 		
 		$interaction = array( 
 			"interaction_id" => 0,
@@ -474,7 +477,7 @@ class CurationSubmission {
 	 * elastic search
 	 */
 	 
-	private function processParticipant( $participant, $block ) {
+	private function generateParticipantStructure( $participant, $block ) {
 		
 		$formattedParticipant = array( );
 		$formattedParticipant['interaction_participant_id'] = "0";
