@@ -33,6 +33,7 @@ class CurationSubmission {
 	private $dbErrors;
 	
 	private $insertStmts;
+	private $curationProgress;
 	
 	public function __construct( ) {
 		$this->db = new PDO( DB_CONNECT, DB_USER, DB_PASS );
@@ -41,6 +42,7 @@ class CurationSubmission {
 		$this->curationOps = new models\CurationOperations( );
 		$this->hashids = new utilities\Hashes( );
 		$this->lookups = new models\Lookups( );
+		$this->curationProgress = new models\CurationProgress( );
 		
 		$this->errors = array( );
 		$this->blocks = array( );
@@ -71,14 +73,21 @@ class CurationSubmission {
 	public function processCurationSubmission( $options ) {
 		
 		$status = "SUCCESS";
+		$this->curationProgress->init( $options['curationCode'] );
+		
 		$this->db->beginTransaction( );
 		
 		if( isset( $options['validationStatus'] ) ) {
+			
+			$this->curationProgress->changeProgress( "validateblocks", $options['curationCode'] );
+			
 			if( $options['validationStatus'] == "false" ) {
 				$status = "ERROR";
 				$this->errors[] = $this->curationOps->generateError( "INVALID_BLOCKS", array( "invalidBlocks" => json_decode( $_POST['invalidBlocks'] ) ) );
 				$this->db->rollBack( );
 			} else {
+				
+				$this->curationProgress->changeProgress( "annotate", $options['curationCode'] );
 				
 				// All blocks are Valid
 				// Fetch curation block details
@@ -107,13 +116,15 @@ class CurationSubmission {
 					}
 				}
 				
-				//print_r( $this->curatedData );
+				$this->curationProgress->changeProgress( "validatesubmission", $options['curationCode'] );
 				
 				// Test curated data against workflow settings to
 				// see if data is valid
 				if( !$this->validateSubmission( $rowCount ) ) {
 					$status = "ERROR";
 				} else {  
+				
+					$this->curationProgress->changeProgress( "build", $options['curationCode'] );
 					
 					// Process each block of stored data and generate a
 					// game plan for processing. Game plan will be based
@@ -157,6 +168,8 @@ class CurationSubmission {
 						}
 					}
 					
+					$this->curationProgress->changeProgress( "insert", $options['curationCode'] );
+					
 					// Process Interactions
 					if( $this->workflowSettings['CONFIG']['participant_method'] == "row" ) {
 						
@@ -179,6 +192,8 @@ class CurationSubmission {
 					print "ROLLING BACK!";
 					$this->db->rollBack( );
 				//}
+				
+				$this->curationProgress->changeProgress( "complete", $options['curationCode'] );
 				
 			}
 		}

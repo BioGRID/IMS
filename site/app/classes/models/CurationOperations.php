@@ -50,6 +50,25 @@ class CurationOperations {
 	}
 	
 	/**
+	 * Fetch latest status and if none exists, simply return "init"
+	 */
+	 
+	public function fetchCurationSubmissionProgress( $options ) {
+		
+		$curationCode = $options['curationCode'];
+		
+		$stmt = $this->db->prepare( "SELECT curation_status FROM " . DB_IMS . ".curation_progress WHERE curation_code=? LIMIT 1" );
+		$stmt->execute( array( $curationCode ) );
+		
+		$status = "init";
+		if( $row = $stmt->fetch( PDO::FETCH_OBJ )) {
+			$status = $row->curation_status;
+		}
+		
+		return array( "PROGRESS" => $status );
+	}
+	
+	/**
 	 * Fetch a configuration for a curation workflow based on the type
 	 * of curation about to be performed.
 	 */
@@ -118,7 +137,15 @@ class CurationOperations {
 					
 					break;
 					
+				case "SUBMIT" :
 					
+					$params = array( 
+						"NOTIFICATION" => "Processing Submission <i class='fa fa-refresh fa-spin fa-lg'></i>",
+						"NOTIFICATION_TYPE" => "",
+						"VIEW_LINK" => "<i class='fa fa-arrow-left'></i> View Results"
+					);
+					
+					break;
 		
 			}
 			

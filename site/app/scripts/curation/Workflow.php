@@ -62,6 +62,7 @@ if( isset( $_POST['script'] ) ) {
 		// Submit a Validated Dataset for Validation across entire set
 		// and for submission into the database if successful
 		case 'submitCuratedDataset' :
+			sleep( 60 );
 			$curationSubmit = new models\CurationSubmission( );
 			echo $curationSubmit->processCurationSubmission( $_POST );
 			break;
@@ -70,6 +71,12 @@ if( isset( $_POST['script'] ) ) {
 		case 'loadWorkflowNotification' :
 			$curationOps = new models\CurationOperations( );
 			echo $curationOps->fetchCurationNotification( $_POST );
+			break;
+			
+		// Fetch Database Submission Progress
+		case 'updateSubmissionProgress' :
+			$curationOps = new models\CurationOperations( );
+			echo json_encode($curationOps->fetchCurationSubmissionProgress( $_POST ));
 			break;
 			
 	}
