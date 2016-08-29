@@ -189,7 +189,7 @@ class CurationSubmission {
 					//print "COMMITTING";
 					//$this->db->commit( );
 				//} else {
-					print "ROLLING BACK!";
+					//print "ROLLING BACK!";
 					$this->db->rollBack( );
 				//}
 				
@@ -292,7 +292,7 @@ class CurationSubmission {
 				$stats['ERROR']++;
 			}
 			
-			print_r( $interaction );
+			//print_r( $interaction );
 			
 		}
 		

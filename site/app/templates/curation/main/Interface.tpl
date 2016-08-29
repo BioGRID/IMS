@@ -1,6 +1,6 @@
 <div id='curationWorkflow' class=''>
 	<div id='curationWorkflowDetails' class='col-lg-12 marginTopSm'>
-		<h3>Submission Results</h3>
+		<h3>Submission Progress</h3>
 		<div id='curationWorkflowResults'></div>
 	</div>
 </div>

@@ -146,6 +146,16 @@ class CurationOperations {
 					);
 					
 					break;
+					
+				case "SUCCESS" :
+					
+					$params = array( 
+						"NOTIFICATION" => "Your submission was completed successfully!",
+						"NOTIFICATION_TYPE" => "text-success",
+						"VIEW_LINK" => "<i class='fa fa-arrow-left'></i> View Results"
+					);
+					
+					break;
 		
 			}
 			

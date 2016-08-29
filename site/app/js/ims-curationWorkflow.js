@@ -29,7 +29,7 @@
 				"validatesubmission" : "Validating Overall Dataset...",
 				"build" : "Building Database Records...",
 				"insert" : "Inserting Records to Database...",
-				"complete" : "Submission Process Complete..."
+				"complete" : "Submission Process Complete!"
 			},
 			lastOp: "init"
 		};
@@ -146,7 +146,7 @@
 				
 				notificationPromise.done( function( ) {
 					
-					$("#curationWorkflowResults").append( base.fetchProgressHeader( "init" ));
+					$("#curationWorkflowResults").html( base.fetchProgressHeader( "init" ));
 					
 					var progressCheck = setInterval( function( ) {
 						base.updateProgress( ajaxData['curationCode'] );
@@ -156,7 +156,7 @@
 						
 						url: base.data.baseURL + "/scripts/curation/Workflow.php",
 						method: "POST",
-						dataType: "html",
+						dataType: "json",
 						data: ajaxData,
 						beforeSend: function( ) {
 							$(".curationWorkflowDetails").html( "" );
@@ -174,6 +174,10 @@
 							base.toggleSubmitBtn( true );
 							if( data["STATUS"] == "SUCCESS" ) {
 								console.log( "Submitted Successfully!" );
+								
+								base.showSubmitNotification( "SUCCESS" );
+								base.showWorkflowDetails( );
+								
 							} else {
 								
 								$("#curationWorkflowResults").append( data["ERRORS"] );
@@ -205,7 +209,7 @@
 			
 			return $.ajax({
 				
-				url: base.data.baseURL + "/scripts/curation/Workflow.php",
+				url: base.data.baseURL + "/scripts/curation/Progress.php",
 				method: "POST",
 				dataType: "json",
 				data: { curationCode: curCode, "script" : "updateSubmissionProgress" }
@@ -253,7 +257,7 @@
 		
 		// Grab a formatted progress header
 		base.fetchProgressHeader = function( progressOp ) {
-			return "<h3 class='progressHeader'>" + base.data.submissionOpTitles[progressOp] + "</h3>";
+			return "<h3 class='progressHeader'><i class='fa fa-lg fa-angle-double-right'></i> " + base.data.submissionOpTitles[progressOp] + "</h3>";
 		};
 		
 		// Generate a standard submission notification
