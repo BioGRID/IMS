@@ -30,8 +30,7 @@
 				"build" : "Building Database Records...",
 				"insert" : "Inserting Records to Database...",
 				"complete" : "Submission Process Complete!"
-			},
-			lastOp: "init"
+			}
 		};
 		
 		base.components = {
@@ -101,8 +100,7 @@
 		base.clickSubmitBtn = function( ) {
 			
 			base.toggleSubmitBtn( false );
-			$("#curationSubmitNotifications").html( "" );
-			base.data.lastOp = "init"; 
+			$("#curationSubmitNotifications").html( "" ); 
 			
 			var allValidated = true;
 			var curationBlockCount = base.data.curationBlocks.length;
@@ -146,10 +144,10 @@
 				
 				notificationPromise.done( function( ) {
 					
-					$("#curationWorkflowResults").html( base.fetchProgressHeader( "init" ));
+					$("#curationWorkflowResults").html( base.fetchProgressHeader( "init", "running" ));
 					
 					var progressCheck = setInterval( function( ) {
-						base.updateProgress( ajaxData['curationCode'] );
+						base.updateProgress( ajaxData['curationCode'], "running" );
 					}, 3000);
 					
 					$.ajax({
@@ -168,7 +166,7 @@
 						console.log( data );
 						clearInterval( progressCheck );
 						
-						var progressUpdatePromise = base.updateProgress( ajaxData['curationCode'] );
+						var progressUpdatePromise = base.updateProgress( ajaxData['curationCode'], data["STATUS"].toLowerCase( ) );
 						progressUpdatePromise.always( function( ) {
 						
 							base.toggleSubmitBtn( true );
@@ -190,6 +188,7 @@
 						
 					}).fail( function( jqXHR, textStatus ) {
 						clearInterval( progressCheck );
+						base.updateProgress( ajaxData['curationCode'], "error" );
 						console.log( textStatus );
 						base.toggleSubmitBtn( true );
 					});
@@ -203,9 +202,7 @@
 		};
 		
 		// Update Curation Submission Progress
-		base.updateProgress = function( curCode ) {
-			
-			console.log( "UPDATING PROGRESS" );
+		base.updateProgress = function( curCode, status ) {
 			
 			return $.ajax({
 				
@@ -220,34 +217,32 @@
 				// order based on where we are now and where we were
 				// last time
 				currentOp = data['PROGRESS'];
-				console.log( currentOp );
 				
-				// If we are still on the same op, do nothing
-				if( base.data.lastOp != currentOp ) {
-					printHeaders = false;
+				// Step through each op one by one, until we find the last
+				// one we printed out
+				for( var i = 0; i < base.data.submissionOps.length; i++ ) {
 					
-					// Step through each op one by one, until we find the last
-					// one we printed out
-					for( var i = 0; i < base.data.submissionOps.length; i++ ) {
-						
-						// When we find the last printed one
-						// Start printing headers on the next one
-						if( base.data.submissionOps[i] == base.data.lastOp ) {
-							printHeaders = true;
-							continue;
+					// Print out the new headers
+					style = "success";
+					if( base.data.submissionOps[i] == currentOp ) {
+						if( status == "success" ) {
+							style = "success";
+						} else if( status == "error" ) {
+							style = "error";
+						} else {
+							style = "running";
 						}
-						
-						// Print out the new headers
-						if( printHeaders ) {
-							$("#curationWorkflowResults").append( base.fetchProgressHeader( base.data.submissionOps[i] ));
-						}
-						
-						// Once we find where we're at, we set that to the 
-						// new lastOp and we stop printing more headers
-						if( base.data.submissionOps[i] == currentOp ) {
-							base.data.lastOp = currentOp;
-							break;
-						}
+					}
+					
+					if( i == 0 ) {
+						$("#curationWorkflowResults").html( base.fetchProgressHeader( base.data.submissionOps[i], style ));
+					} else {
+						$("#curationWorkflowResults").append( base.fetchProgressHeader( base.data.submissionOps[i], style ));
+					}
+					
+					// Once we find where we're at, we stop
+					if( base.data.submissionOps[i] == currentOp ) {
+						break;
 					}
 				}
 				
@@ -256,8 +251,24 @@
 		};
 		
 		// Grab a formatted progress header
-		base.fetchProgressHeader = function( progressOp ) {
-			return "<h3 class='progressHeader'><i class='fa fa-lg fa-angle-double-right'></i> " + base.data.submissionOpTitles[progressOp] + "</h3>";
+		base.fetchProgressHeader = function( progressOp, style ) {
+			
+			var progressHeader = "<i class='fa fa-lg fa-angle-double-right'></i>";
+			var progressClass = "progressDefault";
+			
+			if( style == "running" ) {
+				progressHeader = progressHeader + "<i class='pull-right fa fa-spinner fa-pulse fa-lg fa-fw'></i> ";
+				progressClass = "progressRunning";
+			} else if( style == "success" ) {
+				progressHeader = progressHeader + "<i class='pull-right fa fa-lg fa-check-circle'></i> ";
+				progressClass = "progressSuccess";
+			} else if( style == "error" ) {
+				progressHeader = progressHeader + "<i class='pull-right fa fa-lg fa-exclamation-circle'></i> ";
+				progressClass = "progressError";
+			} 
+			
+			progressHeader = "<h3 class='progressHeader " + progressClass + "'>" + progressHeader + base.data.submissionOpTitles[progressOp] + "</h3>";
+			return progressHeader;
 		};
 		
 		// Generate a standard submission notification

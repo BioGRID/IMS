@@ -182,18 +182,19 @@ class CurationSubmission {
 							
 					}
 					
-					
-				}
-				
-				//if( $status == "SUCCESS" ) {
+					//if( $status == "SUCCESS" ) {
 					//print "COMMITTING";
 					//$this->db->commit( );
-				//} else {
-					//print "ROLLING BACK!";
-					$this->db->rollBack( );
-				//}
+					//} else {
+						//print "ROLLING BACK!";
+						$this->db->rollBack( );
+					//}
 				
-				$this->curationProgress->changeProgress( "complete", $options['curationCode'] );
+					$this->curationProgress->changeProgress( "complete", $options['curationCode'] );
+				
+				}
+				
+				
 				
 			}
 		}
