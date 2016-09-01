@@ -175,19 +175,19 @@ class InteractionTables {
 		foreach( $attributes as $attribute ) {
 			
 			if( !$this->matchesIgnores( $attribute, $columnInfo['ignore'] ) ) {
-				if( !isset( $attributeList[$attribute['attribute_type_category_id']]) && $attribute['attribute_parent_id'] == 0 ) {
+				if( !isset( $attributeList[$attribute['attribute_type_category_id']]) && $attribute['interaction_attribute_parent_id'] == 0 ) {
 					$attributeList[$attribute['attribute_type_category_id']] = array( );
 				}
 				
-				if( $attribute['attribute_parent_id'] == 0 ) {
+				if( $attribute['interaction_attribute_parent_id'] == 0 ) {
 					$attributeList[$attribute['attribute_type_category_id']][$attribute['attribute_id']] = $attribute;
 				} else {
 					
-					if( !isset( $attributeChildren[$attribute['attribute_parent_id']] )) {
-						$attributeChildren[$attribute['attribute_parent_id']] = array( );
+					if( !isset( $attributeChildren[$attribute['interaction_attribute_parent_id']] )) {
+						$attributeChildren[$attribute['interaction_attribute_parent_id']] = array( );
 					} 
 					
-					$attributeChildren[$attribute['attribute_parent_id']][] = $attribute;
+					$attributeChildren[$attribute['interaction_attribute_parent_id']][] = $attribute;
 					
 				}
 			}
