@@ -30,6 +30,10 @@ class CurationSubmission {
 	private $participantRoles;
 	private $organismHASH;
 	private $interactionTypes;
+	private $dbErrors;
+	
+	private $insertStmts;
+	private $curationProgress;
 	
 	public function __construct( ) {
 		$this->db = new PDO( DB_CONNECT, DB_USER, DB_PASS );
@@ -38,6 +42,7 @@ class CurationSubmission {
 		$this->curationOps = new models\CurationOperations( );
 		$this->hashids = new utilities\Hashes( );
 		$this->lookups = new models\Lookups( );
+		$this->curationProgress = new models\CurationProgress( );
 		
 		$this->errors = array( );
 		$this->blocks = array( );
@@ -49,6 +54,15 @@ class CurationSubmission {
 		$this->organismHASH = $this->lookups->buildOrganismHash( );
 		$this->interactionTypes = $this->lookups->buildInteractionTypeHash( );
 		
+		$this->insertStmts = array( 
+			"interaction" => $this->db->prepare( "INSERT INTO " . DB_IMS . ".interactions VALUES( '0', ?, ?, ?, ?, ? )" ),
+			"history" => $this->db->prepare( "INSERT INTO " . DB_IMS . ".history VALUES( '0', ?, ?, ?, ?, ?, ? )" ),
+			"interaction_participants" => $this->db->prepare( "INSERT INTO " . DB_IMS . ".interaction_participants VALUES( '0', ?, ?, ?, ?, ? )" ),
+			"interaction_attributes" => $this->db->prepare( "INSERT INTO " . DB_IMS . ".interaction_attributes VALUES( '0', ?, ?, ?, ?, ?, ? )" )
+		);
+		
+		$this->dbErrors = array( );
+		
 	}
 	
 	/**
@@ -59,12 +73,21 @@ class CurationSubmission {
 	public function processCurationSubmission( $options ) {
 		
 		$status = "SUCCESS";
+		$this->curationProgress->init( $options['curationCode'] );
+		
+		$this->db->beginTransaction( );
 		
 		if( isset( $options['validationStatus'] ) ) {
+			
+			$this->curationProgress->changeProgress( "validateblocks", $options['curationCode'] );
+			
 			if( $options['validationStatus'] == "false" ) {
 				$status = "ERROR";
 				$this->errors[] = $this->curationOps->generateError( "INVALID_BLOCKS", array( "invalidBlocks" => json_decode( $_POST['invalidBlocks'] ) ) );
+				$this->db->rollBack( );
 			} else {
+				
+				$this->curationProgress->changeProgress( "annotate", $options['curationCode'] );
 				
 				// All blocks are Valid
 				// Fetch curation block details
@@ -93,20 +116,22 @@ class CurationSubmission {
 					}
 				}
 				
-				//print_r( $this->curatedData );
+				$this->curationProgress->changeProgress( "validatesubmission", $options['curationCode'] );
 				
 				// Test curated data against workflow settings to
 				// see if data is valid
 				if( !$this->validateSubmission( $rowCount ) ) {
 					$status = "ERROR";
 				} else {  
+				
+					$this->curationProgress->changeProgress( "build", $options['curationCode'] );
 					
 					// Process each block of stored data and generate a
 					// game plan for processing. Game plan will be based
 					// on the values and fields stored
 					
 					// Get a base interaction representation
-					$baseInt = $this->processInteraction( $options );
+					$baseInt = $this->generateInteractionStructure( $options );
 					
 					// Get a set of all Participant Blocks and their Members
 					$participantSets = array( );
@@ -143,42 +168,33 @@ class CurationSubmission {
 						}
 					}
 					
+					$this->curationProgress->changeProgress( "insert", $options['curationCode'] );
+					
 					// Process Interactions
 					if( $this->workflowSettings['CONFIG']['participant_method'] == "row" ) {
 						
-						// Create Participant Pairings
-						$participantList = $this->processRows( $participantSets, $attributesEach, $attributesAll, $size, $baseInt );
+						// Create Participant Pairings and Process to Database
+						$stats = $this->processRows( $participantSets, $attributesEach, $attributesAll, $size, $baseInt );
+						if($stats['ERROR'] > 0 ) {
+							$status = "ERROR";
+							$this->errors[] = $this->curationOps->generateError( "DATABASE_INSERT", array( "dbErrors" => $this->dbErrors ) );
+						}
 							
 					}
 					
-					//print_r( $participantList );
-					
-					
-					// Check for Duplicates
-					
-					// Insert into the Database
-					
-					
-					
-					// Insert into Elastic Search
-					
-					
-					
-					// $participantBlocks = array( );
-					// Build Interactions
-					// foreach( $curatedData as $blockID => $blockTypes ) {
-						// foreach( $blockTypes as $blockType => $blockSubType ) {
-							// if( $blockType == "participant" ) {
-								// $participantBlocks[] = $blockID;
-							// }
-						// }
-					// }
-					
-					// $participantBlocks = array_unique( $participantBlocks );
-					
-					$status = "SUCCESS";
-					
+					//if( $status == "SUCCESS" ) {
+					//print "COMMITTING";
+					//$this->db->commit( );
+					//} else {
+						//print "ROLLING BACK!";
+						$this->db->rollBack( );
+					//}
+				
+					$this->curationProgress->changeProgress( "complete", $options['curationCode'] );
+				
 				}
+				
+				
 				
 			}
 		}
@@ -199,25 +215,30 @@ class CurationSubmission {
 		// rows element or the first element in cases where only
 		// one entry is provided
 		
-		//print_r( $participantSets );
-		//print_r( $attributesEach );
-		
-		$participantList = array( );
+		$this->dbErrors = array( );
+		$stats = array( "INSERTED" => 0, "DUPLICATE" => 0, "ERROR" => 0 );
 		for( $i = 0; $i < $participantSize; $i++ ) {
 			
 			$interaction = $baseInt;
 			
 			$participants = array( );
+			$participantIDs = array( );
+			$participantRoles = array( );
 			foreach( $participantSets as $block => $participantSet ) {
 				
 				$currentParticipant = "";
+
 				if( isset( $participantSet[$i] )) {
 					$currentParticipant = $participantSet[$i];
+					$participantIDs[] = $participantSet[$i]["participant"];
+					$participantRoles[] = $participantSet[$i]["role"];
 				} else {
 					$currentParticipant = $participantSet[0];
+					$participantIDs[] = $participantSet[0]["participant"];
+					$participantRoles[] = $participantSet[0]["role"];
 				}
 				
-				$processedParticipant = $this->processParticipant( $currentParticipant, $block );
+				$processedParticipant = $this->generateParticipantStructure( $currentParticipant, $block );
 				
 				// If one participant is unknown it is an erroroneous 
 				// interaction that is being added
@@ -229,41 +250,224 @@ class CurationSubmission {
 				
 			}
 			
+			$participantHashID = $this->hashids->generateHash( $participantIDs, $participantRoles );
+			
+			$interaction["participant_hash"] = $participantHashID;
 			$interaction['participants'] = $participants;
+			
+			$attributeIDs = array( );
+			$attributeParentIDs = array( );
 			
 			// Add EACH Attributes
 			foreach( $attributesEach as $attributeSet ) {
 				$interaction['attributes'][] = $attributeSet['DATA'][$i];
+				$attributeIDs[] = $attributeSet['DATA'][$i]["attribute_id"];
+				$attributeParentIDs[] = 0;
 				foreach( $attributeSet['DATA'][$i]['attributes'] as $subAttribute ) {
-					$interaction['attributes'][] = $subAttribute;
+					$attributeIDs[] = $subAttribute["attribute_id"];
+					$attributeParentIDs[] = $attributeSet['DATA'][$i]["attribute_id"];
 				}
 			}
 			
 			// Add ALL Attributes
 			foreach( $attributesAll as $attribute ) {
 				$interaction['attributes'][] = $attribute;
+				$attributeIDs[] = $attribute["attribute_id"];
+				$attributeParentIDs[] = 0;
 				foreach( $attribute['attributes'] as $subAttribute ) {
-					$interaction['attributes'][] = $subAttribute;
+					$attributeIDs[] = $subAttribute["attribute_id"];
+					$attributeParentIDs[] = $attribute["attribute_id"];
 				}
 			}
 			
-			// Insert into Elastic Search
-			print_r( $interaction );
+			$attributeHashID = $this->hashids->generateHash( $attributeIDs, $attributeParentIDs );
+			$interaction["attribute_hash"] = $attributeHashID;
 			
-			// Add All Attributes
-			//$participantList[] = array( "PARTICIPANTS" => $currentPair, "HASH" => $this->hashids->generateHash( $participantIDs, $roleIDs ) );
+			// Insert into Database
+			$insertResults = $this->submitInteraction( $interaction );
+			$interaction = $insertResults['INTERACTION'];
+			
+			if( $insertResults['STATUS'] ) {
+				$stats['INSERTED']++;
+			} else {
+				$stats['ERROR']++;
+			}
+			
+			//print_r( $interaction );
 			
 		}
 		
-		return $participantList;
+		return $stats;
 		
+	}
+	
+	/**
+	 * Process Interaction into the Database
+	 */
+	 
+	private function submitInteraction( $interaction ) {
+		
+		$currentDate = date( 'Y/m/d H:i:s', strtotime( "now" ));
+		$interaction['history_date'] = $currentDate;
+	
+		$insertComplete = true;
+		if( !$interactionID = $this->insertInteractionToDB( $interaction ) ) {
+			$insertComplete = false;
+		} else {
+			
+			$interaction['interaction_id'] = $interactionID;
+			
+			if( !$this->insertHistoryToDB( "ACTIVATED", $interactionID, $interaction['history_user_id'], "New " . $interaction['interaction_type_name'] . " Interaction", "1", $interaction['history_date'] )) {
+				$insertComplete = false;
+			}
+			
+			if( !$interaction['participants'] = $this->insertInteractionParticipantsToDB( $interaction['participants'], $interactionID, $currentDate, "active" )) {
+				$insertComplete = false;
+			}
+			
+			if( !$interaction['attributes'] = $this->insertInteractionAttributesToDB( $interaction['attributes'], $interactionID, $currentDate, "active" )) {
+				$insertComplete = false;
+			}
+		
+		}
+		
+		return array( "STATUS" => $insertComplete, "INTERACTION" => $interaction );
+		
+	}
+	
+	/**
+	 * Insert Interaction Participants to the interaction_participants table
+	 */
+	 
+	private function insertInteractionParticipantsToDB( $participants, $interactionID, $date, $status ) {
+		
+		try {
+			
+			$participantList = array( );
+			foreach( $participants as $participant ) {
+				
+				$this->insertStmts['interaction_participants']->execute( array( $interactionID, $participant['participant_id'], $participant['participant_role_id'], $date, $status ));
+				
+				$interactionParticipantID = $this->db->lastInsertId( );
+				$participant['interaction_participant_id'] = $interactionParticipantID;
+				$participantList[] = $participant;
+				
+			}
+			
+			if( sizeof( $participantList ) > 0 ) {
+				return $participantList;
+			}
+			
+		} catch( PDOException $e ) {
+			$this->dbErrors[] = 'DB ERROR: ' . $e->getMessage( );
+		}
+		
+		return false;
+		
+	}
+	
+	/**
+	 * Insert Interaction Attributes to the interaction_attributes table
+	 */
+	 
+	private function insertInteractionAttributesToDB( $attributes, $interactionID, $date, $status ) {
+		
+		try {
+			
+			$attributeList = array( );
+			foreach( $attributes as $attribute ) {
+				
+				$this->insertStmts['interaction_attributes']->execute( array( $interactionID, $attribute['attribute_id'], "0", $attribute['attribute_user_id'], $date, $status ));
+				
+				$interactionAttributeID = $this->db->lastInsertId( );
+				$attribute['interaction_attribute_id'] = $interactionAttributeID;
+				$attribute['attribute_addeddate'] = $date;
+				
+				// Process Child Attributes by Inserting into the Database
+				// and also splitting them out in the elastic search record
+				// so they can be indexed correctly for searching
+				
+				$childAttributes = array( );
+				foreach( $attribute['attributes'] as $childAttribute ) {
+					
+					$this->insertStmts['interaction_attributes']->execute( array( $interactionID, $childAttribute['attribute_id'], $interactionAttributeID, $childAttribute['attribute_user_id'], $date, $status ));
+				
+					$interactionChildAttributeID = $this->db->lastInsertId( );
+					$childAttribute['interaction_attribute_id'] = $interactionChildAttributeID;
+					$childAttribute['interaction_attribute_parent_id'] = $interactionAttributeID;
+					$childAttribute['attribute_addeddate'] = $date;
+					$childAttributes[] = $childAttribute;
+				}
+				
+				// Add newly Annotated Child Attributes in place of
+				// originals
+				$attribute['attributes'] = $childAttributes;
+				
+				// Add the Parent Attribute to the master List
+				$attributeList[] = $attribute;
+				
+				// Add Child Attributes as separate attributes
+				$attributeList = array_merge( $attributeList, $childAttributes );
+				
+			}
+			
+			if( sizeof( $attributeList ) > 0 ) {
+				return $attributeList;
+			}
+			
+		} catch( PDOException $e ) {
+			$this->dbErrors[] = 'DB ERROR: ' . $e->getMessage( );
+		}
+		
+		return false;
+		
+	}
+	
+	/**
+	 * Insert an interaction into the database
+	 */
+	 
+	private function insertInteractionToDB( $interaction ) {
+		
+		try {
+			
+			$this->insertStmts['interaction']->execute( array( $interaction['participant_hash'], $interaction['attribute_hash'], $interaction['dataset_id'], $interaction['interaction_type_id'], $interaction['interaction_state'] ));
+			
+			return $this->db->lastInsertId( );
+			
+		} catch( PDOException $e ) {
+			$this->dbErrors[] = 'DB ERROR: ' . $e->getMessage( );
+		}
+		
+		return false;
+		
+	}
+	
+	/**
+	 * Insert an entry into the History table
+	 */
+	 
+	private function insertHistoryToDB( $modType, $interactionID, $userID, $comment, $operationID, $date ) {
+	
+		try {
+			
+			$this->insertStmts['history']->execute( array( $modType, $interactionID, $userID, $comment, $operationID, $date ));
+			
+			return true;
+			
+		} catch( PDOException $e ) {
+			$this->dbErrors[] = 'DB ERROR: ' . $e->getMessage( );
+		}
+		
+		return false;
+	
 	}
 	
 	/**
 	 * Create the base details about an interaction
 	 */
 	 
-	private function processInteraction( $options ) {
+	private function generateInteractionStructure( $options ) {
 		
 		$interaction = array( 
 			"interaction_id" => 0,
@@ -275,6 +479,8 @@ class CurationSubmission {
 			"history_user_id" => $_SESSION['IMS_USER']['ID'],
 			"history_user_name" => $_SESSION['IMS_USER']['FIRSTNAME'] . " " . $_SESSION['IMS_USER']['LASTNAME'],
 			"history_date" => "",
+			"attribute_hash" => "",
+			"participant_hash" => "",
 			"attributes" => array( ),
 			"participants" => array( )
 		);
@@ -287,7 +493,7 @@ class CurationSubmission {
 	 * elastic search
 	 */
 	 
-	private function processParticipant( $participant, $block ) {
+	private function generateParticipantStructure( $participant, $block ) {
 		
 		$formattedParticipant = array( );
 		$formattedParticipant['interaction_participant_id'] = "0";

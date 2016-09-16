@@ -20,7 +20,17 @@
 		base.data = { 
 			id: base.$el.attr( "id" ),
 			baseURL: $("head base").attr( "href" ),
-			curationBlocks: []
+			curationBlocks: [],
+			submissionOps: [ "init", "validateblocks", "annotate", "validatesubmission", "build", "insert", "complete" ],
+			submissionOpTitles: {
+				"init" : "Initializing Submission Process...",				
+			    "validateblocks" : "Validating Data in Curation Blocks...",
+				"annotate" : "Annotating Records...",
+				"validatesubmission" : "Validating Overall Dataset...",
+				"build" : "Building Database Records...",
+				"insert" : "Inserting Records to Database...",
+				"complete" : "Submission Process Complete!"
+			}
 		};
 		
 		base.components = {
@@ -28,7 +38,9 @@
 			curationInterface: $("#curationInterface"),
 			addSubAttributePopup: "",
 			addChecklistItemPopup: "",
-			curationWorkflow: $("#curationWorkflow")
+			curationWorkflow: $("#curationWorkflow"),
+			submitBtn: "",
+			addChecklistItemBtn: ""
 		};
 		
 		base.init = function( ) {
@@ -37,7 +49,11 @@
 			base.initializeCurationTypeDropdown( );
 			
 			base.$el.on( "click", ".workflowLink", function( ) {
-				base.clickWorkflowLink( $(this) );
+				if( base.components.submitBtn.is( ":disabled" ) ) {
+					return false;
+				} else {
+					base.clickWorkflowLink( $(this) );
+				}
 			});
 			
 			base.$el.on( "click", "#submitCurationWorkflowBtn", function( ) {
@@ -65,16 +81,18 @@
 		
 		base.toggleSubmitBtn = function( enableBtn ) {
 			
-			var submitBtn = $("#submitCurationWorkflowBtn");
-			
 			if( enableBtn ) {
-				submitBtn.prop( "disabled", false );
-				submitBtn.find( ".submitCheck" ).show( );
-				submitBtn.find( ".submitProgress" ).hide( );
+				base.components.submitBtn.prop( "disabled", false );
+				base.components.submitBtn.find( ".submitCheck" ).show( );
+				base.components.submitBtn.find( ".submitProgress" ).hide( );
+				base.components.addChecklistItemBtn.prop( "disabled", false );
+				base.components.curationTypeSelect.prop( "disabled", false );
 			} else {
-				submitBtn.prop( "disabled", true );
-				submitBtn.find( ".submitCheck" ).hide( );
-				submitBtn.find( ".submitProgress" ).show( );
+				base.components.submitBtn.prop( "disabled", true );
+				base.components.submitBtn.find( ".submitCheck" ).hide( );
+				base.components.submitBtn.find( ".submitProgress" ).show( );
+				base.components.addChecklistItemBtn.prop( "disabled", true );
+				base.components.curationTypeSelect.prop( "disabled", true );
 			}
 			
 		};
@@ -82,7 +100,7 @@
 		base.clickSubmitBtn = function( ) {
 			
 			base.toggleSubmitBtn( false );
-			$("#curationSubmitNotifications").html( "" );
+			$("#curationSubmitNotifications").html( "" ); 
 			
 			var allValidated = true;
 			var curationBlockCount = base.data.curationBlocks.length;
@@ -122,41 +140,58 @@
 					"script" : 'submitCuratedDataset'
 				};
 
+				var notificationPromise = base.showSubmitNotification( "SUBMIT" );
 				
-				$.ajax({
+				notificationPromise.done( function( ) {
 					
-					url: base.data.baseURL + "/scripts/curation/Workflow.php",
-					method: "POST",
-					dataType: "html",
-					data: ajaxData,
-					beforeSend: function( ) {
-						$(".curationWorkflowDetails").html( "" );
-						$("#curationSubmitNotifications").html( "Processing Submission <i class='fa fa-refresh fa-spin fa-lg'></i>" );
-					}
+					$("#curationWorkflowResults").html( base.fetchProgressHeader( "init", "running" ));
 					
-				}).done( function(data) {
+					var progressCheck = setInterval( function( ) {
+						base.updateProgress( ajaxData['curationCode'], "running" );
+					}, 3000);
 					
-					console.log( data );
-					
-					base.toggleSubmitBtn( true );
-					if( data["STATUS"] == "SUCCESS" ) {
-						console.log( "Submitted Successfully!" );
-					} else {
+					$.ajax({
 						
-						$("#curationWorkflowDetails").html( function( ) {
-							var header = "<h3>Submission Results</h3>"; 
-							var errors = data["ERRORS"];
-							return header + errors;
+						url: base.data.baseURL + "/scripts/curation/Workflow.php",
+						method: "POST",
+						dataType: "json",
+						data: ajaxData,
+						beforeSend: function( ) {
+							$(".curationWorkflowDetails").html( "" );
+							base.showWorkflowDetails( );
+						}
+						
+					}).done( function(data) {
+						
+						console.log( data );
+						clearInterval( progressCheck );
+						
+						var progressUpdatePromise = base.updateProgress( ajaxData['curationCode'], data["STATUS"].toLowerCase( ) );
+						progressUpdatePromise.always( function( ) {
+						
+							base.toggleSubmitBtn( true );
+							if( data["STATUS"] == "SUCCESS" ) {
+								console.log( "Submitted Successfully!" );
+								
+								base.showSubmitNotification( "SUCCESS" );
+								base.showWorkflowDetails( );
+								
+							} else {
+								
+								$("#curationWorkflowResults").append( data["ERRORS"] );
+								
+								base.showSubmitNotification( "ERROR" );
+								base.showWorkflowDetails( );
+							}
+							
 						});
 						
-						base.showSubmitNotification( "ERROR" );
-						
-						base.showWorkflowDetails( );
-					}
-					
-				}).fail( function( jqXHR, textStatus ) {
-					console.log( textStatus );
-					base.toggleSubmitBtn( true );
+					}).fail( function( jqXHR, textStatus ) {
+						clearInterval( progressCheck );
+						base.updateProgress( ajaxData['curationCode'], "error" );
+						console.log( textStatus );
+						base.toggleSubmitBtn( true );
+					});
 				});
 				
 			}).fail( function( jqXHR, textStatus ) {
@@ -166,10 +201,80 @@
 			
 		};
 		
+		// Update Curation Submission Progress
+		base.updateProgress = function( curCode, status ) {
+			
+			return $.ajax({
+				
+				url: base.data.baseURL + "/scripts/curation/Progress.php",
+				method: "POST",
+				dataType: "json",
+				data: { curationCode: curCode, "script" : "updateSubmissionProgress" }
+				
+			}).done( function( data ) {
+				
+				// Step through all operations and print them out in
+				// order based on where we are now and where we were
+				// last time
+				currentOp = data['PROGRESS'];
+				
+				// Step through each op one by one, until we find the last
+				// one we printed out
+				for( var i = 0; i < base.data.submissionOps.length; i++ ) {
+					
+					// Print out the new headers
+					style = "success";
+					if( base.data.submissionOps[i] == currentOp ) {
+						if( status == "success" ) {
+							style = "success";
+						} else if( status == "error" ) {
+							style = "error";
+						} else {
+							style = "running";
+						}
+					}
+					
+					if( i == 0 ) {
+						$("#curationWorkflowResults").html( base.fetchProgressHeader( base.data.submissionOps[i], style ));
+					} else {
+						$("#curationWorkflowResults").append( base.fetchProgressHeader( base.data.submissionOps[i], style ));
+					}
+					
+					// Once we find where we're at, we stop
+					if( base.data.submissionOps[i] == currentOp ) {
+						break;
+					}
+				}
+				
+			});
+			
+		};
+		
+		// Grab a formatted progress header
+		base.fetchProgressHeader = function( progressOp, style ) {
+			
+			var progressHeader = "<i class='fa fa-lg fa-angle-double-right'></i>";
+			var progressClass = "progressDefault";
+			
+			if( style == "running" ) {
+				progressHeader = progressHeader + "<i class='pull-right fa fa-spinner fa-pulse fa-lg fa-fw'></i> ";
+				progressClass = "progressRunning";
+			} else if( style == "success" ) {
+				progressHeader = progressHeader + "<i class='pull-right fa fa-lg fa-check-circle'></i> ";
+				progressClass = "progressSuccess";
+			} else if( style == "error" ) {
+				progressHeader = progressHeader + "<i class='pull-right fa fa-lg fa-exclamation-circle'></i> ";
+				progressClass = "progressError";
+			} 
+			
+			progressHeader = "<h3 class='progressHeader " + progressClass + "'>" + progressHeader + base.data.submissionOpTitles[progressOp] + "</h3>";
+			return progressHeader;
+		};
+		
 		// Generate a standard submission notification
 		base.showSubmitNotification = function( notificationType ) {
 			
-			$.ajax({
+			return $.ajax({
 				
 				url: base.data.baseURL + "/scripts/curation/Workflow.php",
 				method: "POST",
@@ -271,6 +376,9 @@
 			$.when.apply( $, promises ).done( function( ) {
 				var firstChecklistItem = $(".workflowLink:first");
 				base.clickWorkflowLink( firstChecklistItem );
+				
+				base.components.submitBtn = $("#submitCurationWorkflowBtn");
+				base.components.addChecklistItemBtn = $("#addNewChecklistItem");
 			});
 			
 		};

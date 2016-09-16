@@ -212,6 +212,8 @@ class ElasticSearch {
 		$document['interaction_type_id'] = $interaction->interaction_type_id;
 		$document['interaction_type_name'] = $this->interactionTypesHash[$interaction->interaction_type_id];
 		$document['interaction_state'] = $interaction->interaction_state;
+		$document['attribute_hash'] = $interaction->attribute_hash;
+		$document['participant_hash'] = $interaction->participant_hash;
 		
 		$document += $this->fetchInteractionHistoryDetails( $interaction->interaction_id );
 		$document['attributes'] = $this->fetchInteractionAttributes( $interaction->interaction_id );
@@ -463,6 +465,8 @@ class ElasticSearch {
 						"history_user_id" => array( "type" => "integer" ),
 						"history_user_name" => array( "type" => "string" ),
 						"history_date" => array( "type" => "date", "format" => "yyyy/MM/dd HH:mm:ss" ),
+						"attribute_hash" => array( "type" => "string" ),
+						"participant_hash" => array( "type" => "string" ),
 						"attributes" => array( "type" => "nested", "properties" => array(  
 							"interaction_attribute_id" => array( "type" => "integer" ),
 							"interaction_attribute_parent_id" => array( "type" => "integer" ),

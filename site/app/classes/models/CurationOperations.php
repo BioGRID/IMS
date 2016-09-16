@@ -50,6 +50,25 @@ class CurationOperations {
 	}
 	
 	/**
+	 * Fetch latest status and if none exists, simply return "init"
+	 */
+	 
+	public function fetchCurationSubmissionProgress( $options ) {
+		
+		$curationCode = $options['curationCode'];
+		
+		$stmt = $this->db->prepare( "SELECT curation_status FROM " . DB_IMS . ".curation_progress WHERE curation_code=? LIMIT 1" );
+		$stmt->execute( array( $curationCode ) );
+		
+		$status = "init";
+		if( $row = $stmt->fetch( PDO::FETCH_OBJ )) {
+			$status = $row->curation_status;
+		}
+		
+		return array( "PROGRESS" => $status );
+	}
+	
+	/**
 	 * Fetch a configuration for a curation workflow based on the type
 	 * of curation about to be performed.
 	 */
@@ -118,7 +137,25 @@ class CurationOperations {
 					
 					break;
 					
+				case "SUBMIT" :
 					
+					$params = array( 
+						"NOTIFICATION" => "Processing Submission <i class='fa fa-refresh fa-spin fa-lg'></i>",
+						"NOTIFICATION_TYPE" => "",
+						"VIEW_LINK" => "<i class='fa fa-arrow-left'></i> View Results"
+					);
+					
+					break;
+					
+				case "SUCCESS" :
+					
+					$params = array( 
+						"NOTIFICATION" => "Your submission was completed successfully!",
+						"NOTIFICATION_TYPE" => "text-success",
+						"VIEW_LINK" => "<i class='fa fa-arrow-left'></i> View Results"
+					);
+					
+					break;
 		
 			}
 			
@@ -207,6 +244,9 @@ class CurationOperations {
 				
 			case "QUANT_COUNT" :
 				return array( "class" => "danger", "message" => "Your data was not submitted because <strong>" . $details['quantName'] . "</strong> must contain the same number of entries as the number of participants. Currently, <strong>" . $details['quantName'] . "</strong> contains <strong> " . $details['quantSize'] . "</strong> entries but you are entering <strong> " . $details['participantSize'] . "</strong> participants." );
+				
+			case "DATABASE_INSERT" :
+				return array( "class" => "danger", "message" => "Your data was not submitted because there was an issue inserting it into the database. If this problem persists, please contact the site administrators and paste in the following details:<br />" . implode( "<br />", $details['dbErrors'] ) );
 
 			default:
 				return array( "class" => "danger", "message" => "An unknown error has occurred." );

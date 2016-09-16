@@ -64,7 +64,7 @@ if( isset( $_POST['script'] ) ) {
 		case 'submitCuratedDataset' :
 			$curationSubmit = new models\CurationSubmission( );
 			echo $curationSubmit->processCurationSubmission( $_POST );
-			break;
+			break; 
 			
 		// Fetch a formatted notification
 		case 'loadWorkflowNotification' :

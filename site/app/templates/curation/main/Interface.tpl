@@ -1,5 +1,8 @@
 <div id='curationWorkflow' class=''>
-	<div id='curationWorkflowDetails' class='col-lg-12 marginTopSm'>TEST</div>
+	<div id='curationWorkflowDetails' class='col-lg-12 marginTopSm'>
+		<h3>Submission Progress</h3>
+		<div id='curationWorkflowResults'></div>
+	</div>
 </div>
 
 <div id='curationRightSidebar' class='clearfix'>
