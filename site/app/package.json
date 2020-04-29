@@ -21,7 +21,7 @@
     "url": "https://github.com/BioGRID/IMS/issues"
   },
   "dependencies": {
-    "jquery": "~3.4.1",
+    "jquery": "~3.5.0",
     "bootstrap": "~3.4.1",
     "font-awesome": "~4.5.0",
     "datatables.net": "~1.10.11",
